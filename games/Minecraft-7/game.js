@@ -257,7 +257,7 @@ TIERS.forEach((t, i) => { if (i === 0) [PICK0, AXE0, SHOVEL0, SWORD0].forEach(b 
 const SMELT_TIME = 8;
 
 // ─────────────────────────── procedural texture atlas ───────────────────────────
-const ATLAS = 256, TS = 16, TPR = ATLAS / TS;
+const ATLAS = 512, TS = 16, TPR = ATLAS / TS;
 const T = {}; let tileCount = 0;
 let atlasCanvas = null, atlasData = null;
 const ICON = {}; // id -> dataURL
@@ -270,6 +270,10 @@ function buildAtlas() {
   const img = c2.createImageData(ATLAS, ATLAS);
   atlasData = img.data;
   paintAll();
+  // Each model face gets its own tile, retaining procedural fallback textures.
+  const fallback = {zombie:'zombie_skin',pig:'pig_skin',cow:'cow_skin',sheep:'sheep_face',spider:'spider_body'};
+  for (const [mob, base] of Object.entries(fallback)) for (let i=0;i<16;i++) tile('skin_'+mob+'_'+i, t => t.copy(i === 0 ? mob+'_face' : base));
+  if (tileCount > TPR * TPR) throw Error('텍스처 아틀라스 공간이 부족합니다.');
   c2.putImageData(img, 0, 0);
 }
 
@@ -469,18 +473,35 @@ function paintAll() {
   tile('bubble', t => t.each((x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); if (d < 3.5 && d > 2.2) t.set(x, y, [120, 180, 255]); else if (d <= 2.2 && x < 8 && y < 8) t.set(x, y, [230, 240, 255]); }));
 }
 
+
+// Generated sheets are split into fixed UV cells; loading failures retain built-in textures.
+async function applyWorldSheets() {
+  const defs = [
+    ['world-a.png', ['dirt','grass_top','grass_side','stone','cobble','mossy','bedrock','obsidian','sand','gravel','clay','log_side','spruce_log','birch_log','log_top','planks']],
+    ['world-b.png', ['coal_ore','iron_ore','gold_ore','diamond_ore','table_top','table_side','furnace_front_lit','furnace_side','stone_bricks','bricks','snow','ice','bookshelf','sandstone_side','cactus_side','tnt_side']],
+    ['world-nature.png', ['leaves','spruce_leaves','birch_leaves','wool','glowstone','pumpkin_side','pumpkin_top','melon_side','chest_side','chest_front','chest_top','snow_side','wool_0','wool_1','wool_2','wool_5']],
+    ...['zombie','pig','cow','sheep','spider'].map(m => ['skin-'+m+'.png', Array.from({length:16},(_,i)=>'skin_'+m+'_'+i)])
+  ];
+  const load = src => new Promise((resolve,reject) => { const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>resolve(im); im.onerror=reject; im.src=src; });
+  const c=atlasCanvas.getContext('2d'); c.imageSmoothingEnabled=false;
+  await Promise.all(defs.map(async ([file,names]) => { try { const im=await load('textures/'+file); const w=im.naturalWidth/4,h=im.naturalHeight/4; names.forEach((name,i)=>{const target=T[name]; if(target===undefined)return; c.clearRect((target%TPR)*TS,Math.floor(target/TPR)*TS,TS,TS); c.drawImage(im,(i%4)*w,Math.floor(i/4)*h,w,h,(target%TPR)*TS,Math.floor(target/TPR)*TS,TS,TS);}); } catch (_) { /* keep built-in fallback */ } }));
+}
+
 function tileUV(name) { const i = typeof name === 'number' ? name : T[name]; return [(i % TPR) / TPR, Math.floor(i / TPR) / TPR]; }
 
 // UI icons for items (isometric cube for blocks)
 async function applyGeneratedItemIcons() {
-  const load = src => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = src; });
-  try {
-    const [blocks, items] = await Promise.all([load('textures/blocks.png'), load('textures/items.png')]);
-    const icon = (image, index) => { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; const cw = image.naturalWidth / 8, ch = image.naturalHeight / 8; g.drawImage(image, (index % 8) * cw, Math.floor(index / 8) * ch, cw, ch, 0, 0, 32, 32); return c.toDataURL('image/png'); };
-    for (let id = 1; id <= 60; id++) ICON[id] = icon(blocks, id - 1);
-    for (let id = 256; id <= 295; id++) ICON[id] = icon(items, id - 256);
-    for (let id = 41; id <= 47; id++) ICON[id] = ICON[40];
-  } catch { /* The built-in procedural icons remain as an offline fallback. */ }
+  const defs = [
+    ['items-tools.png', [PICK0,PICK0+1,PICK0+2,PICK0+4,SWORD0,SWORD0+1,SWORD0+2,SWORD0+4,IRON,GOLD,DIAMOND,COAL,APPLE,BREAD,BEEF,BUCKET]],
+    ['items-extra.png', [AXE0,AXE0+1,AXE0+2,AXE0+4,SHOVEL0,SHOVEL0+1,SHOVEL0+2,SHOVEL0+4,PICK0+3,AXE0+3,SHOVEL0+3,SWORD0+3,STICK,STRING,FLINT,FLINT_STEEL]],
+    ['items-food.png', [PORK,COOKED_PORK,BEEF,STEAK,MUTTON,COOKED_MUTTON,FLESH,MELON_SLICE,BREAD,APPLE,BUCKET,WATER_BUCKET,COAL,IRON,GOLD,DIAMOND]]
+  ];
+  const load=src=>new Promise((resolve,reject)=>{const im=new Image(); im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});
+  // Build 32px icons, removing only the connected sheet background from tile edges.
+  const drawIcon=(im,i) => {const c=document.createElement('canvas');c.width=c.height=32;const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=false;const w=im.naturalWidth/4,h=im.naturalHeight/4;g.drawImage(im,(i%4)*w,Math.floor(i/4)*h,w,h,0,0,32,32);const pixels=g.getImageData(0,0,32,32),d=pixels.data;const bg=[d[0],d[1],d[2]],seen=new Uint8Array(1024),stack=[0];while(stack.length){const n=stack.pop();if(n<0||n>=1024||seen[n])continue;seen[n]=1;const k=n*4;if(Math.abs(d[k]-bg[0])+Math.abs(d[k+1]-bg[1])+Math.abs(d[k+2]-bg[2])>75)continue;d[k+3]=0;const x=n%32,y=Math.floor(n/32);if(x)stack.push(n-1);if(x<31)stack.push(n+1);if(y)stack.push(n-32);if(y<31)stack.push(n+32);}g.putImageData(pixels,0,0);return c;};
+  // Process sheets in order so duplicate IDs have a deterministic final appearance.
+  const sheets=await Promise.allSettled(defs.map(([file])=>load('textures/'+file)));
+  for (let n=0;n<defs.length;n++) { const [file,ids]=defs[n]; try {if(sheets[n].status!=='fulfilled') continue;const im=sheets[n].value;for(let i=0;i<ids.length;i++){const id=ids[i], icon=drawIcon(im,i);ICON[id]=icon.toDataURL('image/png');const ti=T[ITEM[id]?.icon];if(ti!==undefined){const g=atlasCanvas.getContext('2d');g.clearRect((ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS);g.imageSmoothingEnabled=false;g.drawImage(icon,(ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS);}}}catch(_) {/* Built-in icon remains available. */}}
 }
 
 function buildIcons() {
@@ -1415,19 +1436,22 @@ function drawMobs(B, ox, oy, oz) {
       return [m.x - ox + x * cy - z * sy, m.y - oy + y, m.z - oz + x * sy + z * cy];
     }, sky, blk, flash);
     const six = t => [t, t, t, t, t, t];
+    // Order follows the six box faces: right, left, top, bottom, back, front.
+    const skin = (name, cells) => cells.map(i => T['skin_'+name+'_'+i]);
     const withFace = (t, f) => [t, t, t, t, t, f];
+    const skinFaces = (name, cells) => cells.map(i => T['skin_'+name+'_'+i]);
     if (m.type === 'zombie') {
       const S = T.zombie_skin, sh = T.zombie_shirt, pa = T.zombie_pants;
-      part([-0.25, 0, -0.125], [0, 0.75, 0.125], six(pa), [0, 0.75, 0], swing);
-      part([0, 0, -0.125], [0.25, 0.75, 0.125], six(pa), [0, 0.75, 0], -swing);
-      part([-0.25, 0.75, -0.125], [0.25, 1.5, 0.125], six(sh), [0, 0, 0], 0);
-      part([-0.5, 0.75, -0.125], [-0.25, 1.5, 0.125], [S, S, sh, S, S, S], [0, 1.4, 0], Math.PI / 2 + swing * 0.15);
-      part([0.25, 0.75, -0.125], [0.5, 1.5, 0.125], [S, S, sh, S, S, S], [0, 1.4, 0], Math.PI / 2 - swing * 0.15);
-      part([-0.25, 1.5, -0.25], [0.25, 2, 0.25], withFace(S, T.zombie_face), [0, 0, 0], 0);
+      part([-0.25, 0, -0.125], [0, 0.75, 0.125], skin('zombie',[13,13,12,14,13,12]), [0, 0.75, 0], swing);
+      part([0, 0, -0.125], [0.25, 0.75, 0.125], skin('zombie',[13,13,12,14,13,12]), [0, 0.75, 0], -swing);
+      part([-0.25, 0.75, -0.125], [0.25, 1.5, 0.125], skin('zombie',[8,8,9,9,7,6]), [0, 0, 0], 0);
+      part([-0.5, 0.75, -0.125], [-0.25, 1.5, 0.125], skin('zombie',[11,11,9,15,11,10]), [0, 1.4, 0], Math.PI / 2 + swing * 0.15);
+      part([0.25, 0.75, -0.125], [0.5, 1.5, 0.125], skin('zombie',[11,11,9,15,11,10]), [0, 1.4, 0], Math.PI / 2 - swing * 0.15);
+      part([-0.25, 1.5, -0.25], [0.25, 2, 0.25], skin('zombie',[3,2,4,5,1,0]), [0, 0, 0], 0);
     } else if (m.type === 'spider') {
       const S = T.spider_body;
-      part([-0.42, 0.3, -0.1], [0.42, 0.85, 0.75], six(S), [0, 0, 0], 0);
-      part([-0.25, 0.32, -0.55], [0.25, 0.72, -0.1], withFace(S, T.spider_face), [0, 0, 0], 0);
+      part([-0.42, 0.3, -0.1], [0.42, 0.85, 0.75], skin('spider',[7,6,8,9,7,6]), [0, 0, 0], 0);
+      part([-0.25, 0.32, -0.55], [0.25, 0.72, -0.1], skin('spider',[3,2,4,5,1,0]), [0, 0, 0], 0);
       for (let k = 0; k < 4; k++) for (const side of [-1, 1]) {
         const z = -0.05 + k * 0.17, a = (-side * 0.5) + Math.sin(m.walk * 3 + k + (side > 0 ? 1.5 : 0)) * 0.25;
         part(side < 0 ? [-0.95, 0.48, z - 0.04] : [0.08, 0.48, z - 0.04], side < 0 ? [-0.08, 0.56, z + 0.04] : [0.95, 0.56, z + 0.04], six(S), [0, 0.52, z], 0, a);
@@ -1438,13 +1462,14 @@ function drawMobs(B, ox, oy, oz) {
       const legT = m.type === 'pig' ? T.pig_skin : big ? T.cow_skin : T.sheep_face;
       const bw = big ? 0.38 : sheep ? 0.33 : 0.3, by0 = big ? 0.75 : sheep ? 0.6 : 0.38, by1 = big ? 1.3 : sheep ? 1.15 : 0.85, bl = big ? 0.6 : 0.5;
       const lh = by0, lw = big ? 0.13 : 0.12;
-      part([-bw, by0, -bl], [bw, by1, bl], six(skin), [0, 0, 0], 0);
+      part([-bw, by0, -bl], [bw, by1, bl], sheep && m.color >= 8 ? six(woolT) : skinFaces(m.type,[7,6,8,9,7,6]), [0, 0, 0], 0);
       for (const [lx, lz, s] of [[-1, -1, 1], [1, -1, -1], [-1, 1, -1], [1, 1, 1]]) {
         const cx = lx * (bw - lw), cz = lz * (bl - lw - 0.04);
-        part([cx - lw, 0, cz - lw], [cx + lw, lh, cz + lw], six(legT), [cx, lh, cz], swing * s);
+        part([cx - lw, 0, cz - lw], [cx + lw, lh, cz + lw], skinFaces(m.type,[10,10,12,13,10,11]), [cx, lh, cz], swing * s);
       }
       const hs = big ? 0.3 : 0.25, hy = big ? 1.05 : sheep ? 0.95 : 0.5;
-      part([-hs, hy, -bl - hs * 1.6], [hs, hy + hs * 2, -bl + hs * 0.3], withFace(sheep ? woolT : skin, face), [0, 0, 0], 0);
+      part([-hs, hy, -bl - hs * 1.6], [hs, hy + hs * 2, -bl + hs * 0.3], skinFaces(m.type,[3,2,4,5,1,0]), [0, 0, 0], 0);
+      if (!sheep) part([-hs*.58, hy+hs*.18, -bl-hs*1.9], [hs*.58, hy+hs*.9, -bl-hs*1.59], skinFaces(m.type,[15,15,15,15,15,14]), [0,0,0], 0);
     }
   }
 }
@@ -1915,6 +1940,12 @@ canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
 #mc .touch{opacity:var(--touch-opacity)} #mc .bottom{transform:translateX(-50%) scale(var(--hud-scale));transform-origin:bottom center}
 #mc .tb{border-radius:6px;box-shadow:inset 2px 2px #fff7,inset -3px -3px #0009}
 @media(max-width:620px){#mc .screen{padding:6px}#mc .cols{gap:6px}#mc .panel{max-height:96%;overflow:auto}#mc .recipes{max-height:100px}#mc .tleft{bottom:145px}#mc .tbtns{bottom:72px}#mc .joy{bottom:72px}}
+@media(pointer:coarse){
+#mc .tb{background-image:url('textures/mobile-controls.png');background-size:400% 400%;font-size:0;border:0;box-shadow:none;border-radius:3px}
+#mc #tJump{background-position:0% 33.333%}#mc #tMine{background-position:33.333% 33.333%}#mc #tUse{background-position:66.666% 33.333%}#mc #tSneak{background-position:100% 33.333%}#mc #tDown{background-position:100% 0%}#mc #tFly{background-position:0% 33.333%}
+#mc .joy{background-image:url('textures/mobile-controls.png');background-size:400% 400%;background-position:0% 100%;border:0;border-radius:0}
+#mc .joy i{background-image:url('textures/mobile-controls.png');background-size:400% 400%;background-position:33.333% 100%;border:0;border-radius:0}
+}
 @media(max-height:520px){.slot{width:30px;height:30px}.ico{width:22px;height:22px}.palette{grid-template-columns:repeat(9,30px)}.cnt{font-size:11px}}`;
 
 const SPLASH = ['무한한 세계!', '블록으로 무엇이든!', '밤에는 조심!', '다이아몬드를 찾아라!', '100% 자체 제작 텍스처!', '횃불은 소중해요', '작업대부터 만들어요'];
@@ -2856,7 +2887,7 @@ window.GameHub.registerGame({
   async mount(container, context) {
     root = container; ctx = context; muted = ctx.muted;
     buildDOM();
-    buildAtlas(); prepareBlockTables(); buildIcons(); await applyGeneratedItemIcons();
+    buildAtlas(); await applyWorldSheets(); prepareBlockTables(); buildIcons(); await applyGeneratedItemIcons();
     initGL(canvas);
     const dc = document.createElement('canvas'); dc.width = dc.height = 16; const dg = dc.getContext('2d'); const di = T.dirt; dg.drawImage(atlasCanvas, (di % TPR) * TS, Math.floor(di / TPR) * TS, 16, 16, 0, 0, 16, 16);
     const dirtURL = dc.toDataURL();
