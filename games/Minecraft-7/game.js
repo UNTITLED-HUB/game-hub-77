@@ -773,6 +773,11 @@ function lightChunk(ch) {
   }
   if (sources.length) blockLight(ch, sources);
   ch.lit = true; ch.needLight = false;
+  // Adjacent meshes may have sampled this chunk before its light was calculated.
+  for (let dz=-1; dz<=1; dz++) for (let dx=-1; dx<=1; dx++) {
+    if (!dx && !dz) continue; const neighbor=getChunk(ch.cx+dx,ch.cz+dz);
+    if (neighbor && neighbor.mesh) neighbor.needMesh=true;
+  }
 }
 // BFS in a padded region (chunk ± 15 blocks) so light crosses chunk borders
 const PAD = 15, RW = CS + PAD * 2, RVOL = RW * RW * WH;
@@ -952,7 +957,7 @@ function fillPadded(ch) {
     const lx = (x + CS) & 15, lz = (z + CS) & 15;
     for (let y = 0; y < WH; y++) {
       const p = pidx(x + 1, y, z + 1);
-      if (c) { const i = bidx(lx, y, lz); PB[p] = c.blocks[i]; PL[p] = c.light[i]; } else { PB[p] = STONE; PL[p] = 0; }
+      if (c) { const i = bidx(lx, y, lz); PB[p] = c.blocks[i]; PL[p] = c.lit ? c.light[i] : (y > c.heights[lz * CS + lx] && !isOpaqueId(c.blocks[i]) ? 0xF0 : 0); } else { PB[p] = STONE; PL[p] = 0; }
     }
   }
 }
@@ -1946,6 +1951,28 @@ canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
 #mc .joy{background-image:url('textures/mobile-controls.png');background-size:400% 400%;background-position:0% 100%;border:0;border-radius:0}
 #mc .joy i{background-image:url('textures/mobile-controls.png');background-size:400% 400%;background-position:33.333% 100%;border:0;border-radius:0}
 }
+
+#mc .screen.landing{background:linear-gradient(#0003,#0007),url('textures/title-panorama.png') center/cover no-repeat}
+#mc .landing-menu{width:min(390px,90%);gap:8px;filter:drop-shadow(2px 3px 1px #0008)}
+#mc .landing-menu h1{font-size:clamp(36px,6vw,68px);line-height:.84;letter-spacing:-2px;color:#eee;text-shadow:3px 3px #333,5px 5px #111}
+#mc .landing-menu h1 small{font-size:.35em;letter-spacing:5px}
+#mc .settings-menu{width:min(680px,96%)}#mc .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;text-align:left}
+#mc .settings-grid .field{padding:7px 10px;background:#111b;border:1px solid #777;gap:2px}
+#mc .panel{background-image:none;background-color:#c6c6c6;color:#373737;box-shadow:inset 3px 3px #fff,inset -3px -3px #555;max-height:calc(100% - 42px);overflow:auto;overscroll-behavior:contain}
+#mc .panel h3{color:#3f3f3f;text-shadow:none}#mc .panel .row2{flex:none}
+#mc .touch-held{display:none;position:absolute;bottom:4px;left:50%;transform:translateX(-50%);margin:0;background:#222e;color:#fff;padding:5px 10px;font-size:12px;border:2px solid #777;z-index:6;pointer-events:none;max-width:100%;text-align:center}
+#mc .held-slot{display:inline-flex;width:30px;height:30px;position:relative;vertical-align:middle;align-items:center;justify-content:center;margin-right:6px}
+#mc .hot-inv{display:none}
+@media(pointer:coarse){#mc .joy{width:clamp(110px,var(--joy-size,24vmin),210px);height:clamp(110px,var(--joy-size,24vmin),210px);left:max(10px,env(safe-area-inset-left));bottom:max(54px,env(safe-area-inset-bottom))}
+#mc .joy i{width:42%;height:42%;margin:-21% 0 0 -21%}
+#mc .tbtns{right:max(10px,env(safe-area-inset-right));bottom:max(54px,env(safe-area-inset-bottom));grid-template-columns:repeat(2,clamp(48px,10vmin,72px));gap:8px}
+#mc .tbtns .tb{width:100%;height:clamp(48px,10vmin,72px)}#mc .tleft{left:auto;right:max(10px,env(safe-area-inset-right));bottom:max(190px,calc(env(safe-area-inset-bottom) + 190px));flex-direction:row}
+#mc .touch-held{display:flex;align-items:center;justify-content:center;gap:6px}#mc .screen{padding:5px 5px 40px}#mc .hot-inv{display:block;width:36px;height:36px;padding:0;border:2px solid #ddd;background:#333;color:white;font-size:20px;touch-action:manipulation}
+#mc .tools #bInv{display:none}#mc .hotbar{max-width:100vw}#mc .slot{min-width:34px;min-height:34px;touch-action:manipulation}#mc .palette{grid-template-columns:repeat(9,34px)}
+#mc .recipes{max-height:min(24vh,140px)}#mc .cols{gap:8px}#mc .panel{padding:9px;gap:6px}
+}
+@media(max-width:400px){#mc .hs{width:29px;height:33px}#mc .hot-inv{width:32px;height:33px}#mc .ico{width:23px;height:23px}#mc .settings-grid{grid-template-columns:1fr}#mc .bars,#mc .air{width:270px}}
+@media(max-height:430px) and (pointer:coarse){#mc .joy{width:clamp(90px,var(--joy-size,24vmin),145px);height:clamp(90px,var(--joy-size,24vmin),145px);bottom:52px}#mc .tleft{bottom:165px}#mc .tb,#mc .tbtns .tb{height:48px}#mc .recipes{max-height:68px}#mc .screen{padding-bottom:30px}#mc .touch-held{font-size:10px;padding:2px 6px}}
 @media(max-height:520px){.slot{width:30px;height:30px}.ico{width:22px;height:22px}.palette{grid-template-columns:repeat(9,30px)}.cnt{font-size:11px}}`;
 
 const SPLASH = ['무한한 세계!', '블록으로 무엇이든!', '밤에는 조심!', '다이아몬드를 찾아라!', '100% 자체 제작 텍스처!', '횃불은 소중해요', '작업대부터 만들어요'];
@@ -1972,7 +1999,7 @@ function buildDOM() {
 <div class="cursor" id="cursor"></div><div class="tip" id="tip"></div>
 </section>`;
   canvas = $('cv');
-  $('hotbar').innerHTML = Array.from({ length: 9 }, (_, i) => `<div class="hs" data-hot="${i}"></div>`).join('');
+  $('hotbar').innerHTML = Array.from({ length: 9 }, (_, i) => `<div class="hs" data-hot="${i}"></div>`).join('') + '<button id="hotInv" class="hot-inv" aria-label="인벤토리 열기">⋯</button>'; 
   $('hearts').innerHTML = '<img alt="">'.repeat(10); $('food').innerHTML = '<img alt="">'.repeat(10); $('air').innerHTML = '<img alt="">'.repeat(10);
 }
 function slotHTML(s) {
@@ -2021,7 +2048,7 @@ function chat(msg, color) { const d = document.createElement('div'); d.textConte
 let cursorStack = null, quickMove = false, oneMode = false, tipEl = null, creativeTab = '전체', creativeSearch = '';
 function openScreen(kind) {
   if (G.ui === 'death') return;
-  input.mine = input.use = false; P.mining = null;
+  input.mine = input.use = input.jump = false; input.fwd = input.side = 0; input.sprintKey = false; $('knob').style.transform = ''; P.mining = null;
   if (kind === 'table') G.craft = Array(9).fill(null), G.craftW = 3;
   else if (kind === 'inventory') G.craft = Array(4).fill(null), G.craftW = 2;
   G.ui = kind === 'table' || kind === 'inventory' || kind === 'creative' ? kind : (kind === 'furnace' || kind === 'chest') ? 'container' : kind;
@@ -2071,6 +2098,7 @@ function renderScreen() {
     s.innerHTML = `<div class="panel" role="dialog" aria-label="상자"><div class="row2" style="justify-content:space-between;align-items:center"><h3>상자</h3>${touchTools()}<button class="btn sm" data-act="close">닫기</button></div>
     <div class="grid" style="grid-template-columns:repeat(9,auto)">${Array.from({ length: 27 }, (_, i) => slotEl('c:' + i)).join('')}</div><h3>인벤토리</h3>${invGrid()}</div>`;
   }
+  if (isTouch()) s.insertAdjacentHTML('beforeend', '<div class="touch-held" id="touchHeld" role="status"></div>');
   renderSlots();
 }
 function renderSlots() {
@@ -2078,6 +2106,7 @@ function renderSlots() {
   s.querySelectorAll('[data-slot]').forEach(el => { const r = el.dataset.slot; if (r.startsWith('pal:') || r === 'trash') return; el.innerHTML = slotHTML(getSlot(r)); });
   const out = s.querySelector('[data-slot="out"]'); if (out) out.innerHTML = slotHTML(craftResult());
   $('cursor').innerHTML = slotHTML(cursorStack);
+  const held=$('touchHeld'); if (held) { held.innerHTML = cursorStack ? `<span class="held-slot">${slotHTML(cursorStack)}</span><span>선택 중: ${esc(info(cursorStack.id).name)} · 놓을 칸을 누르세요</span>` : '<span>아이템을 누른 뒤 옮길 칸을 누르세요</span>'; }
   if (G.uiKind === 'furnace' && G.container) { const te = G.container.te; const f = $('fflame'), a = $('farrow'); if (f) f.style.height = (te.burn > 0 ? te.burn / te.burnMax * 100 : 0) + '%'; if (a) a.style.width = (te.cook / SMELT_TIME * 100) + '%'; }
   if (G.uiKind === 'inventory' || G.uiKind === 'table') renderRecipes();
 }
@@ -2230,6 +2259,11 @@ function screenEvents() {
 // ── menus ──
 function screenHTML(inner, dirt) { const s = $('screen'); s.hidden = false; s.className = 'screen' + (dirt ? ' dirt' : ''); s.innerHTML = inner; }
 let selectedWorld = null, deleteArmed = null;
+function showLanding() {
+  G=null; W=null;
+  screenHTML(`<div class="menu landing-menu"><h1>MINECRAFT<br><small>MINI</small></h1><div class="splash">${SPLASH[Math.floor(Math.random()*SPLASH.length)]}</div><button class="btn" data-act="worlds">싱글플레이 · 월드 선택</button><button class="btn" data-act="new">새 월드 만들기</button><button class="btn" data-act="settings">설정</button><p>블록을 모으고 나만의 세계를 만들어 보세요.</p></div>`);
+  $('screen').classList.add('landing');
+}
 function showTitle() {
   G = null; W = null;
   const worlds = SAVE.worlds.slice().sort((a, b) => b.played - a.played);
@@ -2265,18 +2299,19 @@ function showPause() {
 function showSettings(back) {
   const st = SAVE.settings, prev = G ? G.ui : 'title';
   if (G) G.ui = 'settings';
-  screenHTML(`<div class="menu"><h2>설정</h2>
+  screenHTML(`<div class="menu settings-menu"><h2>설정</h2><div class="settings-grid">
   <label class="field">시야 거리: <b id="vRd">${st.renderDist}</b> 청크<input type="range" min="2" max="8" value="${st.renderDist}" id="sRd"></label>
   <label class="field">시야각(FOV): <b id="vFov">${st.fov}</b><input type="range" min="55" max="105" value="${st.fov}" id="sFov"></label>
   <label class="field">마우스 감도: <b id="vSens">${st.sens}</b><input type="range" min="1" max="20" value="${st.sens}" id="sSens"></label>
   <label class="field">HUD 크기: <b id="vHud">${st.hudScale}</b>%<input type="range" min="75" max="125" step="5" value="${st.hudScale}" id="sHud"></label>
+  <label class="field">조이스틱 크기: <b id="vJoy">${st.joySize}</b>%<input type="range" min="75" max="140" step="5" value="${st.joySize}" id="sJoy"></label>
   <label class="field">터치 버튼 불투명도: <b id="vTouch">${st.touchOpacity}</b>%<input type="range" min="30" max="100" step="5" value="${st.touchOpacity}" id="sTouch"></label>
   <button class="btn ${st.invertY ? 'on' : ''}" data-act="invert">세로 시점 반전 ${st.invertY ? '켬' : '끔'}</button>
   <div class="row2"><button class="btn ${st.bob ? 'on' : ''}" data-act="tbob">화면 흔들림 ${st.bob ? '켬' : '끔'}</button><button class="btn ${st.autoJump ? 'on' : ''}" data-act="tjump">자동 점프 ${st.autoJump ? '켬' : '끔'}</button></div>
   ${G ? `<div class="row2"><button class="btn ${W.difficulty === 0 ? 'on' : ''}" data-act="sdiff" data-diff="0">평화로움</button><button class="btn ${W.difficulty !== 0 ? 'on' : ''}" data-act="sdiff" data-diff="2">보통</button></div>` : ''}
-  <button class="btn" data-act="${back || (prev === 'title' || !G ? 'title' : 'pause')}">완료</button></div>`, !G);
+  </div><button class="btn" data-act="${back || (prev === 'title' || !G ? 'title' : 'pause')}">완료</button></div>`, !G);
   const bind = (id, key, out) => { const el = $(id); el.addEventListener('input', () => { st[key] = +el.value; $(out).textContent = el.value; if (G) G.settings = st; applyVisualSettings(); saveSettingsSoon(); }); };
-  bind('sRd', 'renderDist', 'vRd'); bind('sFov', 'fov', 'vFov'); bind('sSens', 'sens', 'vSens'); bind('sHud', 'hudScale', 'vHud'); bind('sTouch', 'touchOpacity', 'vTouch');
+  bind('sRd', 'renderDist', 'vRd'); bind('sFov', 'fov', 'vFov'); bind('sSens', 'sens', 'vSens'); bind('sHud', 'hudScale', 'vHud'); bind('sJoy', 'joySize', 'vJoy'); bind('sTouch', 'touchOpacity', 'vTouch');
 }
 function showHelp() {
   G.ui = 'help';
@@ -2317,7 +2352,8 @@ function menuAction(a, el) {
     case 'pick': selectedWorld = el.dataset.id; deleteArmed = null; showTitle(); break;
     case 'play': if (selectedWorld) startWorld(SAVE.worlds.find(w => w.id === selectedWorld)); break;
     case 'new': showCreate(); break;
-    case 'title': showTitle(); break;
+    case 'title': showLanding(); break;
+    case 'worlds': showTitle(); break;
     case 'delete':
       if (deleteArmed !== selectedWorld) { deleteArmed = selectedWorld; showTitle(); ctx.timeout(() => { if (deleteArmed && !G) { deleteArmed = null; if ($('screen').querySelector('.worlds')) showTitle(); } }, 3500); }
       else { SAVE.worlds = SAVE.worlds.filter(w => w.id !== selectedWorld); deleteArmed = null; selectedWorld = null; persist(); showTitle(); }
@@ -2383,9 +2419,9 @@ function command(line) {
 let touchSneak = false;
 function touchEvents() {
   const joy = $('joy'), knob = $('knob');
-  let jid = null, jc = null;
-  const setJoy = (dx, dy) => { const r = 46, d = Math.hypot(dx, dy), k = d > r ? r / d : 1; knob.style.transform = `translate(${dx * k}px,${dy * k}px)`; const nx = dx * k / r, ny = dy * k / r; input.fwd = Math.abs(ny) > 0.2 ? -ny : 0; input.side = Math.abs(nx) > 0.2 ? nx : 0; input.sprintKey = ny < -0.95; };
-  ctx.on(joy, 'pointerdown', e => { e.preventDefault(); jid = e.pointerId; try { joy.setPointerCapture(jid); } catch { } const r = joy.getBoundingClientRect(); jc = [r.left + r.width / 2, r.top + r.height / 2]; setJoy(e.clientX - jc[0], e.clientY - jc[1]); });
+  let jid = null, jc = null, joyRadius = 46;
+  const setJoy = (dx, dy) => { const r = joyRadius, d = Math.hypot(dx, dy), k = d > r ? r / d : 1; knob.style.transform = `translate(${dx * k}px,${dy * k}px)`; const nx = dx * k / r, ny = dy * k / r; input.fwd = Math.abs(ny) > 0.2 ? -ny : 0; input.side = Math.abs(nx) > 0.2 ? nx : 0; input.sprintKey = ny < -0.95; };
+  ctx.on(joy, 'pointerdown', e => { e.preventDefault(); jid = e.pointerId; try { joy.setPointerCapture(jid); } catch { } const r = joy.getBoundingClientRect(); joyRadius = Math.max(20, r.width * 0.36); jc = [r.left + r.width / 2, r.top + r.height / 2]; setJoy(e.clientX - jc[0], e.clientY - jc[1]); });
   ctx.on(joy, 'pointermove', e => { if (e.pointerId === jid) setJoy(e.clientX - jc[0], e.clientY - jc[1]); });
   const endJoy = e => { if (e.pointerId !== jid) return; jid = null; knob.style.transform = ''; input.fwd = input.side = 0; input.sprintKey = false; };
   ctx.on(joy, 'pointerup', endJoy); ctx.on(joy, 'pointercancel', endJoy);
@@ -2414,12 +2450,14 @@ function touchEvents() {
   });
   const endLook = e => {
     const L = looks.get(e.pointerId); if (!L) return; looks.delete(e.pointerId);
+    clearTimeout(L.timer);
     if (L.mining) input.mine = false;
-    else if (L.moved < 12 && performance.now() - L.t < 280 && G && !G.ui) { input.use = true; P.useCd = 0; updateInteraction(0); input.use = false; }
+    else if (e.type !== 'pointercancel' && L.moved < 12 && performance.now() - L.t < 280 && G && !G.ui) { input.use = true; P.useCd = 0; updateInteraction(0); input.use = false; }
   };
   ctx.on(canvas, 'pointerup', endLook); ctx.on(canvas, 'pointercancel', endLook);
   // hotbar taps
-  ctx.on($('hotbar'), 'pointerdown', e => { const h = e.target.closest('[data-hot]'); if (!h || !G) return; e.preventDefault(); const i = +h.dataset.hot; if (i === G.sel && isTouch()) { openScreen(G.mode === 'creative' ? 'creative' : 'inventory'); return; } G.sel = i; invChanged(); });
+  ctx.on($('hotbar'), 'pointerdown', e => { const h = e.target.closest('[data-hot]'); if (!h || !G) return; e.preventDefault(); const i = +h.dataset.hot; G.sel = i; invChanged(); });
+  ctx.on($('hotInv'), 'click', () => { if (G && !G.ui) openScreen(G.mode === 'creative' ? 'creative' : 'inventory'); });
   ctx.on($('bInv'), 'click', () => { if (G && !G.ui) openScreen(G.mode === 'creative' ? 'creative' : 'inventory'); else if (G && (G.ui === 'inventory' || G.ui === 'creative' || G.ui === 'table' || G.ui === 'container')) closeScreen(); });
   ctx.on($('bPause'), 'click', () => { if (G && !G.ui) showPause(); else if (G && G.ui === 'pause') menuAction('resume'); });
 }
@@ -2483,13 +2521,13 @@ function music(dt) {
 let SAVE = null, saveTimer = 0, settingsTimer = 0;
 function loadSave() {
   const touch = isTouch();
-  SAVE = { v: 1, settings: { renderDist: touch ? 3 : 5, fov: 75, sens: 8, bob: true, autoJump: touch, invertY: false, hudScale: 100, touchOpacity: 85 }, worlds: [], storage: typeof ctx.save === 'function' };
+  SAVE = { v: 1, settings: { renderDist: touch ? 3 : 5, fov: 75, sens: 8, bob: true, autoJump: touch, invertY: false, hudScale: 100, touchOpacity: 85, joySize: 100 }, worlds: [], storage: typeof ctx.save === 'function' };
   try {
     const raw = ctx.savedData;
     if (raw) { const o = JSON.parse(raw); if (o && Array.isArray(o.worlds)) { SAVE.worlds = o.worlds.filter(w => w && w.id && w.name); Object.assign(SAVE.settings, o.settings || {}); } }
   } catch { toast('저장된 데이터를 읽지 못해 새로 시작해요.'); }
 }
-function applyVisualSettings() { if (!SAVE || !root) return; $('mc').style.setProperty('--hud-scale', Math.max(.75, Math.min(1.25, (+SAVE.settings.hudScale || 100) / 100))); $('mc').style.setProperty('--touch-opacity', Math.max(.3, Math.min(1, (+SAVE.settings.touchOpacity || 85) / 100))); }
+function applyVisualSettings() { if (!SAVE || !root) return; $('mc').style.setProperty('--hud-scale', Math.max(.75, Math.min(1.25, (+SAVE.settings.hudScale || 100) / 100))); $('mc').style.setProperty('--touch-opacity', Math.max(.3, Math.min(1, (+SAVE.settings.touchOpacity || 85) / 100))); $('mc').style.setProperty('--joy-size', (24 * Math.max(.75, Math.min(1.4, (+SAVE.settings.joySize || 100) / 100))) + 'vmin'); }
 function serializeWorld() {
   return {
     player: { x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, health: P.health, hunger: P.hunger, sat: P.sat, airT: P.airT, flying: P.flying, dead: P.dead },
@@ -2553,7 +2591,7 @@ function quitToTitle() {
   if (W) for (const ch of W.chunks.values()) freeChunkGL(ch);
   G = null; W = null; P = null; lastChunk = null; cursorStack = null;
   releasePointer(); ctx.setPaused(false);
-  showTitle();
+  showLanding();
 }
 
 // ─────────────────────────── chunk streaming ───────────────────────────
@@ -2567,10 +2605,13 @@ function updateChunks(budget) {
     wantList.sort((a, b) => a[2] - b[2]);
     for (const [k, ch] of W.chunks) if (Math.max(Math.abs(ch.cx - pcx), Math.abs(ch.cz - pcz)) > R + 3) { freeChunkGL(ch); W.chunks.delete(k); if (lastChunk === ch) lastChunk = null; }
   }
-  // edits first, regardless of budget
-  for (const ch of W.chunks.values()) if (ch.urgent && ch.needLight) lightChunk(ch);
-  for (const ch of W.chunks.values()) if (ch.urgent && ch.needMesh && ch.mesh !== undefined && neighborsGenerated(ch)) { uploadMesh(ch, meshChunk(ch)); }
+  // Spread edits across frames so several adjacent relights do not block a frame together.
   const t0 = performance.now();
+  for (const ch of W.chunks.values()) if (ch.urgent) {
+    if (ch.needLight) lightChunk(ch);
+    if (ch.needMesh && neighborsGenerated(ch)) uploadMesh(ch, meshChunk(ch));
+    if (performance.now() - t0 >= budget) return;
+  }
   for (const [dx, dz, d] of wantList) {
     if (performance.now() - t0 > budget) break;
     const cx = pcx + dx, cz = pcz + dz;
@@ -2721,7 +2762,7 @@ function render(dt) {
   if (!G.ui || G.ui === 'chat' || G.ui === 'inventory' || G.ui === 'creative' || G.ui === 'table' || G.ui === 'container') drawHand(w, h, dt);
 }
 let handLower = 0, lastHeld = -1;
-function drawHand(w, h) {
+function drawHand(w, h, dt) {
   if (P.dead) return;
   gl.clear(gl.DEPTH_BUFFER_BIT);
   const proj = perspective(70 * Math.PI / 180, w / Math.max(1, h), 0.01, 10);
@@ -2730,7 +2771,7 @@ function drawHand(w, h) {
   const [sky, blk] = lightAt(P.x, P.y + eyeHeight(), P.z);
   const s = held(), id = s ? s.id : 0;
   if (id !== lastHeld) { handLower = 1; lastHeld = id; }
-  handLower = Math.max(0, handLower - 0.08);
+  handLower = Math.max(0, handLower - Math.min(dt, 0.1) * 4.8);
   const sw = Math.sin(P.swing * Math.PI), sw2 = Math.sin(Math.sqrt(P.swing) * Math.PI);
   const sp = Math.hypot(P.vx, P.vz), bobA = SAVE.settings.bob && P.onGround ? Math.min(1, sp / 4) : 0;
   const bx = Math.cos(P.bob * 1.6) * 0.03 * bobA, by = -Math.abs(Math.sin(P.bob * 1.6)) * 0.03 * bobA;
@@ -2866,7 +2907,7 @@ function frame(now) {
   if (!paused) { let left = dt; while (left > 1e-4) { const s = Math.min(left, 0.05); step(s); left -= s; } }
   if (saveTimer > 0) { saveTimer -= dt; if (saveTimer <= 0) persist(); }
   if (!paused) { autosave -= dt; if (autosave <= 0) { autosave = 45; persist(); } }
-  updateChunks(paused ? 3 : 6);
+  updateChunks(paused ? 2 : 3);
   render(dt);
   updateHUD(dt);
   if (showDebug) {
@@ -2897,7 +2938,7 @@ window.GameHub.registerGame({
     ctx.on($('bFull'), 'click', async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else if ($('mc').requestFullscreen) await $('mc').requestFullscreen(); else toast('이 브라우저에서는 전체화면을 지원하지 않아요.'); } catch { toast('전체화면을 열 수 없어요. 허브 상단 전체화면 버튼도 이용해 주세요.'); } });
     screenEvents(); touchEvents(); bindInput();
     const ro = new ResizeObserver(resize); ro.observe(canvas); ctx.onCleanup(() => ro.disconnect()); resize();
-    showTitle();
+    showLanding();
     last = performance.now(); raf = requestAnimationFrame(frame);
   },
   pause() { if (G && !G.loading && (!G.ui || G.ui === 'chat' || ['inventory', 'creative', 'table', 'container'].includes(G.ui))) { if (G.ui && G.ui !== 'chat') closeScreen(); else if (G.ui === 'chat') closeChat(); showPause(); } if (audio) audio.suspend().catch(() => { }); persist(); },
