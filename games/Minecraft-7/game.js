@@ -1905,6 +1905,16 @@ canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
 .tleft{position:absolute;left:18px;bottom:170px;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
 @media(pointer:coarse){.touch{display:block}.mobtools{display:flex}.bottom{bottom:4px}.chatlog{bottom:200px}}
 @media(max-width:620px),(max-height:520px){.hs{width:34px;height:34px}.ico{width:24px;height:24px}.bars,.air{width:310px}.bars img,.air img{width:15px;height:15px}.slot{width:34px;height:34px}.palette{grid-template-columns:repeat(9,34px)}.panel{padding:8px}.recipes{width:200px}.menu h1{font-size:30px}.joy{width:112px;height:112px}.tb{width:52px;height:52px}.tbtns{grid-template-columns:repeat(2,52px)}}
+#mc{--touch-opacity:.85;--hud-scale:1}
+#mc .btn,#mc .tb,#mc .tab{background-image:url('textures/ui-atlas.png');background-size:400% 400%;background-position:0% 100%;image-rendering:pixelated}
+#mc .btn:hover,#mc .tb:active,#mc .tab.on{background-position:33.333% 100%}
+#mc .panel{background-image:url('textures/ui-atlas.png');background-size:400% 400%;background-position:33.333% 66.666%;image-rendering:pixelated;color:#fff}
+#mc .panel h3{color:#fff;text-shadow:1px 1px #222}
+#mc .slot,#mc .hs{background-image:url('textures/ui-atlas.png');background-size:400% 400%;background-position:100% 66.666%;image-rendering:pixelated}
+#mc .screen.dirt{background-image:url('textures/ui-atlas.png');background-size:400px 400px;background-position:0 33.333%}
+#mc .touch{opacity:var(--touch-opacity)} #mc .bottom{transform:translateX(-50%) scale(var(--hud-scale));transform-origin:bottom center}
+#mc .tb{border-radius:6px;box-shadow:inset 2px 2px #fff7,inset -3px -3px #0009}
+@media(max-width:620px){#mc .screen{padding:6px}#mc .cols{gap:6px}#mc .panel{max-height:96%;overflow:auto}#mc .recipes{max-height:100px}#mc .tleft{bottom:145px}#mc .tbtns{bottom:72px}#mc .joy{bottom:72px}}
 @media(max-height:520px){.slot{width:30px;height:30px}.ico{width:22px;height:22px}.palette{grid-template-columns:repeat(9,30px)}.cnt{font-size:11px}}`;
 
 const SPLASH = ['무한한 세계!', '블록으로 무엇이든!', '밤에는 조심!', '다이아몬드를 찾아라!', '100% 자체 제작 텍스처!', '횃불은 소중해요', '작업대부터 만들어요'];
@@ -1919,7 +1929,7 @@ function buildDOM() {
  <div class="chatlog" id="chatlog"></div>
  <div class="toast" id="toast" role="status"></div>
  <div class="eat" id="eat"><i></i></div>
- <div class="tools"><button class="btn sm" id="bInv" aria-label="인벤토리">가방</button><button class="btn sm" id="bPause" aria-label="일시정지">Ⅱ</button></div>
+ <div class="tools"><button class="btn sm" id="bInv" aria-label="인벤토리">가방</button><button class="btn sm" id="bFull" aria-label="전체화면 전환">⛶</button><button class="btn sm" id="bPause" aria-label="일시정지">Ⅱ</button></div>
  <div class="touch" id="touch">
   <div class="joy" id="joy"><i id="knob"></i></div>
   <div class="tleft"><button class="tb" id="tSneak">숙이기</button><button class="tb" id="tFly" hidden>비행</button></div>
@@ -2228,11 +2238,14 @@ function showSettings(back) {
   <label class="field">시야 거리: <b id="vRd">${st.renderDist}</b> 청크<input type="range" min="2" max="8" value="${st.renderDist}" id="sRd"></label>
   <label class="field">시야각(FOV): <b id="vFov">${st.fov}</b><input type="range" min="55" max="105" value="${st.fov}" id="sFov"></label>
   <label class="field">마우스 감도: <b id="vSens">${st.sens}</b><input type="range" min="1" max="20" value="${st.sens}" id="sSens"></label>
+  <label class="field">HUD 크기: <b id="vHud">${st.hudScale}</b>%<input type="range" min="75" max="125" step="5" value="${st.hudScale}" id="sHud"></label>
+  <label class="field">터치 버튼 불투명도: <b id="vTouch">${st.touchOpacity}</b>%<input type="range" min="30" max="100" step="5" value="${st.touchOpacity}" id="sTouch"></label>
+  <button class="btn ${st.invertY ? 'on' : ''}" data-act="invert">세로 시점 반전 ${st.invertY ? '켬' : '끔'}</button>
   <div class="row2"><button class="btn ${st.bob ? 'on' : ''}" data-act="tbob">화면 흔들림 ${st.bob ? '켬' : '끔'}</button><button class="btn ${st.autoJump ? 'on' : ''}" data-act="tjump">자동 점프 ${st.autoJump ? '켬' : '끔'}</button></div>
   ${G ? `<div class="row2"><button class="btn ${W.difficulty === 0 ? 'on' : ''}" data-act="sdiff" data-diff="0">평화로움</button><button class="btn ${W.difficulty !== 0 ? 'on' : ''}" data-act="sdiff" data-diff="2">보통</button></div>` : ''}
   <button class="btn" data-act="${back || (prev === 'title' || !G ? 'title' : 'pause')}">완료</button></div>`, !G);
-  const bind = (id, key, out) => { const el = $(id); el.addEventListener('input', () => { st[key] = +el.value; $(out).textContent = el.value; if (G) G.settings = st; saveSettingsSoon(); }); };
-  bind('sRd', 'renderDist', 'vRd'); bind('sFov', 'fov', 'vFov'); bind('sSens', 'sens', 'vSens');
+  const bind = (id, key, out) => { const el = $(id); el.addEventListener('input', () => { st[key] = +el.value; $(out).textContent = el.value; if (G) G.settings = st; applyVisualSettings(); saveSettingsSoon(); }); };
+  bind('sRd', 'renderDist', 'vRd'); bind('sFov', 'fov', 'vFov'); bind('sSens', 'sens', 'vSens'); bind('sHud', 'hudScale', 'vHud'); bind('sTouch', 'touchOpacity', 'vTouch');
 }
 function showHelp() {
   G.ui = 'help';
@@ -2292,6 +2305,7 @@ function menuAction(a, el) {
     case 'help': showHelp(); break;
     case 'quit': quitToTitle(); break;
     case 'respawn': respawn(); break;
+    case 'invert': SAVE.settings.invertY = !SAVE.settings.invertY; saveSettingsSoon(); showSettings(); break;
     case 'tbob': SAVE.settings.bob = !SAVE.settings.bob; saveSettingsSoon(); showSettings(); break;
     case 'tjump': SAVE.settings.autoJump = !SAVE.settings.autoJump; saveSettingsSoon(); showSettings(); break;
     case 'sdiff': W.difficulty = +el.dataset.diff; G.world.difficulty = W.difficulty; if (W.difficulty === 0) W.mobs = W.mobs.filter(m => !MOBDEF[m.type].hostile); showSettings(); break;
@@ -2365,7 +2379,7 @@ function touchEvents() {
     const L = looks.get(e.pointerId); if (!L) return;
     const dx = e.clientX - L.x, dy = e.clientY - L.y; L.x = e.clientX; L.y = e.clientY; L.moved += Math.abs(dx) + Math.abs(dy);
     const k = 0.0055 * SAVE.settings.sens / 8;
-    P.yaw += dx * k; P.pitch = clamp(P.pitch - dy * k, -1.55, 1.55);
+    P.yaw += dx * k; P.pitch = clamp(P.pitch - dy * k * (SAVE.settings.invertY ? -1 : 1), -1.55, 1.55);
   });
   const endLook = e => {
     const L = looks.get(e.pointerId); if (!L) return; looks.delete(e.pointerId);
@@ -2438,12 +2452,13 @@ function music(dt) {
 let SAVE = null, saveTimer = 0, settingsTimer = 0;
 function loadSave() {
   const touch = isTouch();
-  SAVE = { v: 1, settings: { renderDist: touch ? 3 : 5, fov: 75, sens: 8, bob: true, autoJump: touch }, worlds: [], storage: typeof ctx.save === 'function' };
+  SAVE = { v: 1, settings: { renderDist: touch ? 3 : 5, fov: 75, sens: 8, bob: true, autoJump: touch, invertY: false, hudScale: 100, touchOpacity: 85 }, worlds: [], storage: typeof ctx.save === 'function' };
   try {
     const raw = ctx.savedData;
     if (raw) { const o = JSON.parse(raw); if (o && Array.isArray(o.worlds)) { SAVE.worlds = o.worlds.filter(w => w && w.id && w.name); Object.assign(SAVE.settings, o.settings || {}); } }
   } catch { toast('저장된 데이터를 읽지 못해 새로 시작해요.'); }
 }
+function applyVisualSettings() { if (!SAVE || !root) return; $('mc').style.setProperty('--hud-scale', Math.max(.75, Math.min(1.25, (+SAVE.settings.hudScale || 100) / 100))); $('mc').style.setProperty('--touch-opacity', Math.max(.3, Math.min(1, (+SAVE.settings.touchOpacity || 85) / 100))); }
 function serializeWorld() {
   return {
     player: { x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, health: P.health, hunger: P.hunger, sat: P.sat, airT: P.airT, flying: P.flying, dead: P.dead },
@@ -2786,8 +2801,8 @@ function bindInput() {
   ctx.on(document, 'mousemove', e => {
     if (!G || G.ui || !P) return;
     const k = 0.0022 * SAVE.settings.sens / 8;
-    if (document.pointerLockElement === canvas) { P.yaw += e.movementX * k; P.pitch = clamp(P.pitch - e.movementY * k, -1.55, 1.55); }
-    else if (e.buttons && !isTouch() && e.target === canvas) { P.yaw += e.movementX * k * 1.6; P.pitch = clamp(P.pitch - e.movementY * k * 1.6, -1.55, 1.55); }
+    if (document.pointerLockElement === canvas) { P.yaw += e.movementX * k; P.pitch = clamp(P.pitch - e.movementY * k * (SAVE.settings.invertY ? -1 : 1), -1.55, 1.55); }
+    else if (e.buttons && !isTouch() && e.target === canvas) { P.yaw += e.movementX * k * 1.6; P.pitch = clamp(P.pitch - e.movementY * k * (SAVE.settings.invertY ? -1 : 1) * 1.6, -1.55, 1.55); }
   });
   ctx.on(canvas, 'wheel', e => { e.preventDefault(); if (!G || G.ui) return; G.sel = (G.sel + (e.deltaY > 0 ? 1 : 8)) % 9; invChanged(); }, { passive: false });
   ctx.on(document, 'pointerlockchange', () => {
@@ -2847,6 +2862,8 @@ window.GameHub.registerGame({
     const dirtURL = dc.toDataURL();
     const st = document.createElement('style'); st.textContent = `.screen.dirt{background:linear-gradient(#000a,#000a),url(${dirtURL}) 0 0/64px 64px;image-rendering:pixelated}`; root.append(st);
     loadSave();
+    applyVisualSettings();
+    ctx.on($('bFull'), 'click', async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else if ($('mc').requestFullscreen) await $('mc').requestFullscreen(); else toast('이 브라우저에서는 전체화면을 지원하지 않아요.'); } catch { toast('전체화면을 열 수 없어요. 허브 상단 전체화면 버튼도 이용해 주세요.'); } });
     screenEvents(); touchEvents(); bindInput();
     const ro = new ResizeObserver(resize); ro.observe(canvas); ctx.onCleanup(() => ro.disconnect()); resize();
     showTitle();
