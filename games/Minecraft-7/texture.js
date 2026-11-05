@@ -113,6 +113,7 @@ function paintAll() {
   tile('mossy', t => { t.copy('cobble'); for (let i = 0; i < 6; i++) blob(t, t.r() * 16, t.r() * 16, 2.2, 1.6, [80, 120, 60], 0.3); });
   tile('bedrock', t => voronoi(t, 12, [90, 90, 90], [30, 30, 30], 0.5, 1.4));
   tile('obsidian', t => { t.noise([24, 18, 38], 0.3); for (let i = 0; i < 12; i++) t.set(Math.floor(t.r() * 16), Math.floor(t.r() * 16), [70, 50, 110]); });
+  tile('crying_obsidian', t => { t.copy('obsidian'); for (const [x,y] of [[3,2],[10,1],[6,7],[13,9],[2,12]]) { for(let k=0;k<3;k++) t.set(x,y+k,[120+k*12,35,180+k*15]); t.set(x+1,y+1,[185,70,220]); } });
   tile('sand', t => { t.noise([219, 207, 160], 0.06); for (let i = 0; i < 20; i++) t.shade(Math.floor(t.r() * 16), Math.floor(t.r() * 16), 0.9); });
   tile('gravel', t => voronoi(t, 14, [130, 122, 118], [95, 88, 85], 0.35, 0.8));
   tile('clay', t => t.noise([160, 166, 178], 0.05));
@@ -387,3 +388,4 @@ function buildIcons() {
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 32, 32); const [sx, sy] = src(n); g.drawImage(atlasCanvas, sx + 3, sy + 3, 9, 9, 0, 0, 32, 32); HUDICON[n] = c.toDataURL();
   }
 }
+

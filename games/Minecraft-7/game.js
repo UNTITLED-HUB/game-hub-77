@@ -197,7 +197,7 @@ const SWORD_DMG = [4, 5, 6, 4, 7];
 // attack damage / attacks per second per tier (wood, stone, iron, gold, diamond), as in the original
 B(BED_HEAD,'침대 머리',{top:'bed_head_top',bottom:'planks',side:'bed_head_side'}, {opaque:false,render:'bed',hard:0.2,tool:'axe',use:'bed',height:9/16,drop:0,creative:false});
 for(const [id,name,tex,drop] of [[DEEP_COAL,'심층암 석탄 광석','deep_coal',COAL],[DEEP_IRON,'심층암 철 광석','deep_iron',IRON_ORE],[DEEP_GOLD,'심층암 금 광석','deep_gold',GOLD_ORE],[DEEP_DIAMOND,'심층암 다이아몬드 광석','deep_diamond',DIAMOND]]) B(id,name,tex,{hard:3,tool:'pickaxe',tier:id===DEEP_DIAMOND?3:1,drop});
-B(ANCIENT_DEBRIS,'고대 잔해','ancient_debris',{hard:30,tool:'pickaxe',tier:4});B(NETHERITE_BLOCK,'네더라이트 블록','netherite_block',{hard:50,tool:'pickaxe',tier:4});B(CRYING_OBSIDIAN,'우는 흑요석','obsidian',{hard:50,tool:'pickaxe',tier:4,light:10});B(SOUL_SOIL,'영혼 흙','soul_sand',{hard:.5,tool:'shovel'});
+B(ANCIENT_DEBRIS,'고대 잔해','ancient_debris',{hard:30,tool:'pickaxe',tier:4});B(NETHERITE_BLOCK,'네더라이트 블록','netherite_block',{hard:50,tool:'pickaxe',tier:4});B(CRYING_OBSIDIAN,'우는 흑요석','crying_obsidian',{hard:50,tool:'pickaxe',tier:4,light:10});B(SOUL_SOIL,'영혼 흙','soul_sand',{hard:.5,tool:'shovel'});
 B(END_FRAME,'엔드 차원문 틀',{top:'end_frame_top',side:'end_frame_side',bottom:'end_stone'},{hard:-1,use:'endframe'});
 for(let id=192;id<=195;id++) B(id,'흐르는 용암','lava',{solid:false,opaque:false,render:'cube',hard:-1,fluid:true,replaceable:true,light:15,creative:false});
 B(LAVA,'용암','lava',{solid:false,opaque:false,render:'cube',hard:-1,fluid:true,replaceable:true,light:15,cat:'자연'});
@@ -911,6 +911,7 @@ function paintAll() {
   tile('mossy', t => { t.copy('cobble'); for (let i = 0; i < 6; i++) blob(t, t.r() * 16, t.r() * 16, 2.2, 1.6, [80, 120, 60], 0.3); });
   tile('bedrock', t => voronoi(t, 12, [90, 90, 90], [30, 30, 30], 0.5, 1.4));
   tile('obsidian', t => { t.noise([24, 18, 38], 0.3); for (let i = 0; i < 12; i++) t.set(Math.floor(t.r() * 16), Math.floor(t.r() * 16), [70, 50, 110]); });
+  tile('crying_obsidian', t => { t.copy('obsidian'); for (const [x,y] of [[3,2],[10,1],[6,7],[13,9],[2,12]]) { for(let k=0;k<3;k++) t.set(x,y+k,[120+k*12,35,180+k*15]); t.set(x+1,y+1,[185,70,220]); } });
   tile('sand', t => { t.noise([219, 207, 160], 0.06); for (let i = 0; i < 20; i++) t.shade(Math.floor(t.r() * 16), Math.floor(t.r() * 16), 0.9); });
   tile('gravel', t => voronoi(t, 14, [130, 122, 118], [95, 88, 85], 0.35, 0.8));
   tile('clay', t => t.noise([160, 166, 178], 0.05));
@@ -1296,6 +1297,10 @@ function generateChunk(cx, cz) {
     const dens = b === FOREST ? 0.05 : b === SNOWY ? 0.022 : b === PLAINS ? 0.005 : (b === MOUNTAIN && h <= 39) ? 0.012 : 0;
     if (!dens || hash2(wx, wz, seed + 11) >= dens) continue;
     if (W.structures !== false && treeBlocked(wx, wz)) continue;
+    // Evaluate the trunk column identically in every chunk, including cave openings.
+    const caveTop = h;
+    const a = n3a(wx / 26, h / 15, wz / 26), c = n3b(wx / 26, h / 15, wz / 26);
+    if (h > YMIN + 3 && h <= caveTop && (a*a+c*c < 0.0075 || (h < 22 && n3a(wx / 55 + 40, h / 26, wz / 55) > 0.42))) continue;
     if (lx >= 0 && lx < CS && lz >= 0 && lz < CS) { const t = B[bidx(lx, h, lz)]; if (t !== GRASS && t !== SNOW_GRASS && t !== DIRT) continue; }
     const kind = b === SNOWY ? 2 : (b === FOREST && hash2(wx, wz, seed + 12) < 0.3) ? 1 : 0;
     placeTree(setL, lx, h + 1, lz, kind, hash2(wx, wz, seed + 13));
@@ -1403,15 +1408,42 @@ function updatePortal(dt){
 }
 function isLava(id){return id===LAVA||(id>=192&&id<=195);}
 function lavaUpdate(x,y,z){
- const id=getBlock(x,y,z);if(!isLava(id))return;
- for(const [dx,dy,dz]of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]])if(isWater(getBlock(x+dx,y+dy,z+dz))){setBlock(x,y,z,id===LAVA?OBSIDIAN:COBBLE);return;}
- if(y>YMIN&&getBlock(x,y-1,z)===AIR){setBlock(x,y-1,z,192);return;}
- const level=id===LAVA?0:id-191;if(level>=4)return;
- for(const [dx,dz]of [[1,0],[-1,0],[0,1],[0,-1]])if(getBlock(x+dx,y,z+dz)===AIR)setBlock(x+dx,y,z+dz,192+level);
+ let id=getBlock(x,y,z); if(!isLava(id))return;
+ for(const [dx,dy,dz] of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) if(isWater(getBlock(x+dx,y+dy,z+dz))){setBlock(x,y,z,id===LAVA?OBSIDIAN:COBBLE);return;}
+ let level=id===LAVA?0:id-LAVA;
+ if(level){
+  let expected=isLava(getBlock(x,y+1,z))?1:99;
+  for(const [dx,dz] of DIRS4){const n=getBlock(x+dx,y,z+dz); if(isLava(n))expected=Math.min(expected,(n===LAVA?0:n-LAVA)+1);}
+  if(expected>4){setBlock(x,y,z,AIR);return;}
+  if(expected!==level){setBlock(x,y,z,LAVA+expected);return;}
+ }
+ const below=getBlock(x,y-1,z);
+ if(y>YMIN && (flowable(below)||(isLava(below)&&below!==LAVA&&below>LAVA+1))){setBlock(x,y-1,z,LAVA+1);return;}
+ if(isLava(below))return;
+ const next=(id===LAVA||isLava(getBlock(x,y+1,z)))?1:level+1;
+ if(next>4)return;
+ for(const [dx,dz] of DIRS4){const n=getBlock(x+dx,y,z+dz);if(flowable(n)||(isLava(n)&&n!==LAVA&&n>LAVA+next))setBlock(x+dx,y,z+dz,LAVA+next);}
+}
+// Start simulation for exposed lava when chunks load, and wake border fluids when neighbours appear.
+function wakeChunkLava(ch){
+ const B=ch.blocks, ox=ch.cx*CS, oz=ch.cz*CS;
+ const needsUpdate=(x,y,z)=>{
+  const below=getBlock(x,y-1,z);if(flowable(below)||isWater(below))return true;
+  if(isWater(getBlock(x,y+1,z)))return true;
+  return DIRS4.some(([dx,dz])=>{const n=getBlock(x+dx,y,z+dz);return flowable(n)||isWater(n);});
+ };
+ for(let y=YMIN+1;y<WH;y++)for(let z=0;z<CS;z++)for(let x=0;x<CS;x++){
+  if(isLava(B[bidx(x,y,z)])&&needsUpdate(ox+x,y,oz+z)) W.fluidQ.add(pkey(ox+x,y,oz+z));
+ }
+ for(const [dx,dz] of DIRS4){const n=getChunk(ch.cx+dx,ch.cz+dz);if(!n)continue;for(let y=YMIN+1;y<WH;y++)for(let k=0;k<CS;k++) {const x=dx?(dx<0?15:0):k,z=dz?(dz<0?15:0):k,wx=n.cx*CS+x,wz=n.cz*CS+z;if(isLava(n.blocks[bidx(x,y,z)])&&needsUpdate(wx,y,wz))W.fluidQ.add(pkey(wx,y,wz));}}
 }
 function updateLava(dt){
- if(G.loading)return;const x=Math.floor(P.x),y=Math.floor(P.y),z=Math.floor(P.z);
- if(isLava(getBlock(x,y,z))||isLava(getBlock(x,y+1,z))){P.lavaT=(P.lavaT||0)+dt;if(P.lavaT>0.5){P.lavaT=0;damagePlayer(4,'lava');}}else P.lavaT=0;
+ if(G.loading||P.dead)return;
+ const x=Math.floor(P.x),y=Math.floor(P.y),z=Math.floor(P.z),inLava=isLava(getBlock(x,y,z))||isLava(getBlock(x,y+1,z));
+ if(inLava){P.burnTime=15;P.lavaT=(P.lavaT||0)+dt;if(P.lavaT>=0.5){P.lavaT=0;damagePlayer(4,'lava');}}
+ else P.lavaT=0;
+ if(P.inWater||effectLevel(P,'fire_resistance')>=0||G.mode==='creative'){P.burnTime=0;P.fireTick=0;return;}
+ if(P.burnTime>0){P.burnTime=Math.max(0,P.burnTime-dt);P.fireTick=(P.fireTick||0)+dt;if(P.fireTick>=1){P.fireTick-=1;damagePlayer(1,'fire');}}
 }
 function travelDimension(dest){
  if(!G||G.loading)return;
@@ -1939,7 +1971,7 @@ function buildPiece(w, p, S, style) {
 
 // ── grid placement for rare structures ──
 function structureAt(kind, gx, gz) {
-  const spacing = { portal: 160, pyramid: 224, igloo: 208 }[kind], salt = { portal: 501, pyramid: 601, igloo: 701 }[kind], reach = { portal: 8, pyramid: 14, igloo: 8 }[kind], chance = { portal: 0.6, pyramid: 0.75, igloo: 0.7 }[kind];
+  const spacing = { portal: 320, pyramid: 224, igloo: 208 }[kind], salt = { portal: 501, pyramid: 601, igloo: 701 }[kind], reach = { portal: 8, pyramid: 14, igloo: 8 }[kind], chance = { portal: 0.6, pyramid: 0.75, igloo: 0.7 }[kind];
   if (hash2(gx, gz, W.seed + salt) >= chance) return null;
   const ox = gx * spacing + reach + Math.floor(hash2(gx, gz, W.seed + salt + 1) * (spacing - reach * 2)), oz = gz * spacing + reach + Math.floor(hash2(gx, gz, W.seed + salt + 2) * (spacing - reach * 2));
   const [h, b] = column(ox, oz);
@@ -1950,7 +1982,7 @@ function structureAt(kind, gx, gz) {
   return { x: ox, z: oz, h };
 }
 function eachStructure(kind, ch, fn) {
-  const spacing = { portal: 160, pyramid: 224, igloo: 208 }[kind], reach = { portal: 8, pyramid: 14, igloo: 8 }[kind];
+  const spacing = { portal: 320, pyramid: 224, igloo: 208 }[kind], reach = { portal: 8, pyramid: 14, igloo: 8 }[kind];
   const x0 = ch.cx * 16 - reach, x1 = ch.cx * 16 + 15 + reach, z0 = ch.cz * 16 - reach, z1 = ch.cz * 16 + 15 + reach;
   for (let gz = Math.floor(z0 / spacing); gz <= Math.floor(z1 / spacing); gz++) for (let gx = Math.floor(x0 / spacing); gx <= Math.floor(x1 / spacing); gx++) {
     const s = structureAt(kind, gx, gz); if (!s) continue;
@@ -1968,11 +2000,12 @@ function buildRuinedPortal(w, s, gx, gz) {
     if (Math.abs(h - y0) > 3) continue;
     const r = hash2(x, z, W.seed + 503);
     w.put(x, h, z, r < 0.55 ? NETHERRACK : r < 0.68 ? MAGMA : r < 0.75 ? GILDED_BLACKSTONE : r < 0.85 ? BLACKSTONE : w.get(x, h, z) || STONE);
-    for (let y = h + 1; y <= h + 7; y++) if (Math.abs(dx) > 2 || Math.abs(dz) > 2) w.put(x, y, z, AIR);
+    // Preserve surrounding vegetation and terrain outside the frame itself.
   }
   // obsidian frame: 4 wide × 5 tall, some blocks missing or crying
   for (let a = 0; a < 4; a++) for (let b = 0; b < 5; b++) {
     if (a > 0 && a < 3 && b > 0 && b < 4) { const [x, z] = axisX ? [s.x - 1 + a, s.z] : [s.x, s.z - 1 + a]; w.put(x, y0 + 1 + b, z, AIR); continue; }
+    if (a===0 && b===0) { const [x,z]=axisX?[s.x-1,s.z]:[s.x,s.z-1]; w.put(x,y0+1,z,CRYING_OBSIDIAN); continue; }
     if (broken && b >= 3 && rnd() < 0.7) continue;
     if (rnd() < 0.22) continue;
     const [x, z] = axisX ? [s.x - 1 + a, s.z] : [s.x, s.z - 1 + a];
@@ -2118,8 +2151,9 @@ function generateOverworldStructures(ch) {
   buildStronghold(w, ch);
 }
 function treeBlocked(x, z) {
-  if (nearVillage(x, z)) return true;
-  for (const [kind, sp, r] of [['portal', 160, 8], ['pyramid', 224, 14], ['igloo', 208, 8]]) { const st = structureAt(kind, Math.floor(x / sp), Math.floor(z / sp)); if (st && Math.abs(st.x - x) <= r + 3 && Math.abs(st.z - z) <= r + 3) return true; }
+  const [gx,gz]=villageCenter(x,z), L=villageLayout(gx,gz);
+  if(L && (L.roads.some(r=>x>=r[0]-3&&x<=r[2]+3&&z>=r[1]-3&&z<=r[3]+3) || L.pieces.some(p=>x>=p.x0-3&&x<=p.x1+3&&z>=p.z0-3&&z<=p.z1+3))) return true;
+  for (const [kind, sp, r] of [['portal', 320, 8], ['pyramid', 224, 14], ['igloo', 208, 8]]) { const st = structureAt(kind, Math.floor(x / sp), Math.floor(z / sp)); if (st && Math.abs(st.x - x) <= r + 3 && Math.abs(st.z - z) <= r + 3) return true; }
   return false;
 }
 
@@ -2211,7 +2245,7 @@ function locateStructure(type) {
   if (type === 'fortress') return [Math.round(P.x / 256) * 256, Math.round(P.z / 256) * 256];
   if (type === 'end_city') { let best = null; for (const [x, z] of endCityList(px >> 4, pz >> 4)) { const d = Math.hypot(x - px, z - pz); if (!best || d < best[2]) best = [x, z, d]; } return best; }
   const kind = { ruined_portal: 'portal', desert_pyramid: 'pyramid', igloo: 'igloo' }[type]; if (!kind) return null;
-  const sp = { portal: 160, pyramid: 224, igloo: 208 }[kind]; let best = null;
+  const sp = { portal: 320, pyramid: 224, igloo: 208 }[kind]; let best = null;
   for (let dz = -6; dz <= 6; dz++) for (let dx = -6; dx <= 6; dx++) { const gx = Math.floor(px / sp) + dx, gz = Math.floor(pz / sp) + dz, s = structureAt(kind, gx, gz); if (s) { const d = Math.hypot(s.x - px, s.z - pz); if (!best || d < best[2]) best = [s.x, s.z, d]; } }
   return best;
 }
@@ -5466,7 +5500,7 @@ function updateChunks(budget) {
     if (performance.now() - t0 > budget) break;
     const cx = pcx + dx, cz = pcz + dz;
     let ch = getChunk(cx, cz);
-    if (!ch) { ch = generateChunk(cx, cz); W.chunks.set(ckey(cx, cz), ch); continue; }
+    if (!ch) { ch = generateChunk(cx, cz); W.chunks.set(ckey(cx, cz), ch); wakeChunkLava(ch); continue; }
     if (d > R + 0.5) continue;
     if ((ch.needLight || ch.needMesh) && neighborsGenerated(ch)) { if (ch.needLight) lightChunk(ch); uploadMesh(ch, meshChunk(ch)); }
   }

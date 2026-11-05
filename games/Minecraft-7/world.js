@@ -107,6 +107,10 @@ function generateChunk(cx, cz) {
     const dens = b === FOREST ? 0.05 : b === SNOWY ? 0.022 : b === PLAINS ? 0.005 : (b === MOUNTAIN && h <= 39) ? 0.012 : 0;
     if (!dens || hash2(wx, wz, seed + 11) >= dens) continue;
     if (W.structures !== false && treeBlocked(wx, wz)) continue;
+    // Evaluate the trunk column identically in every chunk, including cave openings.
+    const caveTop = h;
+    const a = n3a(wx / 26, h / 15, wz / 26), c = n3b(wx / 26, h / 15, wz / 26);
+    if (h > YMIN + 3 && h <= caveTop && (a*a+c*c < 0.0075 || (h < 22 && n3a(wx / 55 + 40, h / 26, wz / 55) > 0.42))) continue;
     if (lx >= 0 && lx < CS && lz >= 0 && lz < CS) { const t = B[bidx(lx, h, lz)]; if (t !== GRASS && t !== SNOW_GRASS && t !== DIRT) continue; }
     const kind = b === SNOWY ? 2 : (b === FOREST && hash2(wx, wz, seed + 12) < 0.3) ? 1 : 0;
     placeTree(setL, lx, h + 1, lz, kind, hash2(wx, wz, seed + 13));
@@ -214,15 +218,42 @@ function updatePortal(dt){
 }
 function isLava(id){return id===LAVA||(id>=192&&id<=195);}
 function lavaUpdate(x,y,z){
- const id=getBlock(x,y,z);if(!isLava(id))return;
- for(const [dx,dy,dz]of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]])if(isWater(getBlock(x+dx,y+dy,z+dz))){setBlock(x,y,z,id===LAVA?OBSIDIAN:COBBLE);return;}
- if(y>YMIN&&getBlock(x,y-1,z)===AIR){setBlock(x,y-1,z,192);return;}
- const level=id===LAVA?0:id-191;if(level>=4)return;
- for(const [dx,dz]of [[1,0],[-1,0],[0,1],[0,-1]])if(getBlock(x+dx,y,z+dz)===AIR)setBlock(x+dx,y,z+dz,192+level);
+ let id=getBlock(x,y,z); if(!isLava(id))return;
+ for(const [dx,dy,dz] of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) if(isWater(getBlock(x+dx,y+dy,z+dz))){setBlock(x,y,z,id===LAVA?OBSIDIAN:COBBLE);return;}
+ let level=id===LAVA?0:id-LAVA;
+ if(level){
+  let expected=isLava(getBlock(x,y+1,z))?1:99;
+  for(const [dx,dz] of DIRS4){const n=getBlock(x+dx,y,z+dz); if(isLava(n))expected=Math.min(expected,(n===LAVA?0:n-LAVA)+1);}
+  if(expected>4){setBlock(x,y,z,AIR);return;}
+  if(expected!==level){setBlock(x,y,z,LAVA+expected);return;}
+ }
+ const below=getBlock(x,y-1,z);
+ if(y>YMIN && (flowable(below)||(isLava(below)&&below!==LAVA&&below>LAVA+1))){setBlock(x,y-1,z,LAVA+1);return;}
+ if(isLava(below))return;
+ const next=(id===LAVA||isLava(getBlock(x,y+1,z)))?1:level+1;
+ if(next>4)return;
+ for(const [dx,dz] of DIRS4){const n=getBlock(x+dx,y,z+dz);if(flowable(n)||(isLava(n)&&n!==LAVA&&n>LAVA+next))setBlock(x+dx,y,z+dz,LAVA+next);}
+}
+// Start simulation for exposed lava when chunks load, and wake border fluids when neighbours appear.
+function wakeChunkLava(ch){
+ const B=ch.blocks, ox=ch.cx*CS, oz=ch.cz*CS;
+ const needsUpdate=(x,y,z)=>{
+  const below=getBlock(x,y-1,z);if(flowable(below)||isWater(below))return true;
+  if(isWater(getBlock(x,y+1,z)))return true;
+  return DIRS4.some(([dx,dz])=>{const n=getBlock(x+dx,y,z+dz);return flowable(n)||isWater(n);});
+ };
+ for(let y=YMIN+1;y<WH;y++)for(let z=0;z<CS;z++)for(let x=0;x<CS;x++){
+  if(isLava(B[bidx(x,y,z)])&&needsUpdate(ox+x,y,oz+z)) W.fluidQ.add(pkey(ox+x,y,oz+z));
+ }
+ for(const [dx,dz] of DIRS4){const n=getChunk(ch.cx+dx,ch.cz+dz);if(!n)continue;for(let y=YMIN+1;y<WH;y++)for(let k=0;k<CS;k++) {const x=dx?(dx<0?15:0):k,z=dz?(dz<0?15:0):k,wx=n.cx*CS+x,wz=n.cz*CS+z;if(isLava(n.blocks[bidx(x,y,z)])&&needsUpdate(wx,y,wz))W.fluidQ.add(pkey(wx,y,wz));}}
 }
 function updateLava(dt){
- if(G.loading)return;const x=Math.floor(P.x),y=Math.floor(P.y),z=Math.floor(P.z);
- if(isLava(getBlock(x,y,z))||isLava(getBlock(x,y+1,z))){P.lavaT=(P.lavaT||0)+dt;if(P.lavaT>0.5){P.lavaT=0;damagePlayer(4,'lava');}}else P.lavaT=0;
+ if(G.loading||P.dead)return;
+ const x=Math.floor(P.x),y=Math.floor(P.y),z=Math.floor(P.z),inLava=isLava(getBlock(x,y,z))||isLava(getBlock(x,y+1,z));
+ if(inLava){P.burnTime=15;P.lavaT=(P.lavaT||0)+dt;if(P.lavaT>=0.5){P.lavaT=0;damagePlayer(4,'lava');}}
+ else P.lavaT=0;
+ if(P.inWater||effectLevel(P,'fire_resistance')>=0||G.mode==='creative'){P.burnTime=0;P.fireTick=0;return;}
+ if(P.burnTime>0){P.burnTime=Math.max(0,P.burnTime-dt);P.fireTick=(P.fireTick||0)+dt;if(P.fireTick>=1){P.fireTick-=1;damagePlayer(1,'fire');}}
 }
 function travelDimension(dest){
  if(!G||G.loading)return;
@@ -489,3 +520,4 @@ function encodeMods() {
 function decodeMods(obj){
  const mods=new Map();for(const k in obj||{}){try{const val=obj[k],modern=val?.v===2,a=unb64(modern?val.data:val),m=new Map(),stride=modern?4:3;for(let j=0;j+stride<=a.length;j+=stride){const i=modern?(a[j]|a[j+1]<<8|a[j+2]<<16):(a[j]|a[j+1]<<8)-YMIN*256;if(i>=0&&i<CVOL)m.set(i,a[j+stride-1]);}mods.set(k,m);}catch{}}return mods;
 }
+

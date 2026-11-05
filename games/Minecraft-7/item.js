@@ -114,7 +114,7 @@ const SWORD_DMG = [4, 5, 6, 4, 7];
 // attack damage / attacks per second per tier (wood, stone, iron, gold, diamond), as in the original
 B(BED_HEAD,'침대 머리',{top:'bed_head_top',bottom:'planks',side:'bed_head_side'}, {opaque:false,render:'bed',hard:0.2,tool:'axe',use:'bed',height:9/16,drop:0,creative:false});
 for(const [id,name,tex,drop] of [[DEEP_COAL,'심층암 석탄 광석','deep_coal',COAL],[DEEP_IRON,'심층암 철 광석','deep_iron',IRON_ORE],[DEEP_GOLD,'심층암 금 광석','deep_gold',GOLD_ORE],[DEEP_DIAMOND,'심층암 다이아몬드 광석','deep_diamond',DIAMOND]]) B(id,name,tex,{hard:3,tool:'pickaxe',tier:id===DEEP_DIAMOND?3:1,drop});
-B(ANCIENT_DEBRIS,'고대 잔해','ancient_debris',{hard:30,tool:'pickaxe',tier:4});B(NETHERITE_BLOCK,'네더라이트 블록','netherite_block',{hard:50,tool:'pickaxe',tier:4});B(CRYING_OBSIDIAN,'우는 흑요석','obsidian',{hard:50,tool:'pickaxe',tier:4,light:10});B(SOUL_SOIL,'영혼 흙','soul_sand',{hard:.5,tool:'shovel'});
+B(ANCIENT_DEBRIS,'고대 잔해','ancient_debris',{hard:30,tool:'pickaxe',tier:4});B(NETHERITE_BLOCK,'네더라이트 블록','netherite_block',{hard:50,tool:'pickaxe',tier:4});B(CRYING_OBSIDIAN,'우는 흑요석','crying_obsidian',{hard:50,tool:'pickaxe',tier:4,light:10});B(SOUL_SOIL,'영혼 흙','soul_sand',{hard:.5,tool:'shovel'});
 B(END_FRAME,'엔드 차원문 틀',{top:'end_frame_top',side:'end_frame_side',bottom:'end_stone'},{hard:-1,use:'endframe'});
 for(let id=192;id<=195;id++) B(id,'흐르는 용암','lava',{solid:false,opaque:false,render:'cube',hard:-1,fluid:true,replaceable:true,light:15,creative:false});
 B(LAVA,'용암','lava',{solid:false,opaque:false,render:'cube',hard:-1,fluid:true,replaceable:true,light:15,cat:'자연'});
@@ -277,3 +277,4 @@ const FUEL = { [COAL]: 80, [PLANKS]: 15, [LOG]: 15, [SPRUCE_LOG]: 15, [BIRCH_LOG
 TIERS.forEach((t, i) => { if (i === 0) [PICK0, AXE0, SHOVEL0, SWORD0].forEach(b => FUEL[b + i] = 10); });
 [CHERRY_LOG,DARK_OAK_LOG,MANGROVE_LOG,BAMBOO_BLOCK,CHERRY_PLANKS,DARK_OAK_PLANKS,BIRCH_PLANKS,MANGROVE_PLANKS,BAMBOO_PLANKS].forEach(id=>FUEL[id]=15);
 const SMELT_TIME = 8;
+

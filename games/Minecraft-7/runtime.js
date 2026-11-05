@@ -213,7 +213,7 @@ function updateChunks(budget) {
     if (performance.now() - t0 > budget) break;
     const cx = pcx + dx, cz = pcz + dz;
     let ch = getChunk(cx, cz);
-    if (!ch) { ch = generateChunk(cx, cz); W.chunks.set(ckey(cx, cz), ch); continue; }
+    if (!ch) { ch = generateChunk(cx, cz); W.chunks.set(ckey(cx, cz), ch); wakeChunkLava(ch); continue; }
     if (d > R + 0.5) continue;
     if ((ch.needLight || ch.needMesh) && neighborsGenerated(ch)) { if (ch.needLight) lightChunk(ch); uploadMesh(ch, meshChunk(ch)); }
   }
@@ -817,3 +817,4 @@ window.GameHub.registerGame({
     root.replaceChildren();
   },
 });
+

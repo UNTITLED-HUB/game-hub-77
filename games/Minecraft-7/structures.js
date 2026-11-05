@@ -257,7 +257,7 @@ function buildPiece(w, p, S, style) {
 
 // ── grid placement for rare structures ──
 function structureAt(kind, gx, gz) {
-  const spacing = { portal: 160, pyramid: 224, igloo: 208 }[kind], salt = { portal: 501, pyramid: 601, igloo: 701 }[kind], reach = { portal: 8, pyramid: 14, igloo: 8 }[kind], chance = { portal: 0.6, pyramid: 0.75, igloo: 0.7 }[kind];
+  const spacing = { portal: 320, pyramid: 224, igloo: 208 }[kind], salt = { portal: 501, pyramid: 601, igloo: 701 }[kind], reach = { portal: 8, pyramid: 14, igloo: 8 }[kind], chance = { portal: 0.6, pyramid: 0.75, igloo: 0.7 }[kind];
   if (hash2(gx, gz, W.seed + salt) >= chance) return null;
   const ox = gx * spacing + reach + Math.floor(hash2(gx, gz, W.seed + salt + 1) * (spacing - reach * 2)), oz = gz * spacing + reach + Math.floor(hash2(gx, gz, W.seed + salt + 2) * (spacing - reach * 2));
   const [h, b] = column(ox, oz);
@@ -268,7 +268,7 @@ function structureAt(kind, gx, gz) {
   return { x: ox, z: oz, h };
 }
 function eachStructure(kind, ch, fn) {
-  const spacing = { portal: 160, pyramid: 224, igloo: 208 }[kind], reach = { portal: 8, pyramid: 14, igloo: 8 }[kind];
+  const spacing = { portal: 320, pyramid: 224, igloo: 208 }[kind], reach = { portal: 8, pyramid: 14, igloo: 8 }[kind];
   const x0 = ch.cx * 16 - reach, x1 = ch.cx * 16 + 15 + reach, z0 = ch.cz * 16 - reach, z1 = ch.cz * 16 + 15 + reach;
   for (let gz = Math.floor(z0 / spacing); gz <= Math.floor(z1 / spacing); gz++) for (let gx = Math.floor(x0 / spacing); gx <= Math.floor(x1 / spacing); gx++) {
     const s = structureAt(kind, gx, gz); if (!s) continue;
@@ -286,11 +286,12 @@ function buildRuinedPortal(w, s, gx, gz) {
     if (Math.abs(h - y0) > 3) continue;
     const r = hash2(x, z, W.seed + 503);
     w.put(x, h, z, r < 0.55 ? NETHERRACK : r < 0.68 ? MAGMA : r < 0.75 ? GILDED_BLACKSTONE : r < 0.85 ? BLACKSTONE : w.get(x, h, z) || STONE);
-    for (let y = h + 1; y <= h + 7; y++) if (Math.abs(dx) > 2 || Math.abs(dz) > 2) w.put(x, y, z, AIR);
+    // Preserve surrounding vegetation and terrain outside the frame itself.
   }
   // obsidian frame: 4 wide × 5 tall, some blocks missing or crying
   for (let a = 0; a < 4; a++) for (let b = 0; b < 5; b++) {
     if (a > 0 && a < 3 && b > 0 && b < 4) { const [x, z] = axisX ? [s.x - 1 + a, s.z] : [s.x, s.z - 1 + a]; w.put(x, y0 + 1 + b, z, AIR); continue; }
+    if (a===0 && b===0) { const [x,z]=axisX?[s.x-1,s.z]:[s.x,s.z-1]; w.put(x,y0+1,z,CRYING_OBSIDIAN); continue; }
     if (broken && b >= 3 && rnd() < 0.7) continue;
     if (rnd() < 0.22) continue;
     const [x, z] = axisX ? [s.x - 1 + a, s.z] : [s.x, s.z - 1 + a];
@@ -436,8 +437,9 @@ function generateOverworldStructures(ch) {
   buildStronghold(w, ch);
 }
 function treeBlocked(x, z) {
-  if (nearVillage(x, z)) return true;
-  for (const [kind, sp, r] of [['portal', 160, 8], ['pyramid', 224, 14], ['igloo', 208, 8]]) { const st = structureAt(kind, Math.floor(x / sp), Math.floor(z / sp)); if (st && Math.abs(st.x - x) <= r + 3 && Math.abs(st.z - z) <= r + 3) return true; }
+  const [gx,gz]=villageCenter(x,z), L=villageLayout(gx,gz);
+  if(L && (L.roads.some(r=>x>=r[0]-3&&x<=r[2]+3&&z>=r[1]-3&&z<=r[3]+3) || L.pieces.some(p=>x>=p.x0-3&&x<=p.x1+3&&z>=p.z0-3&&z<=p.z1+3))) return true;
+  for (const [kind, sp, r] of [['portal', 320, 8], ['pyramid', 224, 14], ['igloo', 208, 8]]) { const st = structureAt(kind, Math.floor(x / sp), Math.floor(z / sp)); if (st && Math.abs(st.x - x) <= r + 3 && Math.abs(st.z - z) <= r + 3) return true; }
   return false;
 }
 
@@ -529,7 +531,8 @@ function locateStructure(type) {
   if (type === 'fortress') return [Math.round(P.x / 256) * 256, Math.round(P.z / 256) * 256];
   if (type === 'end_city') { let best = null; for (const [x, z] of endCityList(px >> 4, pz >> 4)) { const d = Math.hypot(x - px, z - pz); if (!best || d < best[2]) best = [x, z, d]; } return best; }
   const kind = { ruined_portal: 'portal', desert_pyramid: 'pyramid', igloo: 'igloo' }[type]; if (!kind) return null;
-  const sp = { portal: 160, pyramid: 224, igloo: 208 }[kind]; let best = null;
+  const sp = { portal: 320, pyramid: 224, igloo: 208 }[kind]; let best = null;
   for (let dz = -6; dz <= 6; dz++) for (let dx = -6; dx <= 6; dx++) { const gx = Math.floor(px / sp) + dx, gz = Math.floor(pz / sp) + dz, s = structureAt(kind, gx, gz); if (s) { const d = Math.hypot(s.x - px, s.z - pz); if (!best || d < best[2]) best = [s.x, s.z, d]; } }
   return best;
 }
+
