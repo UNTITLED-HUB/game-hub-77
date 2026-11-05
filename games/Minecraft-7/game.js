@@ -97,6 +97,10 @@ const STICK = 256, COAL = 257, IRON = 258, GOLD = 259, DIAMOND = 260, PICK0 = 26
 const BED = 61;
 const CHERRY_PLANKS=62, DEEPSLATE=63, COPPER_ORE=64, AMETHYST_BLOCK=65, NETHER_BRICKS=66, END_STONE=67, TERRACOTTA=68, GRANITE=69, DIORITE=70, ANDESITE=71, COPPER_BLOCK=72, OXIDIZED_COPPER=73, DARK_OAK_PLANKS=74, BIRCH_PLANKS=75, EMERALD_ORE=76, LAPIS_ORE=77;
 const EMERALD=302, LAPIS=303, COPPER_INGOT=304, AMETHYST_SHARD=305;
+const CHERRY_LOG=78, DARK_OAK_LOG=79, MANGROVE_LOG=80, BAMBOO_BLOCK=81, BARREL=82, BASALT=83, QUARTZ_PILLAR=84, CHERRY_LEAVES=85, MANGROVE_PLANKS=86, BAMBOO_PLANKS=87, PRISMARINE=88, DARK_PRISMARINE=89, SEA_LANTERN=90, NETHERRACK=91, SOUL_SAND=92, BLACKSTONE=93, TUFF=94, CALCITE=95, DRIPSTONE=96, MOSS_BLOCK=97, MUD=98, PACKED_ICE=99, RED_SAND=100;
+const GOLDEN_APPLE=326, CARROT=327, POTATO=328, BAKED_POTATO=329, BEETROOT=330, QUARTZ=331, REDSTONE=332, PRISMARINE_SHARD=333;
+const NEW_FACE_TILES=['cherry_log_side','cherry_log_top','dark_oak_log_side','dark_oak_log_top','mangrove_log_side','mangrove_log_top','bamboo_side','bamboo_top','barrel_side','barrel_top','melon_side_v2','melon_top_v2','basalt_side','basalt_top','quartz_side','quartz_top'];
+const NEW_BLOCK_TILES=['cherry_leaves','mangrove_planks','bamboo_planks','prismarine','dark_prismarine','sea_lantern','netherrack','soul_sand','blackstone','tuff','calcite','dripstone','moss_block','mud','packed_ice','red_sand'];
 const EXTRA_TEXTURES=['cherry_planks','deepslate','copper_ore','amethyst_block','nether_bricks','end_stone','terracotta','granite','diorite','andesite','copper_block','oxidized_copper','dark_oak_planks','birch_planks','emerald_ore','lapis_ore'];
 
 const BLOCK = [];
@@ -149,11 +153,16 @@ B(MOSSY, '이끼 낀 조약돌', 'mossy', { hard: 2, tool: 'pickaxe', tier: 1 })
 B(OBSIDIAN, '흑요석', 'obsidian', { hard: 50, tool: 'pickaxe', tier: 4 });
 B(BOOKSHELF, '책장', { top: 'planks', bottom: 'planks', side: 'bookshelf' }, { hard: 1.5, tool: 'axe', drop: PLANKS, cat: '장식' });
 B(PUMPKIN, '호박', { top: 'pumpkin_top', bottom: 'pumpkin_top', side: 'pumpkin_side' }, { hard: 1, tool: 'axe', cat: '장식' });
-B(MELON, '수박', { top: 'melon_top', bottom: 'melon_top', side: 'melon_side' }, { hard: 1, tool: 'axe', drop: () => MELON_SLICE, dropCount: r => 3 + Math.floor(r() * 5), cat: '장식' });
+B(MELON, '수박', { top: 'melon_top_v2', bottom: 'melon_top_v2', side: 'melon_side_v2' }, { hard: 1, tool: 'axe', drop: () => MELON_SLICE, dropCount: r => 3 + Math.floor(r() * 5), cat: '장식' });
 B(BED, '침대', { top: 'bed_top', bottom: 'planks', side: 'bed_side' }, { opaque: false, render: 'bed', hard: 0.2, tool: 'axe', use: 'bed', cat: '기능', height: 9 / 16 });
 [
  [CHERRY_PLANKS,'벚나무 판자','axe'], [DEEPSLATE,'심층암','pickaxe'], [COPPER_ORE,'구리 광석','pickaxe'], [AMETHYST_BLOCK,'자수정 블록','pickaxe'], [NETHER_BRICKS,'네더 벽돌','pickaxe'], [END_STONE,'엔드 돌','pickaxe'], [TERRACOTTA,'테라코타','pickaxe'], [GRANITE,'화강암','pickaxe'], [DIORITE,'섬록암','pickaxe'], [ANDESITE,'안산암','pickaxe'], [COPPER_BLOCK,'구리 블록','pickaxe'], [OXIDIZED_COPPER,'산화된 구리','pickaxe'], [DARK_OAK_PLANKS,'짙은 참나무 판자','axe'], [BIRCH_PLANKS,'자작나무 판자','axe'], [EMERALD_ORE,'에메랄드 광석','pickaxe'], [LAPIS_ORE,'청금석 광석','pickaxe']
 ].forEach(([id,name,tool],i)=> B(id,name,EXTRA_TEXTURES[i],{hard:1.5,tool,tier:tool==='pickaxe'?1:0, ...(id===EMERALD_ORE?{tier:3,drop:EMERALD}:id===LAPIS_ORE?{tier:2,drop:LAPIS}: {})}));
+[
+ [CHERRY_LOG,'벚나무 원목','cherry_log_side','cherry_log_top','axe'],[DARK_OAK_LOG,'짙은 참나무 원목','dark_oak_log_side','dark_oak_log_top','axe'],[MANGROVE_LOG,'맹그로브나무 원목','mangrove_log_side','mangrove_log_top','axe'],[BAMBOO_BLOCK,'대나무 블록','bamboo_side','bamboo_top','axe'],[BARREL,'통','barrel_side','barrel_top','axe'],[BASALT,'현무암','basalt_side','basalt_top','pickaxe'],[QUARTZ_PILLAR,'석영 기둥','quartz_side','quartz_top','pickaxe']
+].forEach(([id,name,side,top,tool])=>B(id,name,{top,bottom:top,side},{hard:2,tool,tier:tool==='pickaxe'?1:0,...(id===BARREL?{use:'chest',facing:true,cat:'기능'}:{})}));
+const addedNames=['벚나무 잎','맹그로브나무 판자','대나무 판자','프리즈머린','짙은 프리즈머린','바다 랜턴','네더랙','영혼 모래','흑암','응회암','방해석','점적석 블록','이끼 블록','진흙','꽁꽁 언 얼음','붉은 모래'];
+addedNames.forEach((name,i)=>B(CHERRY_LEAVES+i,name,NEW_BLOCK_TILES[i],{hard:1.5,tool:[0,1,2].includes(i)?'axe':'pickaxe',tier:0,...(i===0?{opaque:false,render:'cutout',tool:'shears'}:{}),...(i===5?{light:15}:{}),...(i===14?{opaque:false,render:'translucent',slippery:true}:{}),...(i===15?{tool:'shovel',gravity:true}: {})}));
 BLOCK[BEDROCK].creative = true;
 const isWater = id => id >= WATER && id <= WATER + 7;
 const waterLevel = id => id - WATER;
@@ -170,6 +179,7 @@ const TIERS = [
 const SWORD_DMG = [4, 5, 6, 4, 7];
 // attack damage / attacks per second per tier (wood, stone, iron, gold, diamond), as in the original
 const WEAPON_STATS = { sword: [SWORD_DMG, [1.6, 1.6, 1.6, 1.6, 1.6]], axe: [[7, 9, 9, 7, 9], [0.8, 0.8, 0.9, 1, 1]], pickaxe: [[2, 3, 4, 2, 5], [1.2, 1.2, 1.2, 1.2, 1.2]], shovel: [[2.5, 3.5, 4.5, 2.5, 5.5], [1, 1, 1, 1, 1]] };
+I(GOLDEN_APPLE,'황금 사과','golden_apple',{cat:'음식',food:[4,9.6]}); I(CARROT,'당근','carrot',{cat:'음식',food:[3,3.6]}); I(POTATO,'감자','potato',{cat:'음식',food:[1,0.6]}); I(BAKED_POTATO,'구운 감자','baked_potato',{cat:'음식',food:[5,6]}); I(BEETROOT,'비트','beetroot',{cat:'음식',food:[1,1.2]}); I(QUARTZ,'네더 석영','quartz_item'); I(REDSTONE,'레드스톤 가루','redstone_item'); I(PRISMARINE_SHARD,'프리즈머린 조각','prismarine_shard');
 I(EMERALD, '에메랄드', 'emerald'); I(LAPIS, '청금석', 'lapis'); I(COPPER_INGOT, '구리 주괴', 'copper_ingot'); I(AMETHYST_SHARD, '자수정 조각', 'amethyst_shard');
 I(STICK, '막대기', 'stick'); I(COAL, '석탄', 'coal'); I(IRON, '철 주괴', 'iron_ingot'); I(GOLD, '금 주괴', 'gold_ingot'); I(DIAMOND, '다이아몬드', 'diamond');
 TIERS.forEach((t, i) => {
@@ -221,7 +231,7 @@ const maxStack = id => (info(id) || { stack: 64 }).stack;
 
 // ─────────────────────────── crafting ───────────────────────────
 const LOGS = [LOG, SPRUCE_LOG, BIRCH_LOG];
-const GROUP = { log: LOGS, planks: [PLANKS], wool: [WOOL, ...WOOL_COLORS.map((_, i) => COLOR_WOOL + i)] };
+const GROUP = { log: LOGS, planks: [PLANKS,CHERRY_PLANKS,DARK_OAK_PLANKS,BIRCH_PLANKS,MANGROVE_PLANKS,BAMBOO_PLANKS], wool: [WOOL, ...WOOL_COLORS.map((_, i) => COLOR_WOOL + i)] };
 const RECIPES = [];
 function shaped(pattern, keys, out, count = 1) { RECIPES.push({ pattern, keys, out, count }); }
 function shapeless(items, out, count = 1) { RECIPES.push({ items, out, count }); }
@@ -295,11 +305,16 @@ function craft(grid, w) {
   }
   return null;
 }
+[[CHERRY_LOG,CHERRY_PLANKS],[DARK_OAK_LOG,DARK_OAK_PLANKS],[MANGROVE_LOG,MANGROVE_PLANKS],[BAMBOO_BLOCK,BAMBOO_PLANKS]].forEach(([a,b])=>shapeless([a],b,4));
+shaped(['GGG','GAG','GGG'],{G:GOLD,A:APPLE},GOLDEN_APPLE);
+shaped(['P P','PPP','P P'],{P:'planks'},BARREL);
+shaped(['QQ','QQ'],{Q:QUARTZ},QUARTZ_PILLAR);
 shaped(['CCC','CCC','CCC'], { C: COPPER_INGOT }, COPPER_BLOCK);
 shapeless([COPPER_BLOCK], COPPER_INGOT, 9);
-const SMELT = { [COPPER_ORE]: COPPER_INGOT, [IRON_ORE]: IRON, [GOLD_ORE]: GOLD, [SAND]: GLASS, [COBBLE]: STONE, [PORK]: COOKED_PORK, [BEEF]: STEAK, [MUTTON]: COOKED_MUTTON, [CLAY]: BRICKS, [LOG]: COAL, [SPRUCE_LOG]: COAL, [BIRCH_LOG]: COAL, [CACTUS]: COLOR_WOOL + 3 };
+const SMELT = { [POTATO]: BAKED_POTATO, [COPPER_ORE]: COPPER_INGOT, [IRON_ORE]: IRON, [GOLD_ORE]: GOLD, [SAND]: GLASS, [COBBLE]: STONE, [PORK]: COOKED_PORK, [BEEF]: STEAK, [MUTTON]: COOKED_MUTTON, [CLAY]: BRICKS, [LOG]: COAL, [SPRUCE_LOG]: COAL, [BIRCH_LOG]: COAL, [CACTUS]: COLOR_WOOL + 3 };
 const FUEL = { [COAL]: 80, [PLANKS]: 15, [LOG]: 15, [SPRUCE_LOG]: 15, [BIRCH_LOG]: 15, [STICK]: 5, [SAPLING]: 5, [TABLE]: 15, [CHEST]: 15, [BOOKSHELF]: 15, [BOW]: 15 };
 TIERS.forEach((t, i) => { if (i === 0) [PICK0, AXE0, SHOVEL0, SWORD0].forEach(b => FUEL[b + i] = 10); });
+[CHERRY_LOG,DARK_OAK_LOG,MANGROVE_LOG,BAMBOO_BLOCK,CHERRY_PLANKS,DARK_OAK_PLANKS,BIRCH_PLANKS,MANGROVE_PLANKS,BAMBOO_PLANKS].forEach(id=>FUEL[id]=15);
 const SMELT_TIME = 8;
 
 // ─────────────────────────── procedural texture atlas ───────────────────────────
@@ -316,6 +331,9 @@ function buildAtlas() {
   const img = c2.createImageData(ATLAS, ATLAS);
   atlasData = img.data;
   paintAll();
+  NEW_FACE_TILES.forEach(name=>tile(name,t=>t.copy('log_side')));
+  NEW_BLOCK_TILES.forEach(name=>tile(name,t=>t.copy('stone')));
+  [['golden_apple','apple'],['carrot','apple'],['potato','apple'],['baked_potato','apple'],['beetroot','apple'],['quartz_item','diamond'],['redstone_item','coal'],['prismarine_shard','diamond']].forEach(([name,base])=>tile(name,t=>t.copy(base)));
   EXTRA_TEXTURES.forEach((name,i)=>tile(name,t=>t.copy(i===0||i===12||i===13?'planks':i===2||i===14||i===15?'iron_ore':i===3?'obsidian':'stone')));
   [['emerald','diamond'],['lapis','diamond'],['copper_ingot','iron_ingot'],['amethyst_shard','diamond']].forEach(([name,base])=>tile(name,t=>t.copy(base)));
   // Each model face gets its own tile, retaining procedural fallback textures.
@@ -600,6 +618,8 @@ function paintAll() {
 // Generated sheets are split into fixed UV cells; loading failures retain built-in textures.
 async function applyWorldSheets() {
   const defs = [
+    ['world-face-v2.png', NEW_FACE_TILES],
+    ['world-blocks-v2.png', NEW_BLOCK_TILES],
     ['world-extra.png', EXTRA_TEXTURES],
     ['world-functional.png', [null,'table_front','furnace_top','furnace_front','sandstone_top','cactus_top','tnt_top','tnt_bottom','melon_top','bed_top','bed_side','wool_3','wool_4','wool_6','wool_7',null]],
     ['world-a.png', ['dirt','grass_top','grass_side','stone','cobble','mossy','bedrock','obsidian','sand','gravel','clay','log_side','spruce_log','birch_log','log_top','planks']],
@@ -621,7 +641,8 @@ async function applyGeneratedItemIcons() {
     ['items-extra.png', [AXE0,AXE0+1,AXE0+2,AXE0+4,SHOVEL0,SHOVEL0+1,SHOVEL0+2,SHOVEL0+4,PICK0+3,AXE0+3,SHOVEL0+3,SWORD0+3,STICK,STRING,FLINT,FLINT_STEEL]],
     ['items-food.png', [PORK,COOKED_PORK,BEEF,STEAK,MUTTON,COOKED_MUTTON,FLESH,MELON_SLICE,BREAD,APPLE,BUCKET,WATER_BUCKET,COAL,IRON,GOLD,DIAMOND]],
     ['items-armor.png', Array.from({length:16},(_,i)=>ARMOR0+i)],
-    ['items-new.png', [EMERALD,LAPIS,COPPER_INGOT,AMETHYST_SHARD,PICK0,PICK0+1,PICK0+2,PICK0+4,SWORD0,SWORD0+1,SWORD0+2,SWORD0+4,APPLE,BREAD,IRON,DIAMOND]]
+    ['items-new.png', [EMERALD,LAPIS,COPPER_INGOT,AMETHYST_SHARD,PICK0,PICK0+1,PICK0+2,PICK0+4,SWORD0,SWORD0+1,SWORD0+2,SWORD0+4,APPLE,BREAD,IRON,DIAMOND]],
+    ['items-v2.png', [GOLDEN_APPLE,CARROT,POTATO,BAKED_POTATO,BEETROOT,EMERALD,QUARTZ,REDSTONE,LAPIS,COPPER_INGOT,AMETHYST_SHARD,PRISMARINE_SHARD,DIAMOND,IRON,GOLD,COAL]]
   ];
   const load=src=>new Promise((resolve,reject)=>{const im=new Image(); im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});
   // Build 32px icons, removing only the connected sheet background from tile edges.
