@@ -904,7 +904,9 @@ function decodeMods(obj) {
 }
 
 // ─────────────────────────── chunk mesher ───────────────────────────
-// vertex: int16 x,y,z (×64) | uint16 u,v (normalized) | uint8 sky, block, shade, flash | 2 pad  = 16 bytes
+// vertex: int16 x,y,z,pad (×64) | uint16 u,v (normalized) | uint8 sky, block, shade, flash  = 16 bytes
+// Every attribute starts on a 4-byte boundary (0 / 8 / 12). Mobile GPUs (iOS Safari ANGLE-Metal, some Android
+// drivers) misread unaligned offsets such as 6 or 10, leaving the terrain black or distorted.
 const PW = CS + 2, PVOL = PW * PW * WH;
 const PB = new Uint8Array(PVOL), PL = new Uint8Array(PVOL);
 const pidx = (x, y, z) => (y * PW + z) * PW + x;
@@ -939,9 +941,9 @@ class MeshBuilder {
     const base = this.quads * 4;
     for (let k = 0; k < 4; k++) {
       const v = base + k, w = v * 8;
-      this.i16[w] = Math.round(p[k][0] * 64); this.i16[w + 1] = Math.round(p[k][1] * 64); this.i16[w + 2] = Math.round(p[k][2] * 64);
-      this.u16[w + 3] = Math.round(uv[k][0] * 65535); this.u16[w + 4] = Math.round(uv[k][1] * 65535);
-      const b = v * 16 + 10; this.u8[b] = l[k][0]; this.u8[b + 1] = l[k][1]; this.u8[b + 2] = l[k][2]; this.u8[b + 3] = flash;
+      this.i16[w] = Math.round(p[k][0] * 64); this.i16[w + 1] = Math.round(p[k][1] * 64); this.i16[w + 2] = Math.round(p[k][2] * 64); this.i16[w + 3] = 0;
+      this.u16[w + 4] = Math.round(uv[k][0] * 65535); this.u16[w + 5] = Math.round(uv[k][1] * 65535);
+      const b = v * 16 + 12; this.u8[b] = l[k][0]; this.u8[b + 1] = l[k][1]; this.u8[b + 2] = l[k][2]; this.u8[b + 3] = flash;
     }
     this.quads++;
   }
@@ -1115,9 +1117,9 @@ gl_FragColor=vec4(mix(c,uFog,f),t.a*uAlpha);}`;
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 }
 function bindChunkAttribs(off) {
-  gl.vertexAttribPointer(A.aPos, 3, gl.SHORT, false, 16, off);
-  gl.vertexAttribPointer(A.aUV, 2, gl.UNSIGNED_SHORT, true, 16, off + 6);
-  gl.vertexAttribPointer(A.aLight, 4, gl.UNSIGNED_BYTE, true, 16, off + 10);
+  gl.vertexAttribPointer(A.aPos, 4, gl.SHORT, false, 16, off);
+  gl.vertexAttribPointer(A.aUV, 2, gl.UNSIGNED_SHORT, true, 16, off + 8);
+  gl.vertexAttribPointer(A.aLight, 4, gl.UNSIGNED_BYTE, true, 16, off + 12);
 }
 function bindDynAttribs(off) {
   gl.vertexAttribPointer(A.aPos, 3, gl.FLOAT, false, 36, off);
@@ -1871,7 +1873,7 @@ function invChanged() { invDirty = true; if (G && G.ui) renderSlots(); }
 const u = n => `calc(var(--g)*${n})`;
 const notch = n => { const a = u(n), b = `calc(100% - var(--g)*${n})`; return `polygon(${a} 0,${b} 0,${b} ${a},100% ${a},100% ${b},${b} ${b},${b} 100%,${a} 100%,${a} ${b},0 ${b},0 ${a},${a} ${a})`; };
 
-const CSS = `.startup-spinner{width:32px;height:32px;border:3px solid #555;border-top-color:#fff;border-radius:50%;animation:startup-spin 0.85s linear infinite;margin:16px auto}@keyframes startup-spin{to{transform:rotate(360deg)}}@font-face{font-family:"MCKR";src:url("fonts/Galmuri11.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/Galmuri11.woff2") format("woff2");font-display:swap}
+const CSS = `@font-face{font-family:"MCKR";src:url("fonts/Galmuri11.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/Galmuri11.woff2") format("woff2");font-display:swap}
 *{box-sizing:border-box}
 #mc{--g:2px;--hs:1;--to:.85;--blur:0px;--chat:.5;--chato:1;--fs:max(12px,${u(6)});--ts:max(1px,${u(.5)});--sh:var(--ts) var(--ts) 0 #3f3f3f;position:relative;width:100%;height:100%;overflow:hidden;background:#000;font-family:"MCKR","Galmuri11","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:var(--fs);line-height:1.3;color:#fff;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:none}
 #mc button,#mc input{font:inherit;color:inherit;letter-spacing:inherit}
@@ -3635,8 +3637,6 @@ window.GameHub.registerGame({
   async mount(container, context) {
     root = container; ctx = context; muted = ctx.muted;
     buildDOM();
-    screenHTML(`<div class="ms center" role="status" aria-live="polite"><div class="mtitle">Minecraft 준비 중</div><p class="desc">텍스처와 게임 환경을 불러오고 있어요.</p><div class="startup-spinner" aria-hidden="true"></div></div>`, 'dirt');
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     buildAtlas(); await applyWorldSheets(); prepareBlockTables(); buildIcons(); await applyGeneratedItemIcons();
     initGL(canvas);
     makeUITextures();
