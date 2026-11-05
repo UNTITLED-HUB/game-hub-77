@@ -1,0 +1,13 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minecraft Mini 테스트</title>
+<style>html,body{margin:0;height:100%;background:#000}#c{position:fixed;inset:0}</style></head><body><div id="c"></div>
+<script>
+// Stand-alone test page: a minimal GAME HUB stand-in so game.js runs without the hub (saves go to localStorage).
+window.GameHub = { registerGame(g) {
+  const KEY = 'mcmini-dev-save';
+  let saved = null; try { saved = localStorage.getItem(KEY); } catch (e) {}
+  const ctx = { muted: false, savedData: saved, on: (el, ev, fn, o) => el.addEventListener(ev, fn, o), timeout: (f, ms) => setTimeout(f, ms),
+    setPaused() {}, onCleanup() {}, reportError: e => console.error(e), save: s => { try { localStorage.setItem(KEY, s); return { ok: true }; } catch (e) { return { ok: false, error: '저장 실패' }; } } };
+  Promise.resolve(g.mount(document.getElementById('c'), ctx)).catch(e => console.error(e));
+} };
+</script><script src="game.js"></script></body></html>
