@@ -101,6 +101,12 @@ const CHERRY_LOG=78, DARK_OAK_LOG=79, MANGROVE_LOG=80, BAMBOO_BLOCK=81, BARREL=8
 const GOLDEN_APPLE=326, CARROT=327, POTATO=328, BAKED_POTATO=329, BEETROOT=330, QUARTZ=331, REDSTONE=332, PRISMARINE_SHARD=333;
 const NEW_FACE_TILES=['cherry_log_side','cherry_log_top','dark_oak_log_side','dark_oak_log_top','mangrove_log_side','mangrove_log_top','bamboo_side','bamboo_top','barrel_side','barrel_top','melon_side_v2','melon_top_v2','basalt_side','basalt_top','quartz_side','quartz_top'];
 const NEW_BLOCK_TILES=['cherry_leaves','mangrove_planks','bamboo_planks','prismarine','dark_prismarine','sea_lantern','netherrack','soul_sand','blackstone','tuff','calcite','dripstone','moss_block','mud','packed_ice','red_sand'];
+const COLOR_NAMES=['하얀색','주황색','자홍색','하늘색','노란색','연두색','분홍색','회색','밝은 회색','청록색','보라색','파란색','갈색','초록색','빨간색','검은색'];
+const BULK_BLOCK_NAMES=['윤이 나는 화강암','윤이 나는 섬록암','윤이 나는 안산암','윤이 나는 심층암','심층암 벽돌','금 간 석재 벽돌','이끼 낀 석재 벽돌','사암 벽돌','붉은 사암','매끄러운 사암','석영 벽돌','조각된 석영','윤이 나는 흑암','흑암 벽돌','엔드 석재 벽돌','진홍빛 판자'];
+const BULK_BLOCK_START=101, BULK_ITEM_START=334;
+const BULK_BLOCK_TILES=Array.from({length:80},(_,i)=>'bulk_block_'+i);
+const BULK_ITEM_TILES=Array.from({length:32},(_,i)=>'bulk_item_'+i);
+const BULK_ITEM_NAMES=['밀','달걀','깃털','뼈','뼛가루','화약','슬라임볼','엔더 진주','블레이즈 막대','블레이즈 가루','가스트의 눈물','거미 눈','설탕','종이','책','점토 덩이','익히지 않은 연어','익힌 연어','익히지 않은 대구','익힌 대구','열대어','복어','익히지 않은 닭고기','익힌 닭고기','쿠키','호박 파이','버섯 스튜','꿀병','우유 양동이','눈덩이','벽돌 아이템','네더 벽돌 아이템'];
 const EXTRA_TEXTURES=['cherry_planks','deepslate','copper_ore','amethyst_block','nether_bricks','end_stone','terracotta','granite','diorite','andesite','copper_block','oxidized_copper','dark_oak_planks','birch_planks','emerald_ore','lapis_ore'];
 
 const BLOCK = [];
@@ -163,6 +169,7 @@ B(BED, '침대', { top: 'bed_top', bottom: 'planks', side: 'bed_side' }, { opaqu
 ].forEach(([id,name,side,top,tool])=>B(id,name,{top,bottom:top,side},{hard:2,tool,tier:tool==='pickaxe'?1:0,...(id===BARREL?{use:'chest',facing:true,cat:'기능'}:{})}));
 const addedNames=['벚나무 잎','맹그로브나무 판자','대나무 판자','프리즈머린','짙은 프리즈머린','바다 랜턴','네더랙','영혼 모래','흑암','응회암','방해석','점적석 블록','이끼 블록','진흙','꽁꽁 언 얼음','붉은 모래'];
 addedNames.forEach((name,i)=>B(CHERRY_LEAVES+i,name,NEW_BLOCK_TILES[i],{hard:1.5,tool:[0,1,2].includes(i)?'axe':'pickaxe',tier:0,...(i===0?{opaque:false,render:'cutout',tool:'shears'}:{}),...(i===5?{light:15}:{}),...(i===14?{opaque:false,render:'translucent',slippery:true}:{}),...(i===15?{tool:'shovel',gravity:true}: {})}));
+for(let i=0;i<80;i++) { const group=Math.floor(i/16), n=i%16; const name=group===0?COLOR_NAMES[n]+' 콘크리트':group===1?COLOR_NAMES[n]+' 콘크리트 가루':group===2?COLOR_NAMES[n]+' 테라코타':group===3?COLOR_NAMES[n]+' 무늬 있는 테라코타':BULK_BLOCK_NAMES[n]; B(BULK_BLOCK_START+i,name,BULK_BLOCK_TILES[i],{hard:group===1?0.5:1.5,tool:group===1?'shovel':(i===79?'axe':'pickaxe'),gravity:group===1,cat:'블록'}); }
 BLOCK[BEDROCK].creative = true;
 const isWater = id => id >= WATER && id <= WATER + 7;
 const waterLevel = id => id - WATER;
@@ -179,6 +186,7 @@ const TIERS = [
 const SWORD_DMG = [4, 5, 6, 4, 7];
 // attack damage / attacks per second per tier (wood, stone, iron, gold, diamond), as in the original
 const WEAPON_STATS = { sword: [SWORD_DMG, [1.6, 1.6, 1.6, 1.6, 1.6]], axe: [[7, 9, 9, 7, 9], [0.8, 0.8, 0.9, 1, 1]], pickaxe: [[2, 3, 4, 2, 5], [1.2, 1.2, 1.2, 1.2, 1.2]], shovel: [[2.5, 3.5, 4.5, 2.5, 5.5], [1, 1, 1, 1, 1]] };
+BULK_ITEM_NAMES.forEach((name,i)=>{ const foods={16:[2,0.4],17:[6,9.6],18:[2,0.4],19:[5,6],20:[1,0.2],21:[1,0.2],22:[2,1.2],23:[6,7.2],24:[2,0.4],25:[8,4.8],26:[6,7.2],27:[6,1.2]}; I(BULK_ITEM_START+i,name,BULK_ITEM_TILES[i],{cat:foods[i]?'음식':'재료',...(foods[i]?{food:foods[i]}:{}),...([26,27,28].includes(i)?{stack:1}:{})}); });
 I(GOLDEN_APPLE,'황금 사과','golden_apple',{cat:'음식',food:[4,9.6]}); I(CARROT,'당근','carrot',{cat:'음식',food:[3,3.6]}); I(POTATO,'감자','potato',{cat:'음식',food:[1,0.6]}); I(BAKED_POTATO,'구운 감자','baked_potato',{cat:'음식',food:[5,6]}); I(BEETROOT,'비트','beetroot',{cat:'음식',food:[1,1.2]}); I(QUARTZ,'네더 석영','quartz_item'); I(REDSTONE,'레드스톤 가루','redstone_item'); I(PRISMARINE_SHARD,'프리즈머린 조각','prismarine_shard');
 I(EMERALD, '에메랄드', 'emerald'); I(LAPIS, '청금석', 'lapis'); I(COPPER_INGOT, '구리 주괴', 'copper_ingot'); I(AMETHYST_SHARD, '자수정 조각', 'amethyst_shard');
 I(STICK, '막대기', 'stick'); I(COAL, '석탄', 'coal'); I(IRON, '철 주괴', 'iron_ingot'); I(GOLD, '금 주괴', 'gold_ingot'); I(DIAMOND, '다이아몬드', 'diamond');
@@ -311,7 +319,7 @@ shaped(['P P','PPP','P P'],{P:'planks'},BARREL);
 shaped(['QQ','QQ'],{Q:QUARTZ},QUARTZ_PILLAR);
 shaped(['CCC','CCC','CCC'], { C: COPPER_INGOT }, COPPER_BLOCK);
 shapeless([COPPER_BLOCK], COPPER_INGOT, 9);
-const SMELT = { [POTATO]: BAKED_POTATO, [COPPER_ORE]: COPPER_INGOT, [IRON_ORE]: IRON, [GOLD_ORE]: GOLD, [SAND]: GLASS, [COBBLE]: STONE, [PORK]: COOKED_PORK, [BEEF]: STEAK, [MUTTON]: COOKED_MUTTON, [CLAY]: BRICKS, [LOG]: COAL, [SPRUCE_LOG]: COAL, [BIRCH_LOG]: COAL, [CACTUS]: COLOR_WOOL + 3 };
+const SMELT = { [BULK_ITEM_START+16]: BULK_ITEM_START+17, [BULK_ITEM_START+18]: BULK_ITEM_START+19, [BULK_ITEM_START+22]: BULK_ITEM_START+23, [POTATO]: BAKED_POTATO, [COPPER_ORE]: COPPER_INGOT, [IRON_ORE]: IRON, [GOLD_ORE]: GOLD, [SAND]: GLASS, [COBBLE]: STONE, [PORK]: COOKED_PORK, [BEEF]: STEAK, [MUTTON]: COOKED_MUTTON, [CLAY]: BRICKS, [LOG]: COAL, [SPRUCE_LOG]: COAL, [BIRCH_LOG]: COAL, [CACTUS]: COLOR_WOOL + 3 };
 const FUEL = { [COAL]: 80, [PLANKS]: 15, [LOG]: 15, [SPRUCE_LOG]: 15, [BIRCH_LOG]: 15, [STICK]: 5, [SAPLING]: 5, [TABLE]: 15, [CHEST]: 15, [BOOKSHELF]: 15, [BOW]: 15 };
 TIERS.forEach((t, i) => { if (i === 0) [PICK0, AXE0, SHOVEL0, SWORD0].forEach(b => FUEL[b + i] = 10); });
 [CHERRY_LOG,DARK_OAK_LOG,MANGROVE_LOG,BAMBOO_BLOCK,CHERRY_PLANKS,DARK_OAK_PLANKS,BIRCH_PLANKS,MANGROVE_PLANKS,BAMBOO_PLANKS].forEach(id=>FUEL[id]=15);
@@ -331,6 +339,8 @@ function buildAtlas() {
   const img = c2.createImageData(ATLAS, ATLAS);
   atlasData = img.data;
   paintAll();
+  BULK_BLOCK_TILES.forEach(name=>tile(name,t=>t.copy('stone')));
+  BULK_ITEM_TILES.forEach(name=>tile(name,t=>t.copy('stick')));
   NEW_FACE_TILES.forEach(name=>tile(name,t=>t.copy('log_side')));
   NEW_BLOCK_TILES.forEach(name=>tile(name,t=>t.copy('stone')));
   [['golden_apple','apple'],['carrot','apple'],['potato','apple'],['baked_potato','apple'],['beetroot','apple'],['quartz_item','diamond'],['redstone_item','coal'],['prismarine_shard','diamond']].forEach(([name,base])=>tile(name,t=>t.copy(base)));
@@ -618,6 +628,11 @@ function paintAll() {
 // Generated sheets are split into fixed UV cells; loading failures retain built-in textures.
 async function applyWorldSheets() {
   const defs = [
+    ['concrete-v3.png', BULK_BLOCK_TILES.slice(0,16)],
+    ['powder-v3.png', BULK_BLOCK_TILES.slice(16,32)],
+    ['terracotta-v3.png', BULK_BLOCK_TILES.slice(32,48)],
+    ['glazed-v3.png', BULK_BLOCK_TILES.slice(48,64)],
+    ['building-v3.png', BULK_BLOCK_TILES.slice(64,80)],
     ['world-face-v2.png', NEW_FACE_TILES],
     ['world-blocks-v2.png', NEW_BLOCK_TILES],
     ['world-extra.png', EXTRA_TEXTURES],
@@ -642,6 +657,8 @@ async function applyGeneratedItemIcons() {
     ['items-food.png', [PORK,COOKED_PORK,BEEF,STEAK,MUTTON,COOKED_MUTTON,FLESH,MELON_SLICE,BREAD,APPLE,BUCKET,WATER_BUCKET,COAL,IRON,GOLD,DIAMOND]],
     ['items-armor.png', Array.from({length:16},(_,i)=>ARMOR0+i)],
     ['items-new.png', [EMERALD,LAPIS,COPPER_INGOT,AMETHYST_SHARD,PICK0,PICK0+1,PICK0+2,PICK0+4,SWORD0,SWORD0+1,SWORD0+2,SWORD0+4,APPLE,BREAD,IRON,DIAMOND]],
+    ['items-mats-v3.png', Array.from({length:16},(_,i)=>BULK_ITEM_START+i)],
+    ['items-food-v3.png', Array.from({length:16},(_,i)=>BULK_ITEM_START+16+i)],
     ['items-v2.png', [GOLDEN_APPLE,CARROT,POTATO,BAKED_POTATO,BEETROOT,EMERALD,QUARTZ,REDSTONE,LAPIS,COPPER_INGOT,AMETHYST_SHARD,PRISMARINE_SHARD,DIAMOND,IRON,GOLD,COAL]]
   ];
   const load=src=>new Promise((resolve,reject)=>{const im=new Image(); im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});
