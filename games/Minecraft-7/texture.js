@@ -19,6 +19,7 @@ function buildAtlas() {
   [['golden_apple','apple'],['carrot','apple'],['potato','apple'],['baked_potato','apple'],['beetroot','apple'],['quartz_item','diamond'],['redstone_item','coal'],['prismarine_shard','diamond']].forEach(([name,base])=>tile(name,t=>t.copy(base)));
   EXTRA_TEXTURES.forEach((name,i)=>tile(name,t=>t.copy(i===0||i===12||i===13?'planks':i===2||i===14||i===15?'iron_ore':i===3?'obsidian':'stone')));
   [['emerald','diamond'],['lapis','diamond'],['copper_ingot','iron_ingot'],['amethyst_shard','diamond']].forEach(([name,base])=>tile(name,t=>t.copy(base)));
+  paintContent();
   // Each model face gets its own tile, retaining procedural fallback textures.
   const fallback = {zombie:'zombie_skin',pig:'pig_skin',cow:'cow_skin',sheep:'sheep_face',spider:'spider_body'};
   for (const [mob, base] of Object.entries(fallback)) for (let i=0;i<16;i++) tile('skin_'+mob+'_'+i, t => t.copy(i === 0 ? mob+'_face' : base));
@@ -315,10 +316,10 @@ async function applyWorldSheets() {
     ['world-face-v2.png', NEW_FACE_TILES],
     ['world-blocks-v2.png', NEW_BLOCK_TILES],
     ['world-extra.png', EXTRA_TEXTURES],
-    ['world-functional.png', [null,'table_front','furnace_top','furnace_front','sandstone_top','cactus_top','tnt_top','tnt_bottom','melon_top',null,null,'wool_3','wool_4','wool_6','wool_7',null]],
+    ['world-functional.png', [null,'table_front','furnace_top','furnace_front','sandstone_top','cactus_top','tnt_top','tnt_bottom','melon_top',null,null,null,null,null,null,null]],
     ['world-a.png', ['dirt','grass_top','grass_side','stone','cobble','mossy','bedrock','obsidian','sand','gravel','clay','log_side','spruce_log','birch_log','log_top','planks']],
     ['world-b.png', ['coal_ore','iron_ore','gold_ore','diamond_ore','table_top','table_side','furnace_front_lit','furnace_side','stone_bricks','bricks','snow','ice','bookshelf','sandstone_side','cactus_side','tnt_side']],
-    ['world-nature.png', ['leaves','spruce_leaves','birch_leaves','wool','glowstone','pumpkin_side','pumpkin_top','melon_side','chest_side','chest_front','chest_top','snow_side','wool_0','wool_1','wool_2','wool_5']],
+    ['world-nature.png', ['leaves','spruce_leaves','birch_leaves','wool','glowstone','pumpkin_side','pumpkin_top','melon_side','chest_side','chest_front','chest_top','snow_side',null,'wool_1','wool_2','wool_5']],
     ...['zombie','pig','cow','sheep','spider'].map(m => ['skin-'+m+'.png', Array.from({length:16},(_,i)=>'skin_'+m+'_'+i)])
   ];
   const load = src => new Promise((resolve,reject) => { const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>resolve(im); im.onerror=reject; im.src=src; });
@@ -351,7 +352,7 @@ async function applyGeneratedItemIcons() {
   const drawIcon=(im,i) => {const c=document.createElement('canvas');c.width=c.height=32;const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=false;const w=im.naturalWidth/4,h=im.naturalHeight/4;g.drawImage(im,(i%4)*w,Math.floor(i/4)*h,w,h,0,0,32,32);const pixels=g.getImageData(0,0,32,32),d=pixels.data;if(d[3]===0)return c;const bg=[d[0],d[1],d[2]],seen=new Uint8Array(1024),stack=[0];while(stack.length){const n=stack.pop();if(n<0||n>=1024||seen[n])continue;seen[n]=1;const k=n*4;if(Math.abs(d[k]-bg[0])+Math.abs(d[k+1]-bg[1])+Math.abs(d[k+2]-bg[2])>75)continue;d[k+3]=0;const x=n%32,y=Math.floor(n/32);if(x)stack.push(n-1);if(x<31)stack.push(n+1);if(y)stack.push(n-32);if(y<31)stack.push(n+32);}g.putImageData(pixels,0,0);return c;};
   // Process sheets in order so duplicate IDs have a deterministic final appearance.
   const sheets=await Promise.allSettled(defs.map(([file])=>load('textures/'+file)));
-  for (let n=0;n<defs.length;n++) { const [file,ids]=defs[n]; try {if(sheets[n].status!=='fulfilled') continue;const im=sheets[n].value;for(let i=0;i<ids.length;i++){const id=ids[i];if(id==null)continue;const icon=drawIcon(im,i);ICON[id]=icon.toDataURL('image/png');const ti=T[ITEM[id]?.icon];if(ti!==undefined){const g=atlasCanvas.getContext('2d');g.clearRect((ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS);g.imageSmoothingEnabled=false;g.drawImage(icon,(ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS);}}}catch(_) {/* Built-in icon remains available. */}}
+  for (let n=0;n<defs.length;n++) { const [file,ids]=defs[n]; try {if(sheets[n].status!=='fulfilled') continue;const im=sheets[n].value;for(let i=0;i<ids.length;i++){const id=ids[i];if(id==null)continue;const icon=drawIcon(im,i);ICON[id]=icon.toDataURL('image/png');const ti=T[ITEM[id]?.icon];if(ti!==undefined && !BLOCK[id]){const g=atlasCanvas.getContext('2d');g.clearRect((ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS);g.imageSmoothingEnabled=false;g.drawImage(icon,(ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS);}}}catch(_) {/* Built-in icon remains available. */}}
 }
 
 function buildIcons() {

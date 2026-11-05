@@ -106,14 +106,16 @@ function generateChunk(cx, cz) {
     if (h <= SEA || h > WH - 12) continue;
     const dens = b === FOREST ? 0.05 : b === SNOWY ? 0.022 : b === PLAINS ? 0.005 : (b === MOUNTAIN && h <= 39) ? 0.012 : 0;
     if (!dens || hash2(wx, wz, seed + 11) >= dens) continue;
+    if (W.structures !== false && treeBlocked(wx, wz)) continue;
     if (lx >= 0 && lx < CS && lz >= 0 && lz < CS) { const t = B[bidx(lx, h, lz)]; if (t !== GRASS && t !== SNOW_GRASS && t !== DIRT) continue; }
     const kind = b === SNOWY ? 2 : (b === FOREST && hash2(wx, wz, seed + 12) < 0.3) ? 1 : 0;
     placeTree(setL, lx, h + 1, lz, kind, hash2(wx, wz, seed + 13));
   }
-  generateStructures(ch);
+  if (W.structures !== false) generateOverworldStructures(ch);
   // apply player modifications
   const mods = W.mods.get(ckey(cx, cz));
   if (mods) for (const [i, id] of mods) B[i] = id;
+  applyPendingTE(ch);
   for (let i = 0; i < CVOL; i++) { const id = B[i]; if (id && BLOCK[id] && BLOCK[id].light) ch.emit.add(i); }
   return ch;
 }
@@ -122,7 +124,7 @@ function generateDimensionChunk(cx,cz){
  const ch=newChunk(cx,cz),b=ch.blocks,nether=W.dimension==='nether';
  for(let z=0;z<16;z++)for(let x=0;x<16;x++){
   const wx=cx*16+x,wz=cz*16+z,radius=Math.hypot(wx,wz),n=W.noise.n2(wx/42,wz/42);
-  const island=radius<100||(radius>180&&W.noise2.fbm2(wx/100,wz/100,3)>0.03);
+  const island=radius<100||(radius>180&&(W.noise2.fbm2(wx/100,wz/100,3)>0.03||endForcedIsland(wx,wz)));
   const h=nether?Math.floor(64+n*16):Math.floor(radius<100?60+Math.max(0,1-(radius/100)**2)*6+n*2:62+n*10);
   ch.heights[z*16+x]=nether?127:(island?h:YMIN);
   for(let y=YMIN;y<WH;y++){
@@ -144,8 +146,6 @@ function generateDimensionChunk(cx,cz){
       if((wx-px)**2+(wz-pz)**2<=rr*rr&&y>=50&&y<=top)id=OBSIDIAN;
       if(wx===px&&wz===pz&&y===top+1)id=AMETHYST_BLOCK;
     }
-    // End ruins and a gateway on the outer islands.
-    if(Math.abs(wx-224)<12&&Math.abs(wz)<12&&y>=h&&y<h+17){const edge=Math.abs(wx-224)===10||Math.abs(wz)===10;if(edge||y===h||y===h+8||y===h+16)id=PRISMARINE;}
    }
    if(nether){const fx=wx-(Math.floor((wx+128)/256)*256),fz=wz-(Math.floor((wz+128)/256)*256);
     if((Math.abs(fx)<4&&Math.abs(fz)<42)||(Math.abs(fz)<4&&Math.abs(fx)<42)){
@@ -164,42 +164,11 @@ function generateDimensionChunk(cx,cz){
    b[bidx(x,y,z)]=id;
   }
  }
- if(!nether&&cx===14&&cz===0){const y=Math.floor(62+W.noise.n2(224/42,0)*10)+1;b[bidx(0,y,0)]=CHEST;const key=pkey(224,y,0);if(!W.te.has(key))W.te.set(key,{type:'chest',facing:4,slots:[{id:ELYTRA,count:1,dmg:0},{id:TOTEM,count:1,dmg:0},{id:DIAMOND,count:4,dmg:0},...Array(24).fill(null)]});}
+ if(!nether&&W.structures!==false)generateEndStructures(ch);
  const mods=W.mods.get(ckey(cx,cz));if(mods)for(const [i,id]of mods)b[i]=id;
+ applyPendingTE(ch);
  for(let i=0;i<CVOL;i++){if(BLOCK[b[i]]?.light)ch.emit.add(i);if(b[i]===NETHER_PORTAL){const x=cx*16+(i&15),y=(i>>8)+YMIN,z=cz*16+((i>>4)&15);if(!W.te.has(pkey(x,y,z)))W.te.set(pkey(x,y,z),{type:'nether',frame:{x:-1,y:49,z:4,dx:1,dz:0,width:2,height:4}});}}
  return ch;
-}
-const villageCache=new Map();
-function villageSite(gx,gz){const key=W.seed+':'+gx+','+gz;if(villageCache.has(key))return villageCache.get(key);let lo=Infinity,hi=-Infinity,valid=true;for(let z=-28;z<=28;z+=7)for(let x=-28;x<=28;x+=7){const [h,b]=column(gx+x,gz+z);lo=Math.min(lo,h);hi=Math.max(hi,h);if(h<=SEA+1||b===MOUNTAIN)valid=false;}valid=valid&&hi-lo<=8;const v={valid,base:Math.ceil((lo+hi)/2)+1};villageCache.set(key,v);return v;}
-function getBlockForStructure(ch,x,y,z){return ch.blocks[bidx(x&15,y,z&15)];}
-function generateStructures(ch){
- const x0=ch.cx*16,z0=ch.cz*16;
- const put=(x,y,z,id)=>{if((x>>4)===ch.cx&&(z>>4)===ch.cz&&y>=YMIN&&y<WH)ch.blocks[bidx(x&15,y,z&15)]=id;};
- const gx=Math.floor((x0+64)/192)*192+32,gz=Math.floor((z0+64)/192)*192+32;
- const site=villageSite(gx,gz),base=site.base;
- if(site.valid){
- for(let z=z0;z<z0+16;z++)for(let x=x0;x<x0+16;x++){
-  if(Math.abs(x-gx)<26&&Math.abs(z-gz)<26&&(Math.abs(x-gx)<2||Math.abs(z-gz)<2)){for(let y=base-3;y<base;y++)put(x,y,z,DIRT);put(x,base-1,z,GRAVEL);for(let y=base;y<base+5;y++)put(x,y,z,AIR);}
-  if(Math.abs(x-gx)<28&&Math.abs(z-gz)<28){const natural=column(x,z)[0];for(let y=Math.min(natural,base-2);y<base;y++)put(x,y,z,DIRT);if(getBlockForStructure(ch,x,base-1,z)!==GRAVEL)put(x,base-1,z,GRASS);for(let y=base;y<=Math.max(natural+10,base+8);y++)put(x,y,z,AIR);}
-  for(const [dx,dz]of [[-12,-12],[12,-12],[-12,12],[12,12],[0,22]]){
-   const hx=gx+dx,hz=gz+dz,ax=Math.abs(x-hx),az=Math.abs(z-hz);if(ax>3||az>3)continue;
-   for(let y=base-3;y<base;y++)put(x,y,z,COBBLE);
-   for(let y=base;y<base+5;y++){let id=AIR;if(y===base+4)id=PLANKS;else if(ax===3||az===3)id=(ax===3&&az===3)?LOG:PLANKS;
-    if((ax===3||az===3)&&y===base+2&&ax+az<5)id=GLASS;
-    if(x===hx&&z===hz-3&&y<base+2)id=AIR;put(x,y,z,id);}
-   if(x===hx&&z===hz+1)put(x,base,z,BED);if(x===hx&&z===hz+2)put(x,base,z,BED_HEAD);
-   if(x===hx+2&&z===hz+2)put(x,base,z,TABLE);
-  }
-  if(Math.abs(x-gx)<27&&Math.abs(z-gz)<27&&(Math.abs(x-gx)<2||Math.abs(z-gz)<2))put(x,base-1,z,GRAVEL);
-  if(Math.abs(x-gx)<=2&&Math.abs(z-gz)<=2){put(x,base-1,z,STONE_BRICKS);if(Math.abs(x-gx)<2&&Math.abs(z-gz)<2)put(x,base-1,z,WATER);}
- }
- }
- // Underground stronghold room, complete end frame ring and central opening.
- const sx=96,sz=96,sy=-28;
- for(let z=z0;z<z0+16;z++)for(let x=x0;x<x0+16;x++)if(Math.abs(x-sx)<=7&&Math.abs(z-sz)<=7){
- for(let y=sy-1;y<=sy+5;y++)put(x,y,z,y===sy-1||y===sy+5||Math.abs(x-sx)===7||Math.abs(z-sz)===7?STONE_BRICKS:AIR);
- const dx=x-sx,dz=z-sz;if((Math.abs(dx)===2&&Math.abs(dz)<=1)||(Math.abs(dz)===2&&Math.abs(dx)<=1))put(x,sy,z,END_FRAME);
- }
 }
 function ignitePortal(t){
  const open=id=>id===AIR||id===NETHER_PORTAL;
@@ -217,7 +186,7 @@ function ignitePortal(t){
   if(!valid)continue;
   const origin={x:sx+l*dx,y,z:sz+l*dz,dx,dz,width,height};
   for(let b=0;b<height;b++)for(let a=0;a<width;a++){const x=origin.x+a*dx,z=origin.z+a*dz;setBlock(x,y+b,z,NETHER_PORTAL);W.te.set(pkey(x,y+b,z),{type:'nether',frame:origin});}
-  toast('네더 차원문이 열렸습니다. 안에 서서 기다리세요.');return true;
+  hint(tr('네더 차원문이 열렸습니다. 안에 서서 기다리세요.'));return true;
  }return false;
 }
 function validPortalFrame(f){
@@ -229,14 +198,14 @@ function activateEndFrame(t){
  W.te.set(pkey(t.x,t.y,t.z),{type:'endframe',eye:true});consumeHeld(1);
  for(let cx=t.x-2;cx<=t.x+2;cx++)for(let cz=t.z-2;cz<=t.z+2;cz++){
   let ok=true;for(let d=-1;d<=1;d++)for(const [x,z]of [[cx-2,cz+d],[cx+2,cz+d],[cx+d,cz-2],[cx+d,cz+2]])if(getBlock(x,t.y,z)!==END_FRAME||!W.te.get(pkey(x,t.y,z))?.eye)ok=false;
-  if(ok){for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)setBlock(cx+dx,t.y,cz+dz,END_PORTAL);toast('엔드 차원문이 열렸습니다.');return;}
- }toast('엔더의 눈을 끼웠습니다. 틀 12개를 모두 채우세요.');
+  if(ok){for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)setBlock(cx+dx,t.y,cz+dz,END_PORTAL);hint(tr('엔드 차원문이 열렸습니다.'));return;}
+ }hint(tr('엔더의 눈을 끼웠습니다. 틀 12개를 모두 채우세요.'));
 }
 function updatePortal(dt){
  P.portalCooldown=Math.max(0,(P.portalCooldown||0)-dt);
  let id=0;for(const yy of [P.y,P.y+0.8,P.y+1.5]){const n=getBlock(Math.floor(P.x),Math.floor(yy),Math.floor(P.z));if(n===NETHER_PORTAL||n===END_PORTAL)id=n;}
  if(!id){P.portalTime=0;P.portalExit=true;}else if(P.portalCooldown<=0&&P.portalExit!==false){
-  if(!P.portalTime&&id===NETHER_PORTAL&&G.mode==='survival')toast('차원문 안에서 4초 동안 기다리세요.');
+  if(!P.portalTime&&id===NETHER_PORTAL&&G.mode==='survival')hint(tr('차원문 안에서 4초 동안 기다리세요.'));
   P.portalTime=(P.portalTime||0)+dt;
   if(P.portalTime>=(id===END_PORTAL?0.1:G.mode==='creative'?0.3:4)){P.portalExit=false;travelDimension(id===END_PORTAL?(W.dimension==='end'?'overworld':'end'):(W.dimension==='nether'?'overworld':'nether'));return;}
  }
@@ -460,15 +429,16 @@ function fluidUpdate(x, y, z) {
 function gravityUpdate(x, y, z) {
   const id = getBlock(x, y, z), b = BLOCK[id];
   if (!b) return;
+  if (id >= POWDER && id < POWDER + 16) { for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) if (isWater(getBlock(x + dx, y + dy, z + dz))) { setBlock(x, y, z, CONCRETE + id - POWDER); return; } }
   if (b.gravity) {
     const below = getBlock(x, y - 1, z);
     if (y > YMIN && (below === AIR || isWater(below) || (BLOCK[below] && BLOCK[below].replaceable))) { setBlock(x, y, z, AIR); setBlock(x, y - 1, z, id); }
     return;
   }
   // plants and torches need support
-  if (b.needsSoil || b.needsSand || b.needsFloor) {
+  if (b.needsSoil || b.needsSand || b.needsFloor || b.needsFarm) {
     const below = getBlock(x, y - 1, z), bb = BLOCK[below];
-    const ok = b.needsSoil ? (below === GRASS || below === DIRT || below === SNOW_GRASS) : b.needsSand ? (below === SAND || below === DIRT || below === GRASS) : !!(bb && bb.solid);
+    const ok = b.needsFarm ? below === FARMLAND : b.needsSoil ? (below === GRASS || below === DIRT || below === SNOW_GRASS || below === FARMLAND) : b.needsSand ? (below === SAND || below === DIRT || below === GRASS || below === SUGAR_CANE || below === RED_SAND) : !!(bb && bb.solid);
     if (!ok) { setBlock(x, y, z, AIR); dropBlockItems(x, y, z, id, false); }
   }
   if (id === CACTUS) {

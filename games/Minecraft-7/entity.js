@@ -37,6 +37,7 @@ function dropBlockItems(x, y, z, id) {
   let d = typeof b.drop === 'function' ? b.drop(r) : b.drop;
   const n = b.dropCount ? b.dropCount(r) : 1;
   if (d) spawnItem(d, n, x + 0.5, y + 0.4, z + 0.5);
+  if (b.extraDrop) for (const [eid, lo, hi] of b.extraDrop) spawnItem(eid, lo + Math.floor(r() * (hi - lo + 1)), x + 0.5, y + 0.4, z + 0.5);
   const te = W.te.get(pkey(x, y, z));
   if (te) for (const s of te.slots) if (s) spawnItem(s.id, s.count, x + 0.5, y + 0.5, z + 0.5, s.dmg);
 }
@@ -124,20 +125,20 @@ function updateArrows(dt) {
 }
 // ── beds ──
 function trySleep(t) {
-  if(W.dimension && W.dimension!=='overworld'){toast('이 차원에서는 잠을 잘 수 없어요.');return;}
+  if(W.dimension && W.dimension!=='overworld'){toast(tr('이 차원에서는 잠을 잘 수 없어요.'));return;}
   G.spawn = { x: t.x + 0.5, y: t.y + 1, z: t.z + 0.5 };
   const tt = W.time % DAY_TICKS;
-  if (tt < 12540 || tt > 23460) { toast('리스폰 지점을 정했어요. 잠은 밤에만 잘 수 있어요.'); return; }
-  if (G.mode === 'survival' && W.difficulty > 0 && W.mobs.some(m => !m.dead && MOBDEF[m.type].hostile && Math.hypot(m.x - t.x - 0.5, m.z - t.z - 0.5) < 8 && Math.abs(m.y - t.y) < 5)) { toast('근처에 몬스터가 있어 잘 수 없어요!'); return; }
+  if (tt < 12540 || tt > 23460) { toast(tr('리스폰 지점을 정했어요. 잠은 밤에만 잘 수 있어요.')); return; }
+  if (G.mode === 'survival' && W.difficulty > 0 && W.mobs.some(m => !m.dead && MOBDEF[m.type].hostile && Math.hypot(m.x - t.x - 0.5, m.z - t.z - 0.5) < 8 && Math.abs(m.y - t.y) < 5)) { toast(tr('근처에 몬스터가 있어 잘 수 없어요!')); return; }
   input.mine = input.use = false; input.fwd = input.side = 0; resetTouchHolds();
   P.x = t.x + 0.5; P.z = t.z + 0.5; P.y = t.y + 1; P.vx = P.vy = P.vz = 0; P.flying = false;
-  G.sleep = 0.001; toast('리스폰 지점을 정했어요. 잘 자요…');
+  G.sleep = 0.001; hint(tr('리스폰 지점을 정했어요. 잘 자요…'));
 }
 function updateSleep(dt) {
   if (!G.sleep) return;
   if (G.sleep < 0) { G.sleep = Math.min(0, G.sleep + dt * 1.2); return; }
   G.sleep += dt; input.fwd = input.side = 0; input.jump = false;
-  if (G.sleep > 2.4) { W.time = Math.ceil(W.time / DAY_TICKS) * DAY_TICKS + 300; updateSky(); G.sleep = -1; chat('좋은 아침이에요!', '#ff5'); saveSoon(); }
+  if (G.sleep > 2.4) { W.time = Math.ceil(W.time / DAY_TICKS) * DAY_TICKS + 300; updateSky(); G.sleep = -1; saveSoon(); }
 }
 // ── armor ──
 function armorPoints() { let d = 0, t = 0; for (const s of G.armor) { const a = s && armorOf(s.id); if (a) { d += a.def; t += a.tough; } } return [d, t]; }
@@ -147,7 +148,7 @@ function damageArmor(amount) {
     const s = G.armor[i], a = s && armorOf(s.id); if (!a) continue;
     if(s.enchants?.unbreaking&&Math.random()<s.enchants.unbreaking/(s.enchants.unbreaking+1))continue;
   s.dmg = (s.dmg || 0) + n;
-    if (s.dmg >= a.dur) { G.armor[i] = null; sfx('toolbreak'); toast(info(s.id).name + '이(가) 부서졌어요!'); }
+    if (s.dmg >= a.dur) { G.armor[i] = null; sfx('toolbreak'); toast(tr('{0}이(가) 부서졌어요!', info(s.id).name)); }
   }
   invChanged();
 }

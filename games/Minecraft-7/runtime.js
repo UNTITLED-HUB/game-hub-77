@@ -50,6 +50,11 @@ function sfx(name, vol = 1) {
     case 'knock': noise(0.14, 600, 0.8, 0.6); tone('triangle', 150, 80, 0.12, 0.12); break;
     case 'crit': noise(0.12, 2600, 1.5, 0.5); tone('square', 1300, 700, 0.1, 0.05); break;
     case 'sweep': noise(0.22, 2000, 0.5, 0.35, 'bandpass'); break;
+    case 'note': tone('triangle', 440 * Math.pow(2, Math.floor(Math.random() * 12) / 12), 430, 0.5, 0.1); break;
+    case 'bell': tone('sine', 1320, 1300, 1.6, 0.12); tone('sine', 660, 655, 1.8, 0.08); tone('sine', 1980, 1960, 0.9, 0.04); break;
+    case 'rocket': noise(0.6, 2400, 0.4, 0.4); tone('sawtooth', 200, 900, 0.5, 0.03); break;
+    case 'pearl': tone('sine', 900, 300, 0.25, 0.08); noise(0.2, 3000, 1, 0.2); break;
+    case 'slime': tone('sine', 220, 360, 0.18, 0.12); noise(0.1, 500, 1, 0.3); break;
   }
 }
 let musicT = 40;
@@ -78,7 +83,9 @@ function loadSave() {
     sneakToggle: false, sprintToggle: false, keys: { ...DEFAULT_KEYS },
     touchMode: 'auto', moveStyle: 'joystick', joyFloat: false, touchSens: 8, btnSize: 100, tapPlace: true, holdDelay: 280, vibrate: true, leftHanded: false, layout: {},
     crosshair: true, itemNames: true, showCoords: false, showFps: false, chatShow: true, chatOpacity: 100, menuBlur: 0, panoSpeed: 100, recipeBook: null,
-    combat: 'modern', attackIndicator: true, dmgNumbers: false, char: null }, worlds: [], storage: typeof ctx.save === 'function' };
+    combat: 'modern', attackIndicator: true, dmgNumbers: false, char: null,
+    lang: /^ko/i.test(navigator.language || 'ko') ? 'ko' : 'en', fog: true, showHand: true, scrollInvert: false, chatScale: 100, systemMsgs: false, autoPause: true,
+    highContrast: false, reduceMotion: false, autosave: 45, invHelpers: false, hideMobileExtras: true }, worlds: [], storage: typeof ctx.save === 'function' };
   let raw = null;
   try {
     raw = ctx.savedData;
@@ -92,6 +99,8 @@ function loadSave() {
   // older saves stored one joystick size for everyone; carry it into the new per-button layout
   if (+st.joySize && st.joySize !== 100 && !(st.layout.move && st.layout.move.s)) { (st.layout.move || (st.layout.move = {})).s = st.joySize / 100; st.joySize = 100; }
   st.renderDist = clamp(+st.renderDist || 4, 2, 10); st.fov = clamp(+st.fov || 75, 30, 110);
+  if (st.lang !== 'ko' && st.lang !== 'en') st.lang = 'ko';
+  applyLanguage();
   return raw === 'bad';
 }
 function applyVisualSettings() {
@@ -108,6 +117,9 @@ function applyVisualSettings() {
   mc.classList.toggle('nocross', st.crosshair === false);
   mc.classList.toggle('noname', st.itemNames === false);
   mc.classList.toggle('nochat', st.chatShow === false);
+  mc.classList.toggle('hc', !!st.highContrast); mc.classList.toggle('rm', !!st.reduceMotion);
+  mc.style.setProperty('--chatfs', clamp((+st.chatScale || 100) / 100, .5, 1.5));
+  mc.lang = st.lang === 'en' ? 'en' : 'ko';
   positionTouch(); updateVolume();
 }
 function serializeWorld() {
@@ -122,7 +134,7 @@ function persist() {
   if (!SAVE || !SAVE.storage) return;
   if (G && W && !G.loading) { G.world.data = serializeWorld(); G.world.played = Date.now(); G.world.mode = G.mode; G.world.difficulty = W.difficulty; }
   const str = JSON.stringify({ v: 1, settings: SAVE.settings, worlds: SAVE.worlds });
-  try { Promise.resolve(ctx.save(str)).then(r => { if (r && r.ok === false) toast(r.error || '저장 공간이 부족해 월드를 저장하지 못했어요.'); }).catch(() => { }); } catch { }
+  try { Promise.resolve(ctx.save(str)).then(r => { if (r && r.ok === false) toast(r.error || tr('저장 공간이 부족해 월드를 저장하지 못했어요.')); }).catch(() => { }); } catch { }
 }
 function saveSoon() { saveTimer = 2; }
 function saveSettingsSoon() { settingsTimer = 1; }
@@ -133,7 +145,7 @@ function startWorld(w) {
   wake();
   const d = w.data;
   W = { dimension:d?.dimension||'overworld',dimensions:d?.dimensions||{}, seed: w.seed >>> 0, noise: makeNoise(w.seed >>> 0), noise2: makeNoise((w.seed ^ 0x9e3779b9) >>> 0), chunks: new Map(), mods: decodeMods(d && d.mods), te: new Map(Object.entries((d && d.te) || {})),
-    weather:d?.weather||'clear',weatherTime:d?.weatherTime||0, fluidQ: new Set(), gravQ: new Set(), mobs: [], items: [], particles: [], tnts: [], arrows: [], time: d ? d.time : 1000, difficulty: w.difficulty ?? 2, daylight: 1, skyLevel: 15 };
+    weather:d?.weather||'clear',weatherTime:d?.weatherTime||0, structures: w.structures !== false, pendingSpawns: [], fluidQ: new Set(), gravQ: new Set(), mobs: [], items: [], particles: [], tnts: [], arrows: [], time: d ? d.time : 1000, difficulty: w.difficulty ?? 2, daylight: 1, skyLevel: 15 };
   lastChunk = null; lastPc = null;
   G = { world: w, mode: w.mode, inv: Array(36).fill(null), sel: (d && d.sel) || 0, ui: 'loading', settings: SAVE.settings, spawn: (d && d.spawn) || findSpawn(), stats: Object.assign({ mined: 0, placed: 0, crafted: 0, deaths: 0, time: 0, walk: 0 }, (d && d.stats) || {}),
     target: null, targetMob: null, hurtFlash: 0, loading: true, fresh: !d, craft: null, craftW: 2 };
@@ -141,7 +153,6 @@ function startWorld(w) {
   if (d && d.player) { Object.assign(P, d.player); P.fallStart = P.y; if (P.dead) { P.dead = false; P.health = 20; P.hunger = 20; Object.assign(P, { x: G.spawn.x, y: G.spawn.y, z: G.spawn.z }); } }
   if(d&&!d.terrainVersion&&W.dimension!=='overworld')Object.assign(P,{x:.5,y:W.dimension==='end'?65:49,z:.5,vx:0,vy:0,vz:0,fallStart:W.dimension==='end'?65:49});
   if (d && d.inv) G.inv = d.inv.map(s => s && info(s[0]) ? { id: s[0], count: s[1], dmg: s[2] || 0,enchants:s[3]||undefined } : null);
-  else if (w.mode === 'creative') [GRASS, DIRT, STONE, COBBLE, PLANKS, LOG, GLASS, BRICKS, TORCH].forEach((id, i) => G.inv[i] = { id, count: 64, dmg: 0 });
   G.off = d && d.off && info(d.off[0]) ? { id: d.off[0], count: d.off[1], dmg: d.off[2] || 0 } : null;
   G.armor = [0, 1, 2, 3].map(i => { const s = d && d.armor && d.armor[i]; return s && armorOf(s[0]) && armorOf(s[0]).slot === i ? { id: s[0], count: 1, dmg: s[2] || 0,enchants:s[3]||undefined } : null; });
   G.sleep = 0;
@@ -166,10 +177,7 @@ function finishLoading() {
   }
   else if (hitsAt(P, P.x, P.y, P.z)) P.y = surfaceY(P.x, P.z, P.y);
   $('chatlog').innerHTML = '';
-  chat(`${G.world.name}에 오신 것을 환영해요! (${G.mode === 'creative' ? '크리에이티브' : '서바이벌'})`, '#ff5');
-  if (G.fresh && G.mode === 'survival' && G.world.bonus) { for (const [id, n] of [[LOG, 12], [APPLE, 6], [PICK0, 1], [AXE0, 1], [TORCH, 8], [BREAD, 3]]) addToInventory(id, n); invChanged(); chat('보너스 아이템을 받았어요!', '#5f5'); }
-  if (G.fresh && G.mode === 'survival') { chat('팁: 나무를 꾹 눌러 캐서 원목을 얻고, 가방(E)에서 판자 → 작업대를 만들어 보세요.', '#ddd'); chat('밤이 되면 몬스터가 나타나요. 해가 지기 전에 은신처와 횃불을 준비하세요!', '#ddd'); }
-  else if (G.fresh) chat('팁: E 또는 가방 버튼으로 모든 블록을 꺼낼 수 있어요. 스페이스 두 번으로 비행!', '#ddd');
+  if (G.fresh && G.mode === 'survival' && G.world.bonus) { for (const [id, n] of [[LOG, 12], [APPLE, 6], [PICK0, 1], [AXE0, 1], [TORCH, 8], [BREAD, 3]]) addToInventory(id, n); invChanged(); }
   persist();
   capture();
 }
@@ -233,10 +241,20 @@ function furnaceTick(k, te) {
   const wasLit = te.burn > 0;
   if (te.burn > 0) te.burn -= TICK;
   if (te.burn <= 0 && canOut && fuel && FUEL[fuel.id]) { te.burnMax = te.burn = FUEL[fuel.id]; fuel.count--; if (!fuel.count) te.slots[1] = fuel.id === WATER_BUCKET ? { id: BUCKET, count: 1 } : null; }
-  if (te.burn > 0 && canOut) { te.cook += TICK; if (te.cook >= SMELT_TIME) { te.cook = 0; inp.count--; if (!inp.count) te.slots[0] = null; if (out) out.count++; else te.slots[2] = { id: res, count: 1, dmg: 0 }; } }
+  if (te.burn > 0 && canOut) { if (te.fast == null) { const [x, y, z] = k.split(',').map(Number), id = getBlock(x, y, z); te.fast = id === SMOKER || id === BLAST_FURNACE ? 2 : 1; } te.cook += TICK * te.fast; if (te.cook >= SMELT_TIME) { te.cook = 0; inp.count--; if (!inp.count) te.slots[0] = null; if (out) out.count++; else te.slots[2] = { id: res, count: 1, dmg: 0 }; } }
   else te.cook = Math.max(0, te.cook - TICK * 2);
   if (te.burn < 0) te.burn = 0;
   if (wasLit !== te.burn > 0) { const [x, , z] = k.split(',').map(Number); const ch = getChunk(x >> 4, z >> 4); if (ch) { ch.needMesh = true; ch.urgent = true; } }
+}
+// crops planted on farmland ripen after a couple of in-game minutes when they have light
+function growCrops() {
+  for (const [k, te] of W.te) {
+    if (te.type !== 'crop') continue;
+    const [x, y, z] = k.split(',').map(Number); if (!getChunk(x >> 4, z >> 4)) continue;
+    if (getBlock(x, y, z) !== WHEAT_CROP) { W.te.delete(k); continue; }
+    const l = getLight(x, y, z), lit = Math.max(l >> 4, l & 15) >= 9;
+    if (lit && W.time - te.t > 2400 + hash3(x, y, z, 5) * 2400) setBlock(x, y, z, WHEAT_RIPE, { noUpdate: true });
+  }
 }
 function gameTick() {
   tickN++;
@@ -244,6 +262,7 @@ function gameTick() {
   if (tickN % 5 === 0 && W.fluidQ.size) { const q = [...W.fluidQ]; W.fluidQ.clear(); for (let i = 0; i < q.length; i++) { if (i > 4000) { W.fluidQ.add(q[i]); continue; } const [x, y, z] = q[i].split(',').map(Number); fluidUpdate(x, y, z); } }
   randomTicks(P.x, P.z);
   for (const [k, te] of W.te) if (te.type === 'furnace' && (te.burn > 0 || te.slots[0])) furnaceTick(k, te);
+  if (tickN % 40 === 0) growCrops();
   if (G.uiKind === 'furnace' && tickN % 4 === 0) renderSlots();
 }
 function step(dt) {
@@ -252,6 +271,7 @@ function step(dt) {
   updateSky();
   updatePlayer(dt); updateInteraction(dt); updateSurvival(dt);
   tickAcc += dt; while (tickAcc >= TICK) { tickAcc -= TICK; gameTick(); }
+  processPendingSpawns(); updateSpawners(dt);
   updateMobs(dt); updateItems(dt); updateArrows(dt); updateParticles(dt); updateTNT(dt); spawnLogic(dt); updateSleep(dt);
   if(getBlock(Math.floor(P.x),Math.floor(P.y-0.1),Math.floor(P.z))===MAGMA&&!P.sneaking&&G.mode==='survival'){P.dimensionBurn=(P.dimensionBurn||0)+dt;if(P.dimensionBurn>=1){P.dimensionBurn=0;damagePlayer(1,'magma');}}
   G.stats.time = (G.stats.time || 0) + dt;
@@ -272,7 +292,7 @@ function render(dt) {
   const duskK = clamp(1 - Math.abs(sunY) * 4, 0, 1) * 0.6; sky = mix(sky, dusk, duskK * clamp(dl, 0.3, 1));
   if(W.dimension==='nether')sky=[0.24,0.055,0.035];else if(W.dimension==='end')sky=[0.055,0.025,0.09];
   if(W.weather&&W.weather!=='clear'&&W.dimension==='overworld')sky=mix(sky,[.3,.33,.38],.6);
-  let fogC = sky, fogR = [far * 0.55, far];
+  let fogC = sky, fogR = SAVE.settings.fog === false ? [far * 0.92, far * 1.02] : [far * 0.55, far];
   if (P.eyeInWater) { fogC = mul([0.05, 0.12, 0.36], Math.max(0.3, dl)); fogR = [0, 22]; }
   gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   // camera
@@ -288,7 +308,7 @@ function render(dt) {
     eye = [eye[0] + d[0] * sgn * dist, eye[1] + d[1] * sgn * dist, eye[2] + d[2] * sgn * dist];
     if (camView === 2) { vyaw = P.yaw + Math.PI; vpitch = -P.pitch; }
   }
-  const fe = SAVE.settings.fovEffect !== false, targetFov = SAVE.settings.fov * (fe && P.sprinting ? 1.12 : 1) * (fe && P.flying && P.sprinting ? 1.05 : 1) * (fe && P.draw > 0 ? 1 - 0.15 * Math.min(1, P.draw) : 1);
+  const fe = SAVE.settings.fovEffect !== false, targetFov = SAVE.settings.fov * (P.zoom ? 0.12 : 1) * (fe && P.gliding ? 1.08 : 1) * (fe && P.sprinting ? 1.12 : 1) * (fe && P.flying && P.sprinting ? 1.05 : 1) * (fe && P.draw > 0 ? 1 - 0.15 * Math.min(1, P.draw) : 1);
   fov += (targetFov - fov) * Math.min(1, dt * 8);
   const proj = perspective(fov * Math.PI / 180, w / Math.max(1, h), 0.05, far + 60);
   const view = viewMatrix(eye, vyaw, vpitch), vp = mat4mul(proj, view), planes = frustumPlanes(vp);
@@ -365,7 +385,7 @@ function render(dt) {
   gl.depthMask(true); gl.disable(gl.BLEND);
   // first-person hand
   updateDamageNumbers(vp, dt);
-  if ((!G.ui || G.ui === 'chat' || G.ui === 'inventory' || G.ui === 'creative' || G.ui === 'table' || G.ui === 'container') && !hudHidden && !camView) drawHand(w, h, dt);
+  if ((!G.ui || G.ui === 'chat' || G.ui === 'inventory' || G.ui === 'creative' || G.ui === 'table' || G.ui === 'container') && !hudHidden && !camView && SAVE.settings.showHand !== false && !P.zoom) drawHand(w, h, dt);
 }
 // ── first-person hand ──
 // Small 3×4 affine "pose stack" so the held item and arm follow the original game's transforms
@@ -543,7 +563,6 @@ function drawPortrait(cv, armor) {
 let camView = 0; // 0 first person, 1 behind, 2 in front
 function cycleView() {
   camView = (camView + 1) % 3; $('mc').classList.toggle('cam2', camView === 2);
-  toast(['1인칭 시점', '3인칭 시점 (뒤)', '3인칭 시점 (앞)'][camView]);
 }
 function drawPlayerModel(B, ox, oy, oz, dt) {
   if (P.dead||effectLevel(P,'invisibility')>=0) return;
@@ -642,6 +661,12 @@ function pickBlock() {
   else if (i >= 9) { const tmp = G.inv[G.sel]; G.inv[G.sel] = G.inv[i]; G.inv[i] = tmp; }
   invChanged();
 }
+// jump press: a second press while airborne deploys the elytra; two quick presses toggle creative flight
+function jumpPressed(now, gap) {
+  if (!G || !P) return;
+  const glide = tryStartGlide();
+  if (G.mode === 'creative') { if (now - P.lastJump < gap) { setFlying(!P.flying); if (P.flying) stopGlide(); P.lastJump = 0; } else P.lastJump = glide ? 0 : now; }
+}
 function setHudHidden(v) { hudHidden = v; $('mc').classList.toggle('nohud', v); }
 function bindInput() {
   // key rebinding grabs the next key press before anything else sees it
@@ -676,7 +701,7 @@ function bindInput() {
     if (G.ui) return;
     const st = SAVE.settings;
     if (act === 'forward' && !e.repeat) { const n = performance.now(); if (n - P.lastFwd < 280) sprintTap = true; P.lastFwd = n; }
-    if (act === 'jump' && !e.repeat && G.mode === 'creative') { const n = performance.now(); if (n - P.lastJump < 300) { setFlying(!P.flying); P.lastJump = 0; } else P.lastJump = n; }
+    if (act === 'jump' && !e.repeat) jumpPressed(performance.now(), 300);
     if (act === 'sneak' && !e.repeat && st.sneakToggle) sneakLatch = !sneakLatch;
     if (act === 'sprint' && !e.repeat && st.sprintToggle) sprintLatch = !sprintLatch;
     keys[c] = true; refreshMove();
@@ -706,11 +731,11 @@ function bindInput() {
   ctx.on(document, 'mouseup', e => { if (e.button === 0) input.mine = false; if (e.button === 2) input.use = false; });
   ctx.on(document, 'mousemove', e => {
     if (!G || G.ui || !P) return;
-    const k = 0.0022 * SAVE.settings.sens / 8;
+    const k = 0.0022 * SAVE.settings.sens / 8 * (P.zoom ? 0.15 : 1);
     if (document.pointerLockElement === canvas) { P.yaw += e.movementX * k; P.pitch = clamp(P.pitch - e.movementY * k * (SAVE.settings.invertY ? -1 : 1), -1.55, 1.55); }
     else if (e.buttons && !isTouch() && e.target === canvas) { P.yaw += e.movementX * k * 1.6; P.pitch = clamp(P.pitch - e.movementY * k * (SAVE.settings.invertY ? -1 : 1) * 1.6, -1.55, 1.55); }
   });
-  ctx.on(canvas, 'wheel', e => { e.preventDefault(); if (!G || G.ui) return; G.sel = (G.sel + (e.deltaY > 0 ? 1 : 8)) % 9; invChanged(); }, { passive: false });
+  ctx.on(canvas, 'wheel', e => { e.preventDefault(); if (!G || G.ui) return; const down = (e.deltaY > 0) !== !!SAVE.settings.scrollInvert; G.sel = (G.sel + (down ? 1 : 8)) % 9; invChanged(); }, { passive: false });
   ctx.on(document, 'pointerlockchange', () => {
     if (document.pointerLockElement === canvas) return;
     lastUnlock = performance.now();
@@ -718,7 +743,7 @@ function bindInput() {
     if (expectUnlock) { expectUnlock = false; return; }
     if (G && !G.ui && !G.loading) showPause();
   });
-  ctx.on(document, 'visibilitychange', () => { if (document.hidden) { if (G && !G.ui && !G.loading) showPause(); persist(); } });
+  ctx.on(document, 'visibilitychange', () => { if (document.hidden) { if (G && !G.ui && !G.loading && SAVE.settings.autoPause !== false) showPause(); persist(); } });
   ctx.on(canvas, 'webglcontextlost', e => { e.preventDefault(); ctx.reportError(Error('3D 그래픽 연결이 끊겼습니다. 다시 시작해 주세요.')); });
 }
 
@@ -743,7 +768,7 @@ function frame(now) {
   const paused = PAUSED_UI.includes(G.ui);
   if (!paused) { let left = dt; while (left > 1e-4) { const s = Math.min(left, 0.05); step(s); left -= s; } }
   if (saveTimer > 0) { saveTimer -= dt; if (saveTimer <= 0) persist(); }
-  if (!paused) { autosave -= dt; if (autosave <= 0) { autosave = 45; persist(); } }
+  if (!paused) { autosave -= dt; if (autosave <= 0) { autosave = +SAVE.settings.autosave || 45; persist(); } }
   updateChunks(paused ? 2 : 3);
   render(dt);
   updateHUD(dt);
@@ -777,11 +802,11 @@ window.GameHub.registerGame({
     screenEvents(); touchEvents(); bindInput();
     const ro = new ResizeObserver(() => { resize(); applyVisualSettings(); if (ED) renderEdBar(); }); ro.observe(canvas); ctx.onCleanup(() => ro.disconnect()); resize();
     showLanding();
-    if (badSave) toast('저장된 데이터를 읽지 못해 새로 시작해요.');
+    if (badSave) toast(tr('저장된 데이터를 읽지 못해 새로 시작해요.'));
     last = performance.now(); raf = requestAnimationFrame(frame);
   },
   pause() { if (G && !G.loading && (!G.ui || G.ui === 'chat' || ['inventory', 'creative', 'table', 'container'].includes(G.ui))) { if (G.ui && G.ui !== 'chat') closeScreen(); else if (G.ui === 'chat') closeChat(); showPause(); } if (audio) audio.suspend().catch(() => { }); persist(); },
-  resume() { if (audio && !muted) audio.resume().catch(() => { }); if (G && G.ui === 'pause') { hideScreens(); G.ui = null; toast('화면을 클릭하면 다시 조작할 수 있어요.'); } },
+  resume() { if (audio && !muted) audio.resume().catch(() => { }); if (G && G.ui === 'pause') { hideScreens(); G.ui = null; hint(tr('화면을 클릭하면 다시 조작할 수 있어요.')); } },
   setMuted(v) { muted = v; if (!v) wake(); else if (audio) audio.suspend().catch(() => { }); },
   unmount() {
     try { persist(); } catch { }

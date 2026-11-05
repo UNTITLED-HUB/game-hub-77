@@ -1,7 +1,11 @@
 // ── commands ──
 const COMMANDS=['help','give','clear','effect','execute','tp','teleport','summon','kill','setblock','fill','clone','gamemode','time','weather','difficulty','gamerule','spawnpoint','setworldspawn','seed','locate','say','tellraw','title','tag','scoreboard','enchant','experience','xp','damage','heal','playsound','stopsound','particle','spreadplayers','item','replaceitem'];
 const ITEM_ALIASES={shield:SHIELD,elytra:ELYTRA,totem_of_undying:TOTEM,potion:HEALING_POTION,air:AIR,grass_block:GRASS,dirt:DIRT,stone:STONE,cobblestone:COBBLE,oak_log:LOG,oak_planks:PLANKS,diamond:DIAMOND,diamond_sword:SWORD0+4,diamond_pickaxe:PICK0+4,iron_ingot:IRON,gold_ingot:GOLD,netherite_ingot:NETHERITE_INGOT,netherite_scrap:NETHERITE_SCRAP,ancient_debris:ANCIENT_DEBRIS,netherite_block:NETHERITE_BLOCK,netherite_sword:NETHERITE_SWORD,netherite_pickaxe:NETHERITE_PICK,netherite_axe:NETHERITE_AXE,netherite_shovel:NETHERITE_SHOVEL,obsidian:OBSIDIAN,end_portal_frame:END_FRAME,ender_eye:ENDER_EYE,water:WATER,lava:LAVA,lava_bucket:LAVA_BUCKET,water_bucket:WATER_BUCKET,bedrock:BEDROCK,end_stone:END_STONE,netherrack:NETHERRACK,nether_bricks:NETHER_BRICKS,torch:TORCH};
-function findItem(q){q=String(q).replace(/^minecraft:/,'');if(Object.hasOwn(ITEM_ALIASES,q))return ITEM_ALIASES[q];if(/^\d+$/.test(q))return info(+q)?+q:null;for(const b of BLOCK)if(b&&(b.name===q||typeof b.tex==='string'&&b.tex===q))return b.id;for(const [id,it]of Object.entries(ITEM)){if(it.name===q||it.icon===q)return +id;if(it.armor){const a=it.armor,m=ARMOR_MATS[a.mat].key,p=['helmet','chestplate','leggings','boots'][a.slot];if(q===m+'_'+p)return +id;}}if(q.endsWith('_spawn_egg'))return Object.values(ITEM).find(it=>it.spawnMob===q.replace('_spawn_egg',''))?.id??null;return [...BLOCK.filter(Boolean),...Object.values(ITEM)].find(it=>it.name.includes(q))?.id??null;}
+let EN_IDS=null;
+function findItem(q){q=String(q).replace(/^minecraft:/,'');if(Object.hasOwn(ITEM_ALIASES,q))return ITEM_ALIASES[q];
+ if(!EN_IDS){EN_IDS=new Map();for(const it of [...BLOCK.filter(Boolean),...Object.values(ITEM)]){if(it.en){const k=it.en.toLowerCase().replace(/'/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');if(!EN_IDS.has(k))EN_IDS.set(k,it.id);}if(it.nameKo&&!EN_IDS.has(it.nameKo))EN_IDS.set(it.nameKo,it.id);}
+  Object.entries({iron_block:IRON_BLOCK,gold_block:GOLD_BLOCK,diamond_block:DIAMOND_BLOCK,emerald_block:EMERALD_BLOCK,lapis_block:LAPIS_BLOCK,coal_block:COAL_BLOCK,redstone_block:REDSTONE_BLOCK,raw_iron_block:RAW_IRON_BLOCK,purpur_block:PURPUR,crafting_table:TABLE,short_grass:TALL_GRASS,oak_sapling:SAPLING,wooden_hoe:HOE0,golden_hoe:HOE0+3,enchanted_golden_apple:ENCH_GOLDEN_APPLE,spawner:SPAWNER,firework_rocket:FIREWORK,end_rod:END_ROD,bell:BELL}).forEach(([k,v])=>EN_IDS.set(k,v));}
+ if(EN_IDS.has(q))return EN_IDS.get(q);if(/^\d+$/.test(q))return info(+q)?+q:null;for(const b of BLOCK)if(b&&(b.name===q||typeof b.tex==='string'&&b.tex===q))return b.id;for(const [id,it]of Object.entries(ITEM)){if(it.name===q||it.icon===q)return +id;if(it.armor){const a=it.armor,m=ARMOR_MATS[a.mat].key,p=['helmet','chestplate','leggings','boots'][a.slot];if(q===m+'_'+p)return +id;}}if(q.endsWith('_spawn_egg'))return Object.values(ITEM).find(it=>it.spawnMob===q.replace('_spawn_egg',''))?.id??null;return [...BLOCK.filter(Boolean),...Object.values(ITEM)].find(it=>it.name.includes(q))?.id??null;}
 function commandTargets(q='@s',context={self:P,pos:P}){
  if(q==='@s')return context.self?[context.self]:[];
  if(!q.startsWith('@'))return q==='Player'||q===G.world.playerName?[P]:[];
@@ -29,7 +33,7 @@ function command(line,context,depth=0){
  case 'give':{const has=a[0]?.startsWith('@'),ts=has?targets(a.shift()):[P],id=item(a.shift()),count=clamp(Number(a.shift()||1),1,2304);if(!isFinite(count))throw Error('잘못된 개수입니다.');if(!ts.includes(P))throw Error('인벤토리는 플레이어만 사용할 수 있습니다.');const left=addToInventory(id,Math.floor(count));if(left)spawnItem(id,left,P.x,P.y+1,P.z);invChanged();ok(info(id).name+' ×'+count);break;}
  case 'clear':{if(a[0]?.startsWith('@')&&!targets(a.shift()).includes(P))break;const id=a[0]?item(a[0]):null;let n=Number(a[1]||2304);for(let i=0;i<G.inv.length;i++){const s=G.inv[i];if(s&&(id==null||s.id===id)&&n>0){const k=Math.min(s.count,n);s.count-=k;n-=k;if(!s.count)G.inv[i]=null;}}invChanged();break;}
  case 'effect':{let mode=['give','clear'].includes(a[0])?a.shift():'give',ts=targets(a.shift()||'@s'),name=a.shift()?.replace(/^minecraft:/,'');if(mode==='clear'||name==='clear'){for(const e of ts){if(name&&name!=='clear')delete(e.effects||{})[name];else e.effects={};}break;}if(!EFFECTS.has(name))throw Error('지원 효과: '+[...EFFECTS].join(', '));const duration=a[0]==='infinite'?1e9:Number(a[0]||30),amp=clamp(Number(a[1]||0),0,10);if(!isFinite(duration)||!isFinite(amp))throw Error('효과 시간/강도를 확인하세요.');for(const e of ts){if(name==='instant_health'){if(e===P)P.health=Math.min(20,P.health+4*(amp+1));else e.hp=Math.min(MOBDEF[e.type].hp,e.hp+4*(amp+1));}else if(name==='instant_damage'){if(e===P)damagePlayer(6*(amp+1),'magic');else hurtMob(e,6*(amp+1),e.x,e.z,true);}else{e.effects??={};e.effects[name]={time:duration,amp};}}ok('효과 적용: '+name);break;}
- case 'tp':case 'teleport':{const ts=a[0]?.startsWith('@')?targets(a.shift()):[ctx.self];let xyz;if(a[0]?.startsWith('@')){const e=targets(a[0])[0];if(!e)throw Error('이동 대상이 없습니다.');xyz=[e.x,e.y,e.z];}else xyz=pos(a);for(const e of ts){[e.x,e.y,e.z]=xyz;e.vx=e.vy=e.vz=0;e.fallStart=e.y;}break;}
+ case 'tp':case 'teleport':{const ts=a[0]?.startsWith('@')?targets(a.shift()):[ctx.self];let xyz;if(a[0]?.startsWith('@')){const e=targets(a[0])[0];if(!e)throw Error('이동 대상이 없습니다.');xyz=[e.x,e.y,e.z];}else xyz=pos(a);const rot=a.length>=5?[a[3],a[4]].map((t,i)=>{const base=i?-(ts[0]?.pitch||0)*180/Math.PI:(ts[0]?.yaw||0)*180/Math.PI-180;const n=t.startsWith('~')?base+Number(t.slice(1)||0):Number(t);if(!isFinite(n))throw Error('잘못된 회전값입니다.');return n;}):null;for(const e of ts){[e.x,e.y,e.z]=xyz;e.vx=e.vy=e.vz=0;e.fallStart=e.y;if(rot&&e===P){P.yaw=(rot[0]+180)*Math.PI/180;P.pitch=clamp(-rot[1]*Math.PI/180,-1.55,1.55);}}break;}
  case 'summon':{const type=a.shift()?.replace(/^minecraft:/,'');if(!MOBDEF[type])throw Error('알 수 없는 몹: '+type);const [x,y,z]=a.length>=3?pos(a):[ctx.pos.x,ctx.pos.y,ctx.pos.z];commandChunk(Math.floor(x),Math.floor(z));spawnMob(type,x,y,z);break;}
  case 'kill':case 'damage':case 'heal':{for(const e of targets(a[0]||'@s')){if(cmd==='heal'){if(e===P)P.health=20;else e.hp=MOBDEF[e.type].hp;}else if(e===P){if(cmd==='kill')die('kill');else damagePlayer(Number(a[1]||1),'magic');}else if(cmd==='kill')e.dead=.001;else hurtMob(e,Number(a[1]||1),e.x,e.z,true);}break;}
  case 'setblock':{const [x,y,z]=pos(a).map(Math.floor),id=item(a[3]);if(id>=256)throw Error('블록 ID가 필요합니다.');if(a[4]!=='keep'||getBlock(x,y,z)===AIR)commandSet(x,y,z,id);break;}
@@ -40,7 +44,7 @@ function command(line,context,depth=0){
  case 'gamerule':{const allowed=['doDaylightCycle','doMobSpawning','keepInventory','doWeatherCycle'];G.world.rules??={};if(!a.length){ok(JSON.stringify(G.world.rules));break;}if(!allowed.includes(a[0]))throw Error('지원 규칙: '+allowed.join(', '));if(a.length===1)ok(G.world.rules[a[0]]??true);else if(['true','false'].includes(a[1]))G.world.rules[a[0]]=a[1]==='true';else throw Error('true/false를 지정하세요.');break;}
  case 'weather':if(!['clear','rain','thunder'].includes(a[0]))throw Error('clear/rain/thunder');else{W.weather=a[0];W.weatherTime=Number(a[1]||300);ok('날씨: '+a[0]);}break;
  case 'spawnpoint':case 'setworldspawn':{if(a[0]?.startsWith('@'))a.shift();const [x,y,z]=a.length>=3?pos(a):[P.x,P.y,P.z];G.spawn={x,y,z};break;}
- case 'locate':{const type=a.at(-1),xyz=type==='village'?[Math.round((P.x-32)/192)*192+32,Math.round((P.z-32)/192)*192+32]:type==='stronghold'?[96,96]:type==='fortress'?[Math.round(P.x/256)*256,Math.round(P.z/256)*256]:type==='end_city'?[224,0]:null;if(!xyz)throw Error('village/stronghold/fortress/end_city');if(type==='village'&&!villageSite(...xyz).valid)throw Error('주변 생성 격자에 유효한 마을 부지가 없습니다.');ok(type+': '+xyz[0]+', '+xyz[1]);break;}
+ case 'locate':{const type=(a.at(-1)||'').replace(/^minecraft:/,'');const r=locateStructure(type);if(r===undefined||(r===null&&!['village','ruined_portal','desert_pyramid','igloo','end_city'].includes(type)))throw Error('village/ruined_portal/desert_pyramid/igloo/stronghold/fortress/end_city');if(!r)throw Error(tr('가까운 곳에서 찾지 못했습니다: ')+type);ok(type+': '+r[0]+', '+r[1]+(r[2]!=null?' ('+Math.round(r[2])+'m)':''));break;}
  case 'tag':{const ts=targets(a[0]);for(const e of ts){e.tags??=[];if(a[1]==='list')ok(e.tags.join(', '));else if(a[1]==='add'&&!e.tags.includes(a[2]))e.tags.push(a[2]);else if(a[1]==='remove')e.tags=e.tags.filter(x=>x!==a[2]);}break;}
  case 'scoreboard':{G.world.scores??={};if(a[0]==='objectives'&&a[1]==='add'){G.world.scores[a[2]]??={};}else if(a[0]==='objectives'&&a[1]==='list')ok(Object.keys(G.world.scores).join(', '));else if(a[0]==='players'){const op=a[1],name=a[2],objective=a[3];const board=G.world.scores[objective];if(!board)throw Error('목표를 먼저 추가하세요.');if(op==='get')ok(board[name]||0);else if(['set','add','remove'].includes(op)){const n=Number(a[4]);if(!isFinite(n))throw Error('점수가 필요합니다.');board[name]=op==='set'?n:(board[name]||0)+(op==='remove'?-n:n);}else if(op==='reset')delete board[name];else throw Error('지원 연산: set/add/remove/get/reset');}else throw Error('scoreboard objectives add|list 또는 players set|add|remove|get|reset');break;}
  case 'experience':case 'xp':{const mode=['add','set'].includes(a[0])?a.shift():'add';if(a[0]?.startsWith('@'))a.shift();const n=Number(a[0]);if(!isFinite(n)||n<0)throw Error('경험치 수치를 지정하세요.');P.xp=mode==='set'?n:(P.xp||0)+n;ok('경험치: '+P.xp);break;}
@@ -55,4 +59,49 @@ function command(line,context,depth=0){
  }
  hudDirty=true;saveSoon();return true;
  }catch(e){chat(e.message,'#f66');return false;}
+}
+
+// ── command autocomplete: candidates for the token under the cursor ──
+const SUG_T = ['@s', '@p', '@a', '@r', '@e', '@e[type=', 'Player'];
+const SUG_POS = ['~', '~ ~ ~'];
+const SUG_STRUCT = ['village', 'ruined_portal', 'desert_pyramid', 'igloo', 'stronghold', 'fortress', 'end_city'];
+let SUG_ITEMS = null;
+function sugItems() {
+  if (!SUG_ITEMS) { findItem('__build_ids__'); SUG_ITEMS = [...new Set([...Object.keys(ITEM_ALIASES), ...[...EN_IDS.keys()].filter(k => /^[a-z0-9_]+$/.test(k))])].sort(); }
+  return SUG_ITEMS;
+}
+const sugBlocks = () => sugItems().filter(k => { const id = findItem(k); return id != null && id < 256; });
+const SUG_SPEC = {
+  give: [SUG_T, sugItems, ['1', '16', '32', '64']], clear: [SUG_T, sugItems],
+  effect: [['give', 'clear'], SUG_T, () => [...EFFECTS], ['30', '60', '300', 'infinite'], ['0', '1', '2', '4']],
+  gamemode: [['survival', 'creative']], gm: [['survival', 'creative']], difficulty: [['peaceful', 'easy', 'normal', 'hard']],
+  time: [['set', 'add', 'query'], p => p[1] === 'query' ? [] : ['day', 'noon', 'night', 'midnight', '1000', '6000']],
+  weather: [['clear', 'rain', 'thunder'], ['300', '600', '1200']],
+  gamerule: [['doDaylightCycle', 'doMobSpawning', 'keepInventory', 'doWeatherCycle'], ['true', 'false']],
+  locate: [['structure', ...SUG_STRUCT], SUG_STRUCT], summon: [() => Object.keys(MOBDEF), SUG_POS],
+  tp: [[...SUG_T, ...SUG_POS]], teleport: [[...SUG_T, ...SUG_POS]], kill: [SUG_T], heal: [SUG_T], damage: [SUG_T, ['1', '5', '10']],
+  setblock: [SUG_POS, ['~'], ['~'], sugBlocks, ['keep', 'replace']], fill: [SUG_POS, ['~'], ['~'], SUG_POS, ['~'], ['~'], sugBlocks, ['replace', 'outline']],
+  clone: [SUG_POS], spawnpoint: [SUG_T], setworldspawn: [SUG_POS], enchant: [SUG_T, ['sharpness', 'efficiency', 'unbreaking', 'protection'], ['1', '2', '3', '4', '5']],
+  execute: [['as', 'at', 'positioned', 'if', 'unless', 'in', 'run']], tag: [SUG_T, ['add', 'remove', 'list']], scoreboard: [['objectives', 'players'], p => p[1] === 'players' ? ['set', 'add', 'remove', 'get', 'reset'] : ['add', 'list']],
+  experience: [['add', 'set'], SUG_T], xp: [['add', 'set'], SUG_T], playsound: [['click', 'bell', 'note', 'pop', 'boom', 'rocket']], item: [['replace'], ['entity'], SUG_T, ['weapon.mainhand', 'weapon.offhand', 'armor.head', 'armor.chest', 'armor.legs', 'armor.feet'], ['with'], sugItems],
+  title: [SUG_T, ['title', 'subtitle', 'actionbar']], tellraw: [SUG_T],
+};
+const SUG_USAGE = { give: '/give <대상> <아이템> [개수]', effect: '/effect give <대상> <효과> [초] [강도]', tp: '/tp <x y z | 대상> [가로 회전] [세로 회전]', summon: '/summon <몹> [x y z]', locate: '/locate <구조물>', fill: '/fill <x1 y1 z1> <x2 y2 z2> <블록>', setblock: '/setblock <x y z> <블록>', time: '/time set <day|night|값>', gamemode: '/gamemode <survival|creative>', enchant: '/enchant <대상> <마법> [레벨]', clear: '/clear [대상] [아이템]', kill: '/kill [대상]' };
+function commandSuggest(line) {
+  if (!line.startsWith('/')) return null;
+  const parts = line.slice(1).split(' '), cur = parts[parts.length - 1], start = line.length - cur.length, cmd = parts[0].toLowerCase();
+  let pool;
+  if (parts.length === 1) pool = COMMANDS;
+  else {
+    const spec = SUG_SPEC[cmd]; if (!spec) return { start, list: [], usage: SUG_USAGE[cmd] };
+    // execute ... run <command>: suggest for the nested command
+    if (cmd === 'execute') { const ri = parts.indexOf('run'); if (ri > 0 && ri < parts.length - 1) { const sub = commandSuggest('/' + parts.slice(ri + 1).join(' ')); if (sub) sub.start += line.length - ('/' + parts.slice(ri + 1).join(' ')).length; return sub; } }
+    let s = spec[Math.min(parts.length - 2, cmd === 'execute' ? 0 : 99)];
+    if (typeof s === 'function') s = s(parts);
+    pool = s || [];
+  }
+  const q = cur.toLowerCase().replace(/^minecraft:/, '');
+  let list = pool.filter(x => x.toLowerCase().startsWith(q) && x !== cur);
+  if (q.length >= 2 && list.length < 30) list = list.concat(pool.filter(x => !x.toLowerCase().startsWith(q) && x.toLowerCase().includes(q)));
+  return { start, list: list.slice(0, 60), usage: SUG_USAGE[cmd] };
 }

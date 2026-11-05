@@ -2,7 +2,7 @@
 // Each control can be moved, resized and hidden in the layout editor. Saved positions are the
 // control's centre as a fraction of the screen; unsaved controls use edge-anchored defaults.
 const TCTL = [
-  { id: 'move', label: '이동', base: 124 }, { id: 'jump', label: '점프', base: 62 }, { id: 'mine', label: '캐기', base: 56 }, { id: 'use', label: '사용 / 설치', base: 56 },
+  { id: 'move', label: '이동 패드', base: 124 }, { id: 'jump', label: '점프', base: 62 }, { id: 'mine', label: '캐기', base: 56 }, { id: 'use', label: '사용 / 설치', base: 56 },
   { id: 'sneak', label: '웅크리기', base: 50 }, { id: 'sprint', label: '달리기', base: 46 }, { id: 'fly', label: '비행', base: 50 }, { id: 'down', label: '내려가기', base: 50 },
   { id: 'drop', label: '버리기', base: 44 }, { id: 'chat', label: '채팅', base: 38 }, { id: 'pause', label: '일시정지', base: 38 },
   { id: 'view', label: '시점', base: 38 }, { id: 'swap', label: '양손 바꾸기', base: 40 }];
@@ -23,15 +23,15 @@ function tpos(id, W, H) {
   else { x = d[0] === 'l' ? d[1] * k : W - d[1] * k; y = d[2] === 't' ? d[3] * k : H - (d[3] + (port ? 70 : 0)) * k; }
   if (SAVE.settings.leftHanded) x = W - x;
   x = clamp(x, size / 2 + 2, W - size / 2 - 2); y = clamp(y, size / 2 + 2, H - size / 2 - 2);
-  return { x, y, size, hide: L.hide??['sprint','drop','swap','fly'].includes(id) };
+  return { x, y, size, hide: L.hide ?? (SAVE.settings.hideMobileExtras !== false ? ['mine', 'use', 'sprint', 'drop', 'swap', 'fly'] : ['sprint', 'drop', 'swap', 'fly']).includes(id) };
 }
 function renderTouch() {
   const t = $('touch'); if (!t || !SAVE) return;
   t.innerHTML = TCTL.map(c => {
     if (c.id === 'move') return SAVE.settings.moveStyle === 'dpad'
-      ? `<div class="tc dpad" data-ctl="move" data-label="${c.label}">${['ul', 'u', 'ur', 'l', 'c', 'r', 'dl', 'd', 'dr'].map(d => `<b data-d="${d}" class="${d.length === 2 ? 'x' : d === 'c' ? 'c' : ''}"></b>`).join('')}</div>`
-      : `<div class="tc joy" data-ctl="move" data-label="${c.label}"><i></i></div>`;
-    return `<button class="tc tb" data-ctl="${c.id}" data-label="${c.label}" aria-label="${c.label}" style="background-image:url(${TICON[c.id]})"></button>`;
+      ? `<div class="tc dpad" data-ctl="move" data-label="${tr(c.label)}">${['ul', 'u', 'ur', 'l', 'c', 'r', 'dl', 'd', 'dr'].map(d => `<b data-d="${d}" class="${d.length === 2 ? 'x' : d === 'c' ? 'c' : ''}"></b>`).join('')}</div>`
+      : `<div class="tc joy" data-ctl="move" data-label="${tr(c.label)}"><i></i></div>`;
+    return `<button class="tc tb" data-ctl="${c.id}" data-label="${tr(c.label)}" aria-label="${tr(c.label)}" style="background-image:url(${TICON[c.id]})"></button>`;
   }).join('');
   for (const k in TEL) delete TEL[k];
   t.querySelectorAll('[data-ctl]').forEach(el => { TEL[el.dataset.ctl] = el; });
@@ -84,8 +84,8 @@ function ctlDown(id, e, el) {
     case 'move': if (SAVE.settings.moveStyle === 'dpad') { DP.pid = e.pointerId; dpadMove(e, true); } else { const r = el.getBoundingClientRect(); joyStart(e, r.left + r.width / 2, r.top + r.height / 2); } break;
     case 'jump': {
       touchJump = true; input.jump = true;
-      // double-tap jump toggles flight in creative, like the original
-      const n = e.timeStamp; if (G.mode === 'creative') { if (n - P.lastJump < 380) { setFlying(!P.flying); P.lastJump = 0; } else P.lastJump = n; }
+      // tap again in the air to open the elytra · double-tap toggles flight in creative
+      jumpPressed(e.timeStamp, 380);
       break;
     }
     case 'mine': input.mine = true; P.attackCd = 0; P.mineCd = 0; break;
@@ -153,7 +153,7 @@ function touchEvents() {
     if (J.float && J.pid === e.pointerId) { joyMove(e); return; }
     const L = looks.get(e.pointerId); if (!L) return;
     const dx = e.clientX - L.x, dy = e.clientY - L.y; L.x = e.clientX; L.y = e.clientY; L.moved += Math.abs(dx) + Math.abs(dy);
-    const k = 0.0055 * (SAVE.settings.touchSens || 8) / 8;
+    const k = 0.0055 * (SAVE.settings.touchSens || 8) / 8 * (P.zoom ? 0.15 : 1);
     P.yaw += dx * k; P.pitch = clamp(P.pitch - dy * k * (SAVE.settings.invertY ? -1 : 1), -1.55, 1.55);
   });
   const endLook = e => {
@@ -172,13 +172,10 @@ function touchEvents() {
   // hotbar taps
   ctx.on($('hotbar'), 'pointerdown', e => { const h = e.target.closest('[data-hot]'); if (!h || !G || ED) return; e.preventDefault(); G.sel = +h.dataset.hot; invChanged(); });
   ctx.on($('hotInv'), 'click', () => { if (G && !G.ui) openScreen(G.mode === 'creative' ? 'creative' : 'inventory'); });
-  ctx.on($('bInv'), 'click', () => { if (G && !G.ui) openScreen(G.mode === 'creative' ? 'creative' : 'inventory'); else if (G && (G.ui === 'inventory' || G.ui === 'creative' || G.ui === 'table' || G.ui === 'container')) closeScreen(); });
-  ctx.on($('bPause'), 'click', () => { if (G && !G.ui) showPause(); else if (G && G.ui === 'pause') menuAction('resume'); });
-  ctx.on($('bFull'), 'click', toggleFull);
   // layout editor toolbar
   const ed = $('editor');
   ctx.on(ed, 'click', e => { const b = e.target.closest('[data-ed]'); if (b) { uiClick(); edAction(b.dataset.ed); } });
-  ctx.on(ed, 'input', e => { if (e.target.id === 'edSize' && ED) { layoutOf(ED.sel).s = +e.target.value / 100; $('edSizeL').textContent = `크기: ${e.target.value}%`; positionTouch(); } });
+  ctx.on(ed, 'input', e => { if (e.target.id === 'edSize' && ED) { layoutOf(ED.sel).s = +e.target.value / 100; $('edSizeL').textContent = tr('크기: {0}%', e.target.value); positionTouch(); } });
   let bar = null;
   ctx.on(ed, 'pointerdown', e => { const h = e.target.closest('.edhead'); if (!h || e.target.closest('button')) return; const b = $('edbar'), r = b.getBoundingClientRect(), m = $('mc').getBoundingClientRect(); bar = { pid: e.pointerId, ox: r.left - m.left - e.clientX, oy: r.top - m.top - e.clientY }; try { h.setPointerCapture(e.pointerId); } catch { } });
   ctx.on(ed, 'pointermove', e => { if (!bar || bar.pid !== e.pointerId) return; const b = $('edbar'), m = $('mc'); b.classList.add('moved'); b.style.left = clamp(e.clientX + bar.ox, 0, m.clientWidth - b.offsetWidth) + 'px'; b.style.top = clamp(e.clientY + bar.oy, 0, m.clientHeight - b.offsetHeight) + 'px'; });
@@ -199,7 +196,7 @@ function openLayoutEditor(from) {
 }
 function closeLayoutEditor(save) {
   if (!ED) return;
-  if (save) { saveSettingsSoon(); toast('버튼 배치를 저장했어요.'); } else SAVE.settings.layout = ED.orig;
+  if (save) { saveSettingsSoon(); toast(tr('버튼 배치를 저장했어요.')); } else SAVE.settings.layout = ED.orig;
   const from = ED.from; ED = null;
   $('mc').classList.remove('editing'); $('editor').hidden = true; $('editor').innerHTML = '';
   positionTouch();
@@ -212,13 +209,13 @@ function renderEdBar() {
   ed.classList.toggle('grid', ED.snap); ed.style.setProperty('--snap', snapSize(mc.clientWidth, mc.clientHeight) + 'px');
   const old = $('edbar'), pos = old && old.classList.contains('moved') ? `left:${old.style.left};top:${old.style.top}` : '';
   ed.innerHTML = `<div class="edbar ${ED.min ? 'min' : ''} ${pos ? 'moved' : ''}" id="edbar" style="${pos}">
-  <div class="edhead"><span>버튼 배치 편집</span><button class="btn sm" data-ed="min">${ED.min ? '펼치기' : '접기'}</button>${ED.min ? '<button class="btn sm" data-ed="save">저장</button>' : ''}</div>
-  <div class="edhint">버튼을 끌어서 옮기고, 눌러서 선택하세요</div>
-  <div class="edsel"><button class="btn sq" data-ed="prev" aria-label="이전 버튼">◀</button><b>${c.label}</b><button class="btn sq" data-ed="next" aria-label="다음 버튼">▶</button></div>
-  <label class="slider"><input type="range" id="edSize" min="50" max="200" step="5" value="${Math.round((L.s || 1) * 100)}" aria-label="버튼 크기"><span class="lab" id="edSizeL">크기: ${Math.round((L.s || 1) * 100)}%</span></label>
-  <div class="row"><button class="btn" data-ed="vis">표시: ${L.hide ? '끔' : '켬'}</button><button class="btn" data-ed="resetOne">이 버튼 초기화</button></div>
-  <div class="row"><button class="btn" data-ed="snap">격자 맞춤: ${ED.snap ? '켬' : '끔'}</button><button class="btn" data-ed="resetAll">모두 초기화</button></div>
-  <div class="row"><button class="btn" data-ed="cancel">취소</button><button class="btn" data-ed="save">저장</button></div></div>`;
+  <div class="edhead"><span>${tr('버튼 배치 편집')}</span><button class="btn sm" data-ed="min">${tr(ED.min ? '펼치기' : '접기')}</button>${ED.min ? `<button class="btn sm" data-ed="save">${tr('저장')}</button>` : ''}</div>
+  <div class="edhint">${tr('버튼을 끌어서 옮기고, 눌러서 선택하세요')}</div>
+  <div class="edsel"><button class="btn sq" data-ed="prev" aria-label="&lt;">◀</button><b>${tr(c.label)}</b><button class="btn sq" data-ed="next" aria-label="&gt;">▶</button></div>
+  <label class="slider"><input type="range" id="edSize" min="50" max="200" step="5" value="${Math.round((L.s || 1) * 100)}" aria-label="${tr('버튼 크기')}"><span class="lab" id="edSizeL">${tr('크기: {0}%', Math.round((L.s || 1) * 100))}</span></label>
+  <div class="row"><button class="btn" data-ed="vis">${tr('표시: {0}', tr(tpos(ED.sel, mc.clientWidth, mc.clientHeight).hide ? '끔' : '켬'))}</button><button class="btn" data-ed="resetOne">${tr('이 버튼 초기화')}</button></div>
+  <div class="row"><button class="btn" data-ed="snap">${tr('격자 맞춤: {0}', tr(ED.snap ? '켬' : '끔'))}</button><button class="btn" data-ed="resetAll">${tr('모두 초기화')}</button></div>
+  <div class="row"><button class="btn" data-ed="cancel">${tr('취소')}</button><button class="btn" data-ed="save">${tr('저장')}</button></div></div>`;
 }
 function edAction(a) {
   if (!ED) return;
@@ -226,7 +223,7 @@ function edAction(a) {
   switch (a) {
     case 'prev': ED.sel = TCTL[(i + TCTL.length - 1) % TCTL.length].id; break;
     case 'next': ED.sel = TCTL[(i + 1) % TCTL.length].id; break;
-    case 'vis': layoutOf(ED.sel).hide = !layoutOf(ED.sel).hide; break;
+    case 'vis': { const mc = $('mc'); layoutOf(ED.sel).hide = !tpos(ED.sel, mc.clientWidth, mc.clientHeight).hide; break; }
     case 'resetOne': delete L[ED.sel]; break;
     case 'resetAll': SAVE.settings.layout = {}; break;
     case 'snap': ED.snap = !ED.snap; break;

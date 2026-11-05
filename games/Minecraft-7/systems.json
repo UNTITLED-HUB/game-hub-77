@@ -1,8 +1,11 @@
 [
   "core.js",
   "item.js",
+  "content.js",
+  "i18n.js",
   "texture.js",
   "world.js",
+  "structures.js",
   "renderer.js",
   "entity.js",
   "mob.js",

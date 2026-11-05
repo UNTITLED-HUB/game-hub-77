@@ -272,7 +272,41 @@ canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
 .edsel{display:flex;align-items:center;gap:${u(3)}}.edsel b{flex:1;text-align:center;font-weight:normal}
 .edhint{color:#a0a0a0;text-align:center;font-size:var(--fs)}`;
 
-const SPLASH = ['무한한 세계!', '블록으로 무엇이든!', '밤에는 조심!', '다이아몬드를 찾아라!', '지하와 다른 차원을 탐험하세요!', '횃불은 소중해요', '작업대부터 만들어요', '이제 버튼도 옮길 수 있어요!', '설정이 더 많아졌어요!', '좀비는 햇빛을 싫어해요?', '모바일에서도 즐겨요!'];
+const CSS_MODERN = `
+/* modern (1.20+) widgets: flat sprite buttons with a white hover outline, blurred panorama menus */
+.btn{background:#6f6f6f;border:${u(1)} solid #000;box-shadow:inset ${u(1)} ${u(1)} #a9a9a9,inset ${u(-1)} ${u(-2)} #565656;color:#fff}
+.btn:hover,.btn:focus-visible{border-color:#fff;color:#fff;background:#7a7a7a}
+.btn[disabled]{background:#2b2b2b;box-shadow:inset ${u(1)} ${u(1)} #3c3c3c,inset ${u(-1)} ${u(-2)} #1a1a1a;color:#a0a0a0}
+.slider{background:#2b2b2b;box-shadow:inset ${u(1)} ${u(1)} #444,inset ${u(-1)} ${u(-1)} #1a1a1a}
+.slider input::-webkit-slider-thumb{background:#6f6f6f;box-shadow:inset ${u(1)} ${u(1)} #a9a9a9,inset ${u(-1)} ${u(-2)} #565656}
+.slider input::-moz-range-thumb{background:#6f6f6f}
+.slider:hover{border-color:#fff}.slider:hover .lab{color:#fff}
+.screen.bg-menu{background:#000 var(--tx-panoblur,url('textures/title-panorama.png')) 50% 50%/cover no-repeat}
+.screen.bg-menu::before,.screen.bg-pano::before{content:"";position:fixed;inset:0;background:#00000055;pointer-events:none}
+.screen.bg-pano::before{background:linear-gradient(#0000 55%,#0007)}
+.screen>*{position:relative}
+.screen.bg-game{background:#10101070;-webkit-backdrop-filter:blur(var(--blur));backdrop-filter:blur(var(--blur))}
+.mlist{background:#0000007a;border-top:${u(2)} solid #ffffff1f;border-bottom:${u(2)} solid #ffffff1f;box-shadow:inset 0 ${u(1)} 0 #0009,inset 0 ${u(-1)} 0 #0009}
+.mtitle{font-size:calc(var(--fs)*1.1)}
+.logo .edition{background:none;border:0;box-shadow:none;letter-spacing:${u(2)};color:#e8e8e8;text-shadow:var(--sh);padding:0;margin-top:${u(2)};font-size:calc(var(--fs)*1.05)}
+.btn.sq img{width:${u(14)};height:${u(14)}}
+.chatlog{font-size:calc(var(--fs)*var(--chatfs,1))}
+.we.lang{min-height:${u(26)};padding:${u(2)} ${u(6)}}
+.opts .sect{color:#a0a0a0;margin-top:${u(6)}}
+.tools{display:none!important}
+.cmdsug{position:absolute;bottom:${u(15)};z-index:7;background:#000000d8;max-height:${u(112)};overflow-y:auto;overscroll-behavior:contain;pointer-events:auto;text-shadow:var(--sh);padding:${u(1)} 0;min-width:${u(60)};max-width:calc(100% - ${u(4)})}
+.cmdsug div{padding:${u(1)} ${u(3)};color:#a8a8a8;white-space:nowrap;cursor:pointer;line-height:1.2;touch-action:manipulation}
+.cmdsug div.on,.cmdsug div:hover{color:#ffff55}
+.cmdsug .usage{color:#808080;cursor:default}
+#mc.touchui .cmdsug div{padding:${u(2)} ${u(4)}}
+#mc.scr:not(.editing) .touch,#mc.scr:not(.editing) .bottom,#mc.scr .chatlog{visibility:hidden}
+#mc.scr.chatting .chatlog{visibility:visible}
+.screen.bg-game{background-color:#000000a0}
+#mc.hc .btn,#mc.hc .slider{border-color:#fff}#mc.hc .btn:hover{border-color:#ffff55;color:#ffff55}#mc.hc .mlist{background:#000d}#mc.hc .desc{color:#e0e0e0}
+#mc.rm .splash span,#mc.rm .screen.bg-pano,#mc.rm .bars .shake img{animation:none!important}
+#mc.rm .screen.bg-pano{background-position:50% 50%}
+`;
+const SPLASH = ['겉날개로 하늘을 날아요!', '마을을 찾아보세요!', '100개가 넘는 새 아이템!', '엔드 시티에 보물이!', '무너진 차원문을 조심!', '무한한 세계!', '블록으로 무엇이든!', '밤에는 조심!', '다이아몬드를 찾아라!', '지하와 다른 차원을 탐험하세요!', '횃불은 소중해요', '작업대부터 만들어요', '이제 버튼도 옮길 수 있어요!', '설정이 더 많아졌어요!', '좀비는 햇빛을 싫어해요?', '모바일에서도 즐겨요!'];
 
 // ── generated pixel textures for the GUI (no external UI images needed) ──
 const UIT = {}, TICON = {};
@@ -303,6 +337,8 @@ const ICONS = {
   grid: ['............', '.####..####.', '.#..#..#..#.', '.#..#..#..#.', '.####..####.', '............', '............', '.####..####.', '.#..#..#..#.', '.#..#..#..#.', '.####..####.', '............'],
   view: ['............', '............', '...######...', '..#......#..', '.#...##...#.', '#...####...#', '#...####...#', '.#...##...#.', '..#......#..', '...######...', '............', '............'],
   swap: ['............', '..#.........', '.##.........', '#########...', '.##.........', '..#.........', '.........#..', '.........##.', '...#########', '.........##.', '.........#..', '............'],
+  globe: ['....####....', '..##.##.##..', '.#..#..#..#.', '.#..#..#..#.', '############', '#...#..#...#', '#...#..#...#', '############', '.#..#..#..#.', '.#..#..#..#.', '..##.##.##..', '....####....'],
+  access: ['.....##.....', '.....##.....', '............', '############', '....####....', '....####....', '....####....', '....#..#....', '....#..#....', '...##..##...', '...#....#...', '............'],
   search: ['............', '...####.....', '..#....#....', '.#......#...', '.#......#...', '.#......#...', '.#......#...', '..#....#....', '...#####....', '.......###..', '........###.', '.........##.'],
 };
 function makeUITextures() {
@@ -360,19 +396,19 @@ function makeUITextures() {
   const mc = $('mc');
   for (const k of ['btn', 'btnoff', 'hot', 'hsel', 'hotend', 'offbg', 'arrow', 'arrowf', 'flameoff', 'flame', 'book', 'trash', 'x', 'pg', 'play', 'dirt']) mc.style.setProperty('--tx-' + k, `url(${UIT[k]})`);
   mc.style.setProperty('--ti-up', `url(${UIT.i_up})`); mc.style.setProperty('--ti-sneak', `url(${UIT.i_sneak})`);
-  $('iInv').src = UIT.i_bag; $('iFull').src = UIT.i_full; $('iPause').src = UIT.i_pause;
+  // blurred copy of the title panorama for the modern menu background
+  try { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'), k = 360 / im.naturalHeight; c.width = Math.round(im.naturalWidth * k); c.height = 360; const g = c.getContext('2d'); g.filter = 'blur(6px) brightness(0.8)'; g.drawImage(im, 0, 0, c.width, c.height); if (root && $('mc')) $('mc').style.setProperty('--tx-panoblur', `url(${c.toDataURL('image/jpeg', 0.8)})`); } catch { } }; im.src = 'textures/title-panorama.png'; } catch { }
 }
 
 function buildDOM() {
-  root.innerHTML = `<style>${CSS}</style><section id="mc">
-<canvas id="cv" tabindex="0" aria-label="3D 블록 월드"></canvas>
+  root.innerHTML = `<style>${CSS}${CSS_MODERN}</style><section id="mc">
+<canvas id="cv" tabindex="0" aria-label="3D world"></canvas>
 <div class="hud" id="hud">
  <div class="uw" id="uw"></div><div class="flash" id="flash"></div>
  <div class="cross" id="cross"></div><div class="atkind" id="atkind"><i></i></div><div class="dnums" id="dnums"></div><div class="iinfo" id="iinfo"></div><div class="sleepov" id="sleepov"></div>
  <div class="hinfo" id="hinfo"></div><div class="debug" id="debug"></div>
  <div class="chatlog" id="chatlog"></div>
  <div class="eat" id="eat"><i></i></div>
- <div class="tools"><button class="btn sq dk" id="bInv" aria-label="인벤토리" title="인벤토리 (E)"><img id="iInv" alt=""></button><button class="btn sq" id="bFull" aria-label="전체화면 전환" title="전체화면"><img id="iFull" alt=""></button><button class="btn sq dk" id="bPause" aria-label="일시정지" title="게임 메뉴 (Esc)"><img id="iPause" alt=""></button></div>
  <div class="touch" id="touch"></div>
  <div class="bottom" id="bottomHud"><div class="itemname" id="itemname"></div><div class="statrows"><div class="toprow"><div class="armor" id="armor"></div><div class="air" id="air"></div></div><div class="bars" id="bars"><div class="hr" id="hearts"></div><div class="hr food" id="food"></div></div></div><div class="hotbar" id="hotbar"></div></div>
 </div>
@@ -382,7 +418,7 @@ function buildDOM() {
 <div class="cursor" id="cursor"></div><div class="tip" id="tip"></div>
 </section>`;
   canvas = $('cv');
-  $('hotbar').innerHTML = Array.from({ length: 9 }, (_, i) => `<div class="hs" data-hot="${i}" style="left:calc(var(--g)*${1 + i * 20})"></div>`).join('') + '<div class="hsel"></div><button id="hotInv" class="hot-inv" aria-label="인벤토리 열기"></button><div class="offhot" id="offhot" title="왼손"></div>';
+  $('hotbar').innerHTML = Array.from({ length: 9 }, (_, i) => `<div class="hs" data-hot="${i}" style="left:calc(var(--g)*${1 + i * 20})"></div>`).join('') + '<div class="hsel"></div><button id="hotInv" class="hot-inv" aria-label="' + tr('인벤토리 열기') + '"></button><div class="offhot" id="offhot" title="' + tr('왼손') + '"></div>';
   $('hearts').innerHTML = '<img alt="">'.repeat(10); $('food').innerHTML = '<img alt="">'.repeat(10); $('air').innerHTML = '<img alt="">'.repeat(10); $('armor').innerHTML = '<img alt="">'.repeat(10);
 }
 // GUI scale: "auto" picks the largest scale that still fits, like the original game's option
@@ -406,12 +442,17 @@ function slotHTML(s) {
 function tipHTML(id, s) {
   const inf = info(id); if (!inf) return '';
   let extra = '';
-  const t = toolOf(id), a = armorOf(id), dm = durOf(id); if (dm && s) extra = `<div class="tl">내구도: ${dm - (s.dmg || 0)} / ${dm}</div>`;
-  else if (inf.food) extra = `<div class="tl">허기 +${inf.food[0] / 2}</div>`;
-  if (a) extra += `<div class="tl" style="color:#5555ff">방어력 +${a.def} (${ARMOR_SLOT_NAME[a.slot]})</div>`;
-  if (inf.gadget === 'compass') extra += '<div class="tl">들고 있으면 리스폰 지점 방향을 알려줘요</div>';
-  if (inf.gadget === 'clock') extra += '<div class="tl">들고 있으면 시간을 알려줘요</div>';
-  if (t && t.aspd) extra += `<div class="tl" style="color:#55ff55">공격력 ${t.dmg} · 공격 속도 ${t.aspd}</div>`;
+  const t = toolOf(id), a = armorOf(id), dm = durOf(id); if (dm && s) extra = `<div class="tl">${tr('내구도: {0} / {1}', dm - (s.dmg || 0), dm)}</div>`;
+  else if (inf.food) extra = `<div class="tl">${tr('허기 +{0}', inf.food[0] / 2)}</div>`;
+  if (a) extra += `<div class="tl" style="color:#5555ff">${tr('방어력 +{0} ({1})', a.def, tr(ARMOR_SLOT_NAME[a.slot]))}</div>`;
+  if (inf.gadget === 'compass') extra += `<div class="tl">${tr('들고 있으면 리스폰 지점 방향을 알려줘요')}</div>`;
+  if (inf.gadget === 'clock') extra += `<div class="tl">${tr('들고 있으면 시간을 알려줘요')}</div>`;
+  if (inf.gadget === 'recovery') extra += `<div class="tl">${tr('들고 있으면 마지막으로 죽은 곳을 알려줘요')}</div>`;
+  if (inf.potion) extra += `<div class="tl" style="color:#5555ff">${esc(inf.potion.effect)}${inf.potion.time ? ' (' + Math.floor(inf.potion.time / 60) + ':' + String(inf.potion.time % 60).padStart(2, '0') + ')' : ''}</div>`;
+  if (id === ELYTRA) extra += `<div class="tl">${tr('공중에서 점프를 한 번 더 누르면 활공해요')}</div>`;
+  if (id === FIREWORK) extra += `<div class="tl">${tr('활공 중에 사용하면 앞으로 가속해요')}</div>`;
+  if (id === SPYGLASS) extra += `<div class="tl">${tr('사용 버튼을 누르고 있으면 확대해요')}</div>`;
+  if (t && t.aspd) extra += `<div class="tl" style="color:#55ff55">${tr('공격력 {0} · 공격 속도 {1}', t.dmg, t.aspd)}</div>`;
   return `<div>${esc(inf.name)}</div>${extra}`;
 }
 let nameTimer = 0, infoT = 0;
@@ -460,7 +501,7 @@ function updateHUD(dt) {
     infoT = 0.25;
     const lines = [];
     if (st.showFps) lines.push(`${fpsShow} FPS`);
-    if (st.showCoords) lines.push(`위치: ${Math.floor(P.x)}, ${Math.floor(P.y)}, ${Math.floor(P.z)}`, `${dayCount()}일째 · ${['북', '동', '남', '서'][((Math.round(P.yaw / (Math.PI / 2)) % 4) + 4) % 4]}쪽`);
+    if (st.showCoords) lines.push(tr('위치: {0}, {1}, {2}', Math.floor(P.x), Math.floor(P.y), Math.floor(P.z)), tr('{0}일째 · {1}쪽', dayCount(), tr(['북', '동', '남', '서'][((Math.round(P.yaw / (Math.PI / 2)) % 4) + 4) % 4])));
     const hi = $('hinfo'); hi.style.display = lines.length && !showDebug ? 'flex' : 'none'; hi.innerHTML = lines.map(l => `<div>${esc(l)}</div>`).join('');
   }
   // chat fade
@@ -476,19 +517,20 @@ let gadgetKey = '';
 function updateGadget() {
   const el = $('iinfo'), s = held(), g = s && ITEM[s.id] && ITEM[s.id].gadget;
   let key = '', html = '';
-  if (g === 'compass' && !G.ui) {
-    const dx = G.spawn.x - P.x, dz = G.spawn.z - P.z, d = Math.hypot(dx, dz), a = Math.atan2(dx, -dz) - P.yaw;
-    key = 'c' + Math.round(d) + ',' + Math.round(a * 20);
-    html = `<i class="ndl" style="transform:rotate(${a.toFixed(2)}rad)"></i><span>${d < 2 ? '리스폰 지점이에요' : `리스폰 지점까지 ${Math.round(d)}m`}</span>`;
-  } else if (g === 'clock' && !G.ui) {
+  const needle = (tx, tz, near, far) => { const dx = tx - P.x, dz = tz - P.z, d = Math.hypot(dx, dz), a = Math.atan2(dx, -dz) - P.yaw; key = g + Math.round(d) + ',' + Math.round(a * 20); html = `<i class="ndl" style="transform:rotate(${a.toFixed(2)}rad)"></i><span>${d < 2 ? near : tr(far, Math.round(d))}</span>`; };
+  if (g === 'compass' && !G.ui) needle(G.spawn.x, G.spawn.z, tr('리스폰 지점이에요'), '리스폰 지점까지 {0}m');
+  else if (g === 'recovery' && !G.ui) { const d = G.lastDeath; if (d && d.dim === (W.dimension || 'overworld')) needle(d.x, d.z, tr('여기에서 죽었어요'), '마지막 사망 지점까지 {0}m'); else { key = 'r-none'; html = `<span>${tr('사망 기록이 없어요')}</span>`; } }
+  else if (g === 'clock' && !G.ui) {
     const tt = W.time % DAY_TICKS, mins = Math.floor(((tt / 1000 + 6) % 24) * 60), hh = Math.floor(mins / 60), mm = mins % 60;
     const ph = tt < 12000 ? '낮' : tt < 13800 ? '해 질 녘' : tt < 22200 ? '밤' : '새벽';
-    key = 't' + hh + ':' + mm; html = `<span>${dayCount()}일째 · ${ph} ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</span>`;
+    key = 't' + hh + ':' + mm; html = `<span>${tr('{0}일째 · {1} {2}', dayCount(), tr(ph), String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'))}</span>`;
   }
   if (key === gadgetKey) return; gadgetKey = key;
   el.style.display = key ? 'flex' : 'none'; if (key) el.innerHTML = html;
 }
 let toastT = 0;
+// optional gameplay notices (tips, portal hints…): hidden unless 'game notices' is turned on
+function hint(msg) { if (SAVE && SAVE.settings.systemMsgs) toast(msg); }
 function toast(msg) { const t = $('toast'); if (!t) return; t.textContent = msg; t.style.opacity = 1; clearTimeout(toastT); toastT = setTimeout(() => { if (t.isConnected) t.style.opacity = 0; }, 2600); }
 function chat(msg, color) { const d = document.createElement('div'); d.textContent = msg; d.dataset.t = performance.now(); if (color) d.style.color = color; $('chatlog').append(d); }
 function buzz(ms) { if (SAVE && SAVE.settings.vibrate && touchUI() && navigator.vibrate) { try { navigator.vibrate(ms); } catch { } } }
@@ -518,49 +560,51 @@ function closeScreen() {
   hideScreens(); invChanged();
   capture();
 }
-function hideScreens() { menuScreen = null; const s = $('screen'); s.hidden = true; s.className = 'screen'; s.innerHTML = ''; $('cursor').innerHTML = ''; $('tip').style.display = 'none'; if (G && G.ui !== 'title') G.ui = null; }
+function hideScreens() { $('mc').classList.remove('scr', 'chatting'); menuScreen = null; const s = $('screen'); s.hidden = true; s.className = 'screen'; s.innerHTML = ''; $('cursor').innerHTML = ''; $('tip').style.display = 'none'; if (G && G.ui !== 'title') G.ui = null; }
 function slotEl(ref, cls = '') { return `<div class="slot ${cls}" data-slot="${ref}"></div>`; }
 function invGrid() {
   return `<div class="grid">${Array.from({ length: 27 }, (_, i) => slotEl('inv:' + (i + 9))).join('')}</div><div class="invgap"></div>
   <div class="grid">${Array.from({ length: 9 }, (_, i) => slotEl('inv:' + i)).join('')}</div>`;
 }
-const touchTools = () => `<div class="mobtools"><button class="tgl ${quickMove ? 'on' : ''}" data-act="quick">빠른 이동</button><button class="tgl ${oneMode ? 'on' : ''}" data-act="one">1개씩</button></div>`;
-const contHead = (title, extra = '') => `<div class="chead"><span class="ctitle">${title}</span>${extra}<span class="sp"></span>${touchTools()}<button class="xbtn" data-act="close" aria-label="닫기" title="닫기 (E)"></button></div>`;
+const touchTools = () => SAVE.settings.invHelpers ? `<div class="mobtools"><button class="tgl ${quickMove ? 'on' : ''}" data-act="quick">${tr('빠른 이동')}</button><button class="tgl ${oneMode ? 'on' : ''}" data-act="one">${tr('1개씩')}</button></div>` : '';
+const contHead = (title, extra = '') => `<div class="chead"><span class="ctitle">${tr(title)}</span>${extra}<span class="sp"></span>${touchTools()}<button class="xbtn" data-act="close" aria-label="${tr('닫기')}" title="${tr('닫기')} (E)"></button></div>`;
 const RB_TABS = [['전체', null], ['도구', ['도구', '전투']], ['블록', ['블록', '장식', '기능']], ['기타', ['재료', '음식']]];
 function recipeBookHTML() {
-  return `<div class="panel rbook" aria-label="레시피 책"><div class="rhead"><input class="mfield" id="rsearch" placeholder="검색..." value="${esc(rbSearch)}" aria-label="레시피 검색"><button class="tgl ${rbCraftable ? 'on' : ''}" data-act="rfilter" title="제작 가능한 것만 보기">제작 가능</button></div>
-  <div class="rtabs">${RB_TABS.map(([t]) => `<button class="rtab ${t === rbTab ? 'on' : ''}" data-act="rtab" data-t="${t}">${t}</button>`).join('')}</div>
+  return `<div class="panel rbook" aria-label="${tr('레시피 책')}"><div class="rhead"><input class="mfield" id="rsearch" placeholder="${tr('검색...')}" value="${esc(rbSearch)}" aria-label="${tr('레시피 책')}"><button class="tgl ${rbCraftable ? 'on' : ''}" data-act="rfilter" title="${tr('제작 가능')}">${tr('제작 가능')}</button></div>
+  <div class="rtabs">${RB_TABS.map(([t]) => `<button class="rtab ${t === rbTab ? 'on' : ''}" data-act="rtab" data-t="${t}">${tr(t)}</button>`).join('')}</div>
   <div class="rgrid" id="recipes"></div>
-  <div class="rpage"><button class="pg prev" data-act="rprev" aria-label="이전 쪽"></button><span id="rpg">1/1</span><button class="pg" data-act="rnext" aria-label="다음 쪽"></button></div></div>`;
+  <div class="rpage"><button class="pg prev" data-act="rprev" aria-label="&lt;"></button><span id="rpg">1/1</span><button class="pg" data-act="rnext" aria-label="&gt;"></button></div></div>`;
 }
 const CR_TABS = [['블록', BRICKS], ['장식', FLOWER_RED], ['기능', CHEST], ['도구', PICK0 + 2], ['전투', ARMOR0 + 9], ['음식', APPLE], ['재료', IRON]];
 function renderScreen() {
-  const s = $('screen'); s.hidden = false; s.className = 'screen bg-cont'; menuScreen = 'cont';
+  const s = $('screen'); s.hidden = false; s.className = 'screen bg-cont'; menuScreen = 'cont'; $('mc').classList.add('scr');
   const k = G.uiKind; recipeCache = null;
   if (k === 'inventory' || k === 'table') {
     const w = G.craftW;
-    s.innerHTML = `<div class="cwrap">${rbOpen ? recipeBookHTML() : ''}<div class="panel" role="dialog" aria-label="${k === 'table' ? '작업대' : '인벤토리'}">${contHead('제작', `<button class="bookbtn ${rbOpen ? 'on' : ''}" data-act="book" aria-label="레시피 책" title="레시피 책"></button>`)}
-    <div class="craft">${k === 'inventory' ? `<div class="armcol" title="갑옷">${[0, 1, 2, 3].map(i => slotEl('arm:' + i)).join('')}</div><div class="pcol"><canvas class="pview" id="pview" width="16" height="32" aria-label="내 캐릭터"></canvas>${slotEl('off:0')}</div>` : ''}<span class="sp"></span><div class="grid g${w}">${G.craft.map((_, i) => slotEl('craft:' + i)).join('')}</div><div class="carrow"></div>${slotEl('out', 'big')}</div>
-    <div class="ctitle sub" id="invsub">인벤토리</div>${invGrid()}</div></div>`;
+    s.innerHTML = `<div class="cwrap">${rbOpen ? recipeBookHTML() : ''}<div class="panel" role="dialog" aria-label="${tr(k === 'table' ? '작업대' : '인벤토리')}">${contHead('제작', `<button class="bookbtn ${rbOpen ? 'on' : ''}" data-act="book" aria-label="${tr('레시피 책')}" title="${tr('레시피 책')}"></button>`)}
+    <div class="craft">${k === 'inventory' ? `<div class="armcol" title="갑옷">${[0, 1, 2, 3].map(i => slotEl('arm:' + i)).join('')}</div><div class="pcol"><canvas class="pview" id="pview" width="16" height="32" aria-label="${tr('캐릭터')}"></canvas>${slotEl('off:0')}</div>` : ''}<span class="sp"></span><div class="grid g${w}">${G.craft.map((_, i) => slotEl('craft:' + i)).join('')}</div><div class="carrow"></div>${slotEl('out', 'big')}</div>
+    <div class="ctitle sub" id="invsub">${tr('인벤토리')}</div>${invGrid()}</div></div>`;
     const inp = $('rsearch'); if (inp) { inp.addEventListener('input', () => { rbSearch = inp.value; rbPage = 0; renderRecipes(); }); inp.addEventListener('keydown', e => { if (e.key !== 'Escape') e.stopPropagation(); }); }
   } else if (k === 'creative') {
     const tab = creativeTab, title = tab === '전체' ? '아이템 검색' : tab === '인벤토리' ? '생존 인벤토리' : tab;
-    const tabBtn = (t, icon, name) => `<button class="crtab ${t === tab ? 'on' : ''}" data-tab="${t}" data-name="${name || t}" aria-label="${name || t}"><img class="ico" src="${icon}" alt=""></button>`;
+    const tabBtn = (t, icon, name) => `<button class="crtab ${t === tab ? 'on' : ''}" data-tab="${t}" data-name="${tr(name || t)}" aria-label="${tr(name || t)}"><img class="ico" src="${icon}" alt=""></button>`;
     s.innerHTML = `<div class="cr"><div class="crtabs">${CR_TABS.map(([t, id]) => tabBtn(t, ICON[id])).join('')}<span class="sp"></span>${tabBtn('전체', UIT.i_search, '아이템 검색')}</div>
-    <div class="panel crp" role="dialog" aria-label="크리에이티브 인벤토리">${contHead(title)}
-    ${tab === '인벤토리' ? `<div class="hotrow" style="margin:0 0 ${u(3)}"><span class="ctitle" id="invsub">갑옷</span><span class="sp"></span><div class="armrow">${[0, 1, 2, 3].map(i => slotEl('arm:' + i)).join('')}</div><span class="ctitle">왼손</span>${slotEl('off:0')}</div>` + invGrid() + `<div class="hotrow"><span class="sp"></span><span class="ctitle">버리기</span>${slotEl('trash', 'trash')}</div>`
-      : `${tab === '전체' ? `<input class="mfield csearch" id="csearch" placeholder="아이템 검색..." value="${esc(creativeSearch)}" aria-label="아이템 검색">` : ''}<div class="palette" id="palette"></div>
+    <div class="panel crp" role="dialog" aria-label="${tr('크리에이티브 인벤토리')}">${contHead(title)}
+    ${tab === '인벤토리' ? `<div class="hotrow" style="margin:0 0 ${u(3)}"><span class="ctitle" id="invsub">${tr('갑옷')}</span><span class="sp"></span><div class="armrow">${[0, 1, 2, 3].map(i => slotEl('arm:' + i)).join('')}</div><span class="ctitle">${tr('왼손')}</span>${slotEl('off:0')}</div>` + invGrid() + `<div class="hotrow"><span class="sp"></span><span class="ctitle">${tr('버리기')}</span>${slotEl('trash', 'trash')}</div>`
+      : `${tab === '전체' ? `<input class="mfield csearch" id="csearch" placeholder="${tr('아이템 검색...')}" value="${esc(creativeSearch)}" aria-label="${tr('아이템 검색')}">` : ''}<div class="palette" id="palette"></div>
       <div class="hotrow"><div class="grid">${Array.from({ length: 9 }, (_, i) => slotEl('inv:' + i)).join('')}</div>${slotEl('trash', 'trash')}</div>`}</div>
     <div class="crtabs bot"><span class="sp"></span>${tabBtn('인벤토리', ICON[CHEST], '생존 인벤토리')}</div></div>`;
     renderPalette();
     const inp = $('csearch'); if (inp) { inp.addEventListener('input', () => { creativeSearch = inp.value; renderPalette(); }); inp.addEventListener('keydown', e => { if (e.key !== 'Escape') e.stopPropagation(); }); }
   } else if (k === 'furnace') {
-    s.innerHTML = `<div class="cwrap"><div class="panel" role="dialog" aria-label="화로">${contHead('화로')}
+    const fname = G.container && BLOCK[getBlock(...G.container.pos.split(',').map(Number))]?.name || tr('화로');
+    s.innerHTML = `<div class="cwrap"><div class="panel" role="dialog" aria-label="${esc(fname)}">${contHead(fname)}
     <div class="furn"><div class="fcol">${slotEl('c:0')}<div class="flame"><i id="fflame"></i></div>${slotEl('c:1')}</div><div class="carrow"><i id="farrow"></i></div>${slotEl('c:2', 'big')}</div>
-    <div class="ctitle sub">인벤토리</div>${invGrid()}</div></div>`;
+    <div class="ctitle sub">${tr('인벤토리')}</div>${invGrid()}</div></div>`;
   } else if (k === 'chest') {
-    s.innerHTML = `<div class="cwrap"><div class="panel" role="dialog" aria-label="상자">${contHead('상자')}
-    <div class="grid">${Array.from({ length: 27 }, (_, i) => slotEl('c:' + i)).join('')}</div><div class="ctitle sub">인벤토리</div>${invGrid()}</div></div>`;
+    const cname = G.container && BLOCK[getBlock(...G.container.pos.split(',').map(Number))]?.name || tr('상자');
+    s.innerHTML = `<div class="cwrap"><div class="panel" role="dialog" aria-label="${esc(cname)}">${contHead(cname)}
+    <div class="grid">${Array.from({ length: 27 }, (_, i) => slotEl('c:' + i)).join('')}</div><div class="ctitle sub">${tr('인벤토리')}</div>${invGrid()}</div></div>`;
   }
   if (touchUI()) s.insertAdjacentHTML('beforeend', '<div class="touch-held" id="touchHeld" role="status"></div>');
   renderSlots();
@@ -579,16 +623,16 @@ function renderSlots() {
     const r = el.dataset.slot; if (r.startsWith('pal:') || r === 'trash') return;
     const st = getSlot(r);
     if (r.startsWith('craft:')) { const gi = +r.slice(6), gid = gm && !st ? gm[gi] : null; el.classList.toggle('ghosted', gid != null); el.innerHTML = st ? slotHTML(st) : gid != null ? `<img class="ico ghost" src="${ICON[gid]}" alt="">` : ''; return; }
-    if (r === 'off:0') { el.innerHTML = st ? slotHTML(st) : `<img class="ico sil" src="${UIT.shield}" alt="">`; el.title = '왼손'; return; }
-    if (r.startsWith('arm:')) { el.innerHTML = st ? slotHTML(st) : `<img class="ico sil" src="${ICON[ARMOR0 + 8 + +r.slice(4)]}" alt="">`; el.title = ARMOR_SLOT_NAME[+r.slice(4)]; return; }
+    if (r === 'off:0') { el.innerHTML = st ? slotHTML(st) : `<img class="ico sil" src="${UIT.shield}" alt="">`; el.title = tr('왼손'); return; }
+    if (r.startsWith('arm:')) { el.innerHTML = st ? slotHTML(st) : `<img class="ico sil" src="${ICON[ARMOR0 + 8 + +r.slice(4)]}" alt="">`; el.title = tr(ARMOR_SLOT_NAME[+r.slice(4)]); return; }
     el.innerHTML = slotHTML(st);
   });
   const out = s.querySelector('[data-slot="out"]');
   if (out) { const r = craftResult(); out.classList.toggle('ghosted', !r && ghost != null); out.innerHTML = r ? slotHTML(r) : ghost != null ? `<img class="ico ghost" src="${ICON[RECIPES[ghost].out]}" alt="">` : ''; }
   $('cursor').innerHTML = slotHTML(cursorStack);
-  const held = $('touchHeld'); if (held) { held.innerHTML = cursorStack ? `<span class="held-slot">${slotHTML(cursorStack)}</span><span>${esc(info(cursorStack.id).name)} · 놓을 칸을 누르거나, 끌어서 여러 칸에 나눠 놓으세요</span>` : '<span>끌어서 옮기기 · 길게 눌러 반 나누기 · 두 번 탭해 빠른 이동</span>'; }
+  const held = $('touchHeld'); if (held) { held.style.visibility = cursorStack ? 'visible' : 'hidden'; held.innerHTML = cursorStack ? `<span class="held-slot">${slotHTML(cursorStack)}</span><span>${esc(info(cursorStack.id).name)}</span>` : ''; }
   const pv = $('pview'); if (pv) drawPortrait(pv, G.armor);
-  const sub = $('invsub'); if (sub && G.armor) { const [def] = armorPoints(); sub.textContent = (G.uiKind === 'creative' ? '갑옷' : '인벤토리') + (def ? ` · 방어력 ${def}` : ''); }
+  const sub = $('invsub'); if (sub && G.armor) { const [def] = armorPoints(); sub.textContent = tr(G.uiKind === 'creative' ? '갑옷' : '인벤토리') + (def ? ' · ' + tr('방어력 {0}', def) : ''); }
   if (G.uiKind === 'furnace' && G.container) { const te = G.container.te; const f = $('fflame'), a = $('farrow'); if (f) f.style.height = (te.burn > 0 ? te.burn / te.burnMax * 100 : 0) + '%'; if (a) a.style.width = (te.cook / SMELT_TIME * 100) + '%'; }
   if (G.uiKind === 'inventory' || G.uiKind === 'table') renderRecipes();
 }
@@ -666,7 +710,7 @@ function slotClick(ref, right, shift) {
     if (shift) { if (st && !addToInventory(st.id, 1, st.dmg)) G.armor[ai] = null; }
     else if (cursorStack) {
       const a = armorOf(cursorStack.id);
-      if (!a || a.slot !== ai) { toast(ARMOR_SLOT_NAME[ai] + ' 칸에는 ' + ARMOR_SLOT_NAME[ai] + ' 갑옷만 넣을 수 있어요.'); return; }
+      if (!a || a.slot !== ai) { toast(tr('{0} 칸에는 {0} 갑옷만 넣을 수 있어요.', tr(ARMOR_SLOT_NAME[ai]))); return; }
       G.armor[ai] = cursorStack; cursorStack = st; sfx('equip');
     } else if (st) { cursorStack = st; G.armor[ai] = null; }
     renderSlots(); invChanged(); return;
@@ -708,7 +752,7 @@ function recipeList() {
 function renderRecipes() {
   const el = $('recipes'); if (!el) return;
   const q = rbSearch.trim(), tab = RB_TABS.find(t => t[0] === rbTab) || RB_TABS[0];
-  let list = recipeList().filter(r => { const inf = info(r.out); if (q && !inf.name.includes(q)) return false; return !tab[1] || tab[1].includes(inf.cat || '블록'); });
+  let list = recipeList().filter(r => { const inf = info(r.out); if (q && !inf.name.toLowerCase().includes(q.toLowerCase()) && !(inf.nameKo || '').includes(q)) return false; return !tab[1] || tab[1].includes(inf.cat || '블록'); });
   const ok = new Map(list.map(r => [r, canFill(r)]));
   if (rbCraftable) list = list.filter(r => ok.get(r));
   list.sort((a, b) => ok.get(b) - ok.get(a));
@@ -717,7 +761,7 @@ function renderRecipes() {
   if (recipeCache === key && el.children.length) return;
   recipeCache = key;
   el.innerHTML = list.slice(rbPage * 20, rbPage * 20 + 20).map(r => `<div class="rslot ${ok.get(r) ? 'ok' : 'no'}" data-recipe="${RECIPES.indexOf(r)}" data-name="${esc(info(r.out).name)}${r.count > 1 ? ' ×' + r.count : ''}"><img class="ico" src="${ICON[r.out]}" alt="">${r.count > 1 ? `<span class="cnt">${r.count}</span>` : ''}</div>`).join('')
-    || `<p class="rempty">${rbCraftable ? '지금 만들 수 있는 게 없어요' : '결과가 없어요'}</p>`;
+    || `<p class="rempty">${tr(rbCraftable ? '지금 만들 수 있는 게 없어요' : '결과가 없어요')}</p>`;
   const pg = $('rpg'); if (pg) pg.textContent = `${rbPage + 1}/${pages}`;
   const sc = $('screen'); const pv = sc.querySelector('[data-act="rprev"]'), nx = sc.querySelector('[data-act="rnext"]'); if (pv) pv.disabled = rbPage <= 0; if (nx) nx.disabled = rbPage >= pages - 1;
 }
@@ -727,15 +771,15 @@ function fillRecipe(ri) {
   const cur = craftResult();
   if (cur && cur.id === r.out && ghost == null) {
     const need = {}; G.craft.forEach(s => { if (s) need[s.id] = (need[s.id] || 0) + 1; });
-    if (G.craft.some(s => s && s.count >= maxStack(s.id))) { toast('더 이상 넣을 수 없어요.'); return; }
-    for (const id in need) if (G.inv.reduce((a, s) => a + (s && s.id === +id ? s.count : 0), 0) < need[id]) { toast('재료가 부족해서 더 넣을 수 없어요.'); return; }
+    if (G.craft.some(s => s && s.count >= maxStack(s.id))) { toast(tr('더 이상 넣을 수 없어요.')); return; }
+    for (const id in need) if (G.inv.reduce((a, s) => a + (s && s.id === +id ? s.count : 0), 0) < need[id]) { toast(tr('재료가 부족해서 더 넣을 수 없어요.')); return; }
     for (const s of G.craft) if (s) { const i = G.inv.findIndex(x => x && x.id === s.id); G.inv[i].count--; if (!G.inv[i].count) G.inv[i] = null; s.count++; }
     renderSlots(); invChanged(); return;
   }
   if (!canFill(r)) {
-    const names = {}; for (const k of recipeNeeds(r)) { const n = typeof k === 'string' ? ({ log: '아무 원목', planks: '나무 판자', wool: '양털' })[k] : info(k).name; names[n] = (names[n] || 0) + 1; }
+    const names = {}; for (const k of recipeNeeds(r)) { const n = typeof k === 'string' ? tr(({ log: '아무 원목', planks: '나무 판자', wool: '양털', slab: '나무 반 블록' })[k]) : info(k).name; names[n] = (names[n] || 0) + 1; }
     ghost = ri; renderSlots();
-    toast('필요: ' + Object.entries(names).map(([n, c]) => `${n} ×${c}`).join(', ')); return;
+    toast(tr('필요: ') + Object.entries(names).map(([n, c]) => `${n} ×${c}`).join(', ')); return;
   }
   ghost = null;
   for (let i = 0; i < G.craft.length; i++) if (G.craft[i]) { addToInventory(G.craft[i].id, G.craft[i].count, G.craft[i].dmg); G.craft[i] = null; }
@@ -750,8 +794,9 @@ function renderPalette() {
   for (let id = 1; id < 256; id++) { const b = BLOCK[id]; if (b && b.creative !== false) ids.push(id); }
   for (const id in ITEM) ids.push(+id);
   const q = creativeTab === '전체' ? creativeSearch.trim() : '';
-  const list = ids.filter(id => { const inf = info(id); if (q && !inf.name.includes(q)) return false; if (creativeTab === '전체') return true; return (inf.cat || '블록') === creativeTab; });
-  el.innerHTML = list.map(id => `<div class="slot" data-slot="pal:${id}" data-name="${esc(info(id).name)}"><img class="ico" src="${ICON[id]}" alt=""></div>`).join('') || '<p class="pe">결과가 없어요.</p>';
+  const ql = q.toLowerCase();
+  const list = ids.filter(id => { const inf = info(id); if (q && !inf.name.toLowerCase().includes(ql) && !(inf.nameKo || '').includes(q) && !(inf.en || '').toLowerCase().includes(ql)) return false; if (creativeTab === '전체') return true; return (inf.cat || '블록') === creativeTab; });
+  el.innerHTML = list.map(id => `<div class="slot" data-slot="pal:${id}" data-name="${esc(info(id).name)}"><img class="ico" src="${ICON[id]}" alt=""></div>`).join('') || '<p class="pe">' + tr('결과가 없어요') + '</p>';
 }
 let lastPtrSlot = 0;
 function screenEvents() {
@@ -777,9 +822,9 @@ function screenEvents() {
     if (el) {
       if (el.dataset.slot === 'out') { const o = craftResult(); if (o) html = tipHTML(o.id, o); else if (ghost != null) html = tipHTML(RECIPES[ghost].out); }
       else if (el.dataset.slot && el.dataset.slot.startsWith('pal:')) html = tipHTML(+el.dataset.slot.slice(4));
-      else if (el.dataset.slot === 'trash') html = '<div>아이템 버리기</div>';
+      else if (el.dataset.slot === 'trash') html = '<div>' + tr('아이템 버리기') + '</div>';
       else if (el.dataset.slot) { const st = getSlot(el.dataset.slot); if (st) html = tipHTML(st.id, st); }
-      else if (el.dataset.recipe) { const rr = RECIPES[+el.dataset.recipe]; html = tipHTML(rr.out) + (canFill(rr) ? '' : '<div class="tl" style="color:#ff5555">재료가 부족해요</div>'); }
+      else if (el.dataset.recipe) { const rr = RECIPES[+el.dataset.recipe]; html = tipHTML(rr.out) + (canFill(rr) ? '' : '<div class="tl" style="color:#ff5555">' + tr('재료가 부족해요') + '</div>'); }
       else if (el.dataset.name) html = `<div>${esc(el.dataset.name)}</div>`;
     }
     if (html && e.pointerType === 'mouse' && !cursorStack) { tip.innerHTML = html; tip.style.display = 'block'; tip.style.left = Math.min(x + 14, r.width - tip.offsetWidth - 4) + 'px'; tip.style.top = Math.max(2, y - tip.offsetHeight - 6) + 'px'; } else tip.style.display = 'none';
@@ -879,136 +924,146 @@ function screenEvents() {
 
 // ── menus ──
 let menuScreen = null, selectedWorld = null, createFrom = 'title', worldFilter = '';
-function screenHTML(inner, bg = G ? 'game' : 'dirt') { const s = $('screen'); s.hidden = false; s.className = 'screen bg-' + bg; s.style.background = ''; s.innerHTML = inner; s.scrollTop = 0; }
+function screenHTML(inner, bg = G ? 'game' : 'menu') { if (bg === 'dirt') bg = 'menu'; $('mc').classList.add('scr'); const s = $('screen'); s.hidden = false; s.className = 'screen bg-' + bg; s.style.background = ''; s.innerHTML = inner; s.scrollTop = 0; }
 function uiClick() { if (SAVE && SAVE.settings.uiSound !== false) { wake(); sfx('click'); } }
 function showLanding() {
-  G = null; W = null; menuScreen = 'landing';
-  screenHTML(`<div class="tw"><div class="logo"><h1 aria-label="Minecraft Mini"><span class="lb" aria-hidden="true">MINECRAFT</span><span class="lf" aria-hidden="true">MINECRAFT</span></h1><div class="edition">MINI</div><div class="splash"><span>${esc(SPLASH[Math.floor(Math.random() * SPLASH.length)])}</span></div></div>
-  <div class="tmenu"><button class="btn" data-act="worlds">싱글플레이</button><button class="btn" data-act="new">새로운 월드 만들기</button><button class="btn" data-act="help">조작법</button><div class="gap"></div>
-  <div class="row"><button class="btn sq" data-act="layout" aria-label="터치 버튼 배치" title="터치 버튼 배치"><img src="${UIT.i_grid}" alt=""></button><button class="btn" data-act="settings">설정...</button><button class="btn sq" data-act="full" aria-label="전체화면" title="전체화면"><img src="${UIT.i_full}" alt=""></button></div></div>
-  <div class="corner l">Minecraft Mini 2.0</div><div class="corner r">자체 제작 텍스처 · 원작 리소스 미사용</div></div>`, 'pano');
+  G = null; W = null; menuScreen = 'landing'; pageOrigin = null;
+  screenHTML(`<div class="tw"><div class="logo"><h1 aria-label="Minecraft Mini"><span class="lb" aria-hidden="true">MINECRAFT</span><span class="lf" aria-hidden="true">MINECRAFT</span></h1><div class="edition">MINI EDITION</div><div class="splash"><span>${esc(tr(SPLASH[Math.floor(Math.random() * SPLASH.length)]))}</span></div></div>
+  <div class="tmenu"><button class="btn" data-act="worlds">${tr('싱글플레이')}</button><button class="btn" data-act="new">${tr('새로운 월드 만들기')}</button><button class="btn" data-act="help">${tr('조작법')}</button><div class="gap"></div>
+  <div class="row"><button class="btn sq" data-act="page" data-p="lang" aria-label="${tr('언어...')}" title="${tr('언어...')}"><img src="${UIT.i_globe}" alt=""></button><button class="btn" data-act="settings">${tr('설정...')}</button><button class="btn" data-act="full">${tr('전체화면')}</button><button class="btn sq" data-act="page" data-p="access" aria-label="${tr('접근성 설정...')}" title="${tr('접근성 설정...')}"><img src="${UIT.i_access}" alt=""></button></div></div>
+  <div class="corner l">Minecraft Mini 3.0</div><div class="corner r">${tr('자체 제작 텍스처 · 원작 리소스 미사용')}</div></div>`, 'pano');
 }
 function fmtDate(t) { const d = new Date(t); return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 const DIFF_NAME = ['평화로움', '쉬움', '보통', '어려움'];
+const diffName = i => tr(DIFF_NAME[i]);
 function showTitle() {
   G = null; W = null; menuScreen = 'worlds';
   const worlds = SAVE.worlds.slice().sort((a, b) => b.played - a.played);
   if (!selectedWorld || !worlds.find(w => w.id === selectedWorld)) selectedWorld = worlds[0] ? worlds[0].id : null;
-  screenHTML(`<div class="ms full"><div class="mtitle">월드 선택</div><input class="mfield" id="wsearch" placeholder="검색..." value="${esc(worldFilter)}" aria-label="월드 검색" style="margin-bottom:${u(6)}">
-  <div class="mlist"><div class="wl" role="listbox" aria-label="저장된 월드">${worlds.length ? worlds.map(w => `<div class="we ${w.id === selectedWorld ? 'sel' : ''}" data-act="pick" data-id="${w.id}" data-n="${esc(w.name.toLowerCase())}" role="option" aria-selected="${w.id === selectedWorld}">
-    <div class="wi"><img src="${ICON[w.mode === 'creative' ? GRASS : DIAMOND_ORE]}" alt=""></div><div class="wt"><div>${esc(w.name)}</div><div class="ws">${fmtDate(w.played)}</div><div class="ws">${w.mode === 'creative' ? '크리에이티브' : '서바이벌'} 모드 · ${DIFF_NAME[w.difficulty ?? 2]} · 시드 ${esc(w.seedText)}</div></div></div>`).join('') : '<p class="empty">아직 월드가 없어요.<br>새로운 월드를 만들어 보세요!</p>'}</div></div>
-  <div class="mfoot"><div class="row w308"><button class="btn" data-act="play" ${selectedWorld ? '' : 'disabled'}>선택한 월드 플레이</button><button class="btn" data-act="new">새로운 월드 만들기</button></div>
-  <div class="row w308"><button class="btn" data-act="delete" ${selectedWorld ? '' : 'disabled'}>삭제</button><button class="btn" data-act="title">취소</button></div>
-  ${SAVE.storage ? '' : '<p class="desc">이 환경에서는 저장소를 쓸 수 없어 월드가 저장되지 않아요.</p>'}</div></div>`, 'dirt');
+  screenHTML(`<div class="ms full"><div class="mtitle">${tr('월드 선택')}</div><input class="mfield" id="wsearch" placeholder="${tr('검색...')}" value="${esc(worldFilter)}" aria-label="${tr('검색...')}" style="margin-bottom:${u(6)}">
+  <div class="mlist"><div class="wl" role="listbox" aria-label="${tr('월드 선택')}">${worlds.length ? worlds.map(w => `<div class="we ${w.id === selectedWorld ? 'sel' : ''}" data-act="pick" data-id="${w.id}" data-n="${esc(w.name.toLowerCase())}" role="option" aria-selected="${w.id === selectedWorld}">
+    <div class="wi"><img src="${ICON[w.mode === 'creative' ? GRASS : DIAMOND_ORE]}" alt=""></div><div class="wt"><div>${esc(w.name)}</div><div class="ws">${fmtDate(w.played)}</div><div class="ws">${tr(w.mode === 'creative' ? '크리에이티브 모드' : '서바이벌 모드')} · ${diffName(w.difficulty ?? 2)}${w.cheats ? ' · ' + tr('치트') : ''}</div></div></div>`).join('') : `<p class="empty">${tr('아직 월드가 없어요.')}<br>${tr('새로운 월드를 만들어 보세요!')}</p>`}</div></div>
+  <div class="mfoot"><div class="row w308"><button class="btn" data-act="play" ${selectedWorld ? '' : 'disabled'}>${tr('선택한 월드 플레이')}</button><button class="btn" data-act="new">${tr('새로운 월드 만들기')}</button></div>
+  <div class="row w308"><button class="btn" data-act="delete" ${selectedWorld ? '' : 'disabled'}>${tr('삭제')}</button><button class="btn" data-act="title">${tr('뒤로')}</button></div>
+  ${SAVE.storage ? '' : `<p class="desc">${tr('이 환경에서는 저장소를 쓸 수 없어 월드가 저장되지 않아요.')}</p>`}</div></div>`, 'menu');
   const inp = $('wsearch'), filt = () => { worldFilter = inp.value; const q = worldFilter.trim().toLowerCase(); root.querySelectorAll('.we').forEach(e => { e.hidden = !!q && !e.dataset.n.includes(q); }); };
   inp.addEventListener('input', filt); inp.addEventListener('keydown', e => { if (e.key !== 'Escape') e.stopPropagation(); }); filt();
 }
 function showDeleteConfirm() {
   const w = SAVE.worlds.find(x => x.id === selectedWorld); if (!w) return showTitle();
   menuScreen = 'confirmDelete';
-  screenHTML(`<div class="ms center"><div class="mtitle">이 월드를 삭제할까요?</div><p class="desc">'${esc(w.name)}' 월드가 영원히 사라져요. 되돌릴 수 없어요!</p><div class="row w308"><button class="btn" data-act="delYes">삭제</button><button class="btn" data-act="worlds">취소</button></div></div>`, 'dirt');
+  screenHTML(`<div class="ms center"><div class="mtitle">${tr('이 월드를 삭제할까요?')}</div><p class="desc">${tr("'{0}' 월드가 영원히 사라져요. 되돌릴 수 없어요!", esc(w.name))}</p><div class="row w308"><button class="btn" data-act="delYes">${tr('삭제')}</button><button class="btn" data-act="worlds">${tr('취소')}</button></div></div>`, 'menu');
 }
-let createOpts = { mode: 'survival', difficulty: 2, bonus: false, cheats: false, tab: 'game' };
+let createOpts = { mode: 'survival', difficulty: 2, bonus: false, cheats: false, structures: true, tab: 'game' };
 const MODE_DESC = { survival: '자원을 모으고, 도구를 만들고, 밤의 몬스터로부터 살아남으세요. 체력과 배고픔이 있어요.', creative: '모든 블록을 무한히 쓰고, 날아다니며, 다치지 않아요. 몬스터도 공격하지 않아요.' };
 function showCreate(from) {
   createFrom = from || (menuScreen === 'worlds' ? 'worlds' : 'title'); menuScreen = 'create';
-  createOpts = { mode: 'survival', difficulty: 2, bonus: false, cheats: false, tab: 'game' };
-  screenHTML(`<div class="ms full"><div class="mtitle">새로운 월드 만들기</div>
-  <div class="ctabs"><button class="btn ctabb on" data-act="ctab" data-t="game">게임</button><button class="btn ctabb" data-act="ctab" data-t="world">월드</button></div>
+  createOpts = { mode: 'survival', difficulty: 2, bonus: false, cheats: false, structures: true, tab: 'game' };
+  screenHTML(`<div class="ms full"><div class="mtitle">${tr('새로운 월드 만들기')}</div>
+  <div class="ctabs"><button class="btn ctabb on" data-act="ctab" data-t="game">${tr('게임')}</button><button class="btn ctabb" data-act="ctab" data-t="world">${tr('월드')}</button></div>
   <div class="mlist"><div id="ctGame" style="display:flex;flex-direction:column;align-items:center;width:100%">
-   <label class="mlabel" for="wname">월드 이름</label><input class="mfield" id="wname" maxlength="32" value="새로운 세계${SAVE.worlds.length ? ' ' + (SAVE.worlds.length + 1) : ''}">
-   <div style="height:${u(8)}"></div><button class="btn w200" data-act="cmode" id="cMode">게임 모드: 서바이벌</button><p class="desc" id="modeDesc">${MODE_DESC.survival}</p>
-   <button class="btn w200" data-act="cdiff" id="cDiff">난이도: 보통</button><p class="desc" id="diffDesc">몬스터가 나타나고, 배고프면 체력이 1칸까지 줄어들어요.</p></div>
+   <label class="mlabel" for="wname">${tr('월드 이름')}</label><input class="mfield" id="wname" maxlength="32" value="${esc(tr('새로운 세계'))}${SAVE.worlds.length ? ' ' + (SAVE.worlds.length + 1) : ''}">
+   <div style="height:${u(8)}"></div><button class="btn w200" data-act="cmode" id="cMode"></button><p class="desc" id="modeDesc"></p>
+   <button class="btn w200" data-act="cdiff" id="cDiff"></button><p class="desc" id="diffDesc"></p>
+   <button class="btn w200" data-act="ccheats" id="cCheats"></button><p class="desc">${tr('/gamemode, /give 같은 명령어를 쓸 수 있어요.')}</p></div>
   <div id="ctWorld" style="display:none;flex-direction:column;align-items:center;width:100%">
-   <label class="mlabel" for="wseed">월드 생성기 시드</label><input class="mfield" id="wseed" maxlength="24" placeholder="비워 두면 무작위 시드"><p class="desc">같은 시드를 쓰면 같은 지형이 만들어져요.</p>
-   <button class="btn w200" data-act="ccheats" id="cCheats">치트 허용: 끔</button><button class="btn w200" data-act="cbonus" id="cBonus">보너스 아이템: 끔</button><p class="desc">서바이벌을 시작할 때 원목, 사과, 나무 도구를 받아요.</p></div></div>
-  <div class="mfoot"><div class="row w308"><button class="btn" data-act="create">새로운 월드 만들기</button><button class="btn" data-act="ccancel">취소</button></div></div></div>`, 'dirt');
+   <label class="mlabel" for="wseed">${tr('월드 생성기 시드')}</label><input class="mfield" id="wseed" maxlength="24" placeholder="${tr('비워 두면 무작위 시드')}"><p class="desc">${tr('같은 시드를 쓰면 같은 지형이 만들어져요.')}</p>
+   <button class="btn w200" data-act="cstruct" id="cStruct"></button><p class="desc">${tr('마을, 무너진 차원문, 사막 피라미드, 이글루, 던전, 엔드 시티를 만들어요.')}</p>
+   <button class="btn w200" data-act="cbonus" id="cBonus"></button><p class="desc">${tr('서바이벌을 시작할 때 원목, 사과, 나무 도구를 받아요.')}</p></div></div>
+  <div class="mfoot"><div class="row w308"><button class="btn" data-act="create">${tr('새로운 월드 만들기')}</button><button class="btn" data-act="ccancel">${tr('취소')}</button></div></div></div>`, 'menu');
   root.querySelectorAll('#screen input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Escape') return; e.stopPropagation(); if (e.key === 'Enter') menuAction('create'); }));
+  updateCreate();
 }
 function updateCreate() {
-  $('cMode').textContent = '게임 모드: ' + (createOpts.mode === 'creative' ? '크리에이티브' : '서바이벌');
-  $('modeDesc').textContent = MODE_DESC[createOpts.mode];
-  $('cDiff').textContent = '난이도: ' + DIFF_NAME[createOpts.difficulty];
-  $('diffDesc').textContent = ['몬스터가 나타나지 않고, 체력과 배고픔이 저절로 회복돼요.', '몬스터가 적게 나타나고 피해도 적어요.', '몬스터가 나타나고, 배고프면 체력이 1칸까지 줄어들어요.', '몬스터가 많고 아파요. 굶으면 죽을 수도 있어요!'][createOpts.difficulty];
-  $('cCheats').textContent='치트 허용: '+(createOpts.cheats?'켬':'끔');
-  $('cBonus').textContent = '보너스 아이템: ' + (createOpts.bonus ? '켬' : '끔');
+  const onoff = v => tr(v ? '켬' : '끔');
+  $('cMode').textContent = tr('게임 모드: {0}', tr(createOpts.mode === 'creative' ? '크리에이티브' : '서바이벌'));
+  $('modeDesc').textContent = tr(MODE_DESC[createOpts.mode]);
+  $('cDiff').textContent = tr('난이도: {0}', diffName(createOpts.difficulty));
+  $('diffDesc').textContent = tr(['몬스터가 나타나지 않고, 체력과 배고픔이 저절로 회복돼요.', '몬스터가 적게 나타나고 피해도 적어요.', '몬스터가 나타나고, 배고프면 체력이 1칸까지 줄어들어요.', '몬스터가 많고 아파요. 굶으면 죽을 수도 있어요!'][createOpts.difficulty]);
+  $('cCheats').textContent = tr('치트 허용: {0}', onoff(createOpts.cheats));
+  $('cBonus').textContent = tr('보너스 상자: {0}', onoff(createOpts.bonus));
+  $('cStruct').textContent = tr('구조물 생성: {0}', onoff(createOpts.structures));
   root.querySelectorAll('.ctabb').forEach(b => b.classList.toggle('on', b.dataset.t === createOpts.tab));
   $('ctGame').style.display = createOpts.tab === 'game' ? 'flex' : 'none'; $('ctWorld').style.display = createOpts.tab === 'world' ? 'flex' : 'none';
 }
 function showPause() {
   if (!G || G.ui === 'death') return;
-  G.ui = 'pause'; menuScreen = 'pause'; releasePointer(); input.mine = input.use = false; resetTouchHolds();
-  screenHTML(`<div class="ms center"><div class="mtitle">게임 메뉴</div>
-  <button class="btn w204" data-act="cheats">치트 허용: ${G.world.cheats?'켬':'끔'}</button>
-  <button class="btn w204" data-act="resume">게임으로 돌아가기</button>
-  <div class="row w204"><button class="btn" data-act="help">조작법</button><button class="btn" data-act="stats">통계</button></div>
-  <div class="row w204"><button class="btn" data-act="settings">설정...</button>${touchUI() ? '<button class="btn" data-act="layout">버튼 배치...</button>' : '<button class="btn" data-act="page" data-p="keys">키 설정...</button>'}</div>
-  ${G.mode==='creative'?`<div class="row w204"><button class="btn" data-act="dim-nether">네더 이동</button><button class="btn" data-act="dim-end">엔드 이동</button><button class="btn" data-act="dim-overworld">오버월드</button></div>`:''}
-  <button class="btn w204" data-act="quit">저장 후 타이틀 화면으로</button>
-  <p class="minfo">${esc(G.world.name)} · ${G.mode === 'creative' ? '크리에이티브' : '서바이벌'} · ${DIFF_NAME[W.difficulty]} · ${dayCount()}일째</p></div>`, 'game');
+  G.ui = 'pause'; menuScreen = 'pause'; pageOrigin = null; releasePointer(); input.mine = input.use = false; resetTouchHolds();
+  screenHTML(`<div class="ms center"><div class="mtitle">${tr('게임 메뉴')}</div>
+  <button class="btn w204" data-act="resume">${tr('게임으로 돌아가기')}</button>
+  <div class="row w204"><button class="btn" data-act="help">${tr('조작법')}</button><button class="btn" data-act="stats">${tr('통계')}</button></div>
+  <div class="row w204"><button class="btn" data-act="settings">${tr('설정...')}</button><button class="btn" data-act="full">${tr('전체화면')}</button></div>
+  <div class="row w204"><button class="btn" data-act="cheats">${tr('치트 허용: {0}', tr(G.world.cheats ? '켬' : '끔'))}</button>${touchUI() ? `<button class="btn" data-act="layout">${tr('버튼 배치...')}</button>` : `<button class="btn" data-act="page" data-p="keys">${tr('키 설정...')}</button>`}</div>
+  ${G.mode === 'creative' ? `<div class="row w204"><button class="btn" data-act="dim-overworld">${tr('오버월드')}</button><button class="btn" data-act="dim-nether">${tr('네더')}</button><button class="btn" data-act="dim-end">${tr('엔드')}</button></div>` : ''}
+  <button class="btn w204" data-act="quit">${tr('저장 후 타이틀 화면으로')}</button>
+  <p class="minfo">${esc(G.world.name)} · ${tr(G.mode === 'creative' ? '크리에이티브' : '서바이벌')} · ${diffName(W.difficulty)} · ${tr('{0}일째', dayCount())}</p></div>`, 'game');
   ctx.setPaused(true);
 }
-// ── settings ──
-const pct = v => v + '%', vol = v => v == 0 ? '끔' : v + '%', sensF = v => Math.round(v / 8 * 100) + '%';
+const pct = v => v + '%', vol = v => v == 0 ? tr('끔') : v + '%', sensF = v => Math.round(v / 8 * 100) + '%';
 const OPTS = {
-  fov: { l: '시야각', min: 30, max: 110, f: v => v == 70 ? '보통' : v == 110 ? '최대' : v },
+  fov: { l: '시야각', min: 30, max: 110, f: v => v == 70 ? tr('보통') : v == 110 ? tr('최대') : v },
   difficulty: { l: '난이도', v: [0, 1, 2, 3], n: DIFF_NAME },
   guiScale: { l: 'GUI 크기', v: [0, 1, 2, 3, 4], n: ['자동', '1', '2', '3', '4'] },
-  brightness: { l: '밝기', min: 0, max: 100, f: v => v == 0 ? '기본' : v == 100 ? '밝게' : '+' + v + '%' },
-  cameraDistance: {l:'3인칭 카메라 거리',min:2,max:10,f:v=>v+' 블록'},
-  renderDist: { l: '시야 거리', min: 2, max: 10, f: v => v + ' 청크' },
+  brightness: { l: '밝기', min: 0, max: 100, f: v => v == 0 ? tr('기본') : v == 100 ? tr('밝게') : '+' + v + '%' },
+  cameraDistance: { l: '3인칭 카메라 거리', min: 2, max: 10, f: v => tr('{0} 블록', v) },
+  renderDist: { l: '시야 거리', min: 2, max: 10, f: v => tr('{0} 청크', v) },
   renderScale: { l: '렌더 해상도', min: 50, max: 100, step: 5, f: pct },
   maxFps: { l: '최대 프레임', v: [30, 60, 0], n: ['30 FPS', '60 FPS', '무제한'] },
   particles: { l: '파티클', v: [2, 1, 0], n: ['모두', '감소', '최소'] },
-  clouds: { l: '구름', b: 1 }, bob: { l: '걷기 흔들림', b: 1 }, fovEffect: { l: '달리기 시야 효과', b: 1 }, hurtShake: { l: '피격·폭발 흔들림', b: 1 },
+  clouds: { l: '구름', b: 1 }, fog: { l: '안개', b: 1 }, showHand: { l: '손 표시', b: 1 }, bob: { l: '화면 흔들림', b: 1 }, fovEffect: { l: '시야 효과', b: 1 }, hurtShake: { l: '피격·폭발 흔들림', b: 1 },
   volMaster: { l: '주 음량', min: 0, max: 100, step: 5, f: vol }, volMusic: { l: '음악', min: 0, max: 100, step: 5, f: vol }, volBlocks: { l: '블록', min: 0, max: 100, step: 5, f: vol },
   volMobs: { l: '생물', min: 0, max: 100, step: 5, f: vol }, volPlayer: { l: '플레이어', min: 0, max: 100, step: 5, f: vol }, uiSound: { l: '버튼 클릭음', b: 1 },
-  sens: { l: '마우스 감도', min: 1, max: 20, f: sensF }, invertY: { l: '마우스 반전', b: 1 }, autoJump: { l: '자동 점프', b: 1 },
+  sens: { l: '마우스 감도', min: 1, max: 20, f: sensF }, invertY: { l: '마우스 반전', b: 1 }, autoJump: { l: '자동 점프', b: 1 }, scrollInvert: { l: '휠 방향 반전', b: 1 },
   sneakToggle: { l: '웅크리기', v: [false, true], n: ['누르기', '전환'] }, sprintToggle: { l: '달리기', v: [false, true], n: ['누르기', '전환'] },
   touchMode: { l: '터치 컨트롤', v: ['auto', 'on', 'off'], n: ['자동', '항상 표시', '숨김'] },
   moveStyle: { l: '이동 방식', v: ['joystick', 'dpad'], n: ['조이스틱', '방향 패드'] },
   joyFloat: { l: '조이스틱', v: [false, true], n: ['고정 위치', '터치한 곳'] },
   touchSens: { l: '터치 시점 감도', min: 1, max: 20, f: sensF }, btnSize: { l: '버튼 크기', min: 60, max: 160, step: 5, f: pct },
   touchOpacity: { l: '버튼 불투명도', min: 20, max: 100, step: 5, f: pct }, tapPlace: { l: '탭해서 설치', b: 1 },
-  holdDelay: { l: '꾹 눌러 캐기', min: 150, max: 600, step: 25, f: v => (v / 1000).toFixed(2) + '초' }, vibrate: { l: '진동', b: 1 }, leftHanded: { l: '좌우 반전 배치', b: 1 },
-  hudScale: { l: 'HUD 크기', min: 50, max: 150, step: 5, f: pct }, chatOpacity: { l: '채팅 불투명도', min: 10, max: 100, step: 5, f: pct },
+  holdDelay: { l: '꾹 눌러 캐기', min: 150, max: 600, step: 25, f: v => tr('{0}초', (v / 1000).toFixed(2)) }, vibrate: { l: '진동', b: 1 }, leftHanded: { l: '좌우 반전 배치', b: 1 },
+  invHelpers: { l: '인벤토리 보조 버튼', b: 1 }, hideMobileExtras: { l: '간단한 터치 버튼', b: 1 },
+  hudScale: { l: 'HUD 크기', min: 50, max: 150, step: 5, f: pct }, chatOpacity: { l: '채팅 불투명도', min: 10, max: 100, step: 5, f: pct }, chatScale: { l: '채팅 글자 크기', min: 50, max: 150, step: 10, f: pct },
   crosshair: { l: '조준점', b: 1 }, itemNames: { l: '아이템 이름', b: 1 }, showCoords: { l: '좌표 표시', b: 1 }, showFps: { l: 'FPS 표시', b: 1 }, chatShow: { l: '채팅 표시', b: 1 },
-  menuBlur: { l: '메뉴 배경 흐림', min: 0, max: 10, f: v => v == 0 ? '끔' : v }, panoSpeed: { l: '타이틀 배경 속도', min: 0, max: 200, step: 10, f: v => v == 0 ? '정지' : v + '%' },
+  systemMsgs: { l: '게임 안내 메시지', b: 1 }, autoPause: { l: '창을 벗어나면 일시정지', b: 1 }, autosave: { l: '자동 저장', v: [30, 45, 120, 300], n: ['30초', '45초', '2분', '5분'] },
+  menuBlur: { l: '메뉴 배경 흐림', min: 0, max: 10, f: v => v == 0 ? tr('끔') : v }, panoSpeed: { l: '타이틀 배경 속도', min: 0, max: 200, step: 10, f: v => v == 0 ? tr('정지') : v + '%' },
+  highContrast: { l: '고대비 테두리', b: 1 }, reduceMotion: { l: '움직임 줄이기', b: 1 },
   combat: { l: '전투 방식', v: ['modern', 'classic'], n: ['공격 쿨다운', '연타 (구버전)'] }, attackIndicator: { l: '공격 게이지', b: 1 }, dmgNumbers: { l: '데미지 숫자', b: 1 },
 };
 const PAGES = {
-  main: ['설정', () => [G ? 'fov' : 'fov*', G ? 'difficulty' : null, '@video|비디오 설정...', '@sound|음악 및 소리...', '@controls|조작...', '@keys|키 설정...', '@touch|터치 컨트롤...', '@iface|인터페이스...', '@char|캐릭터...', '@combat|전투...']],
-  combat: ['전투', () => ['combat*', 'attackIndicator', 'dmgNumbers']],
-  video: ['비디오 설정', () => ['guiScale', 'brightness', 'renderDist', 'cameraDistance', 'renderScale', 'maxFps', 'particles', 'clouds', 'bob', 'fovEffect', 'hurtShake']],
+  main: ['설정', () => ['fov', G ? 'difficulty' : 'guiScale', '@char|캐릭터 꾸미기...', '@sound|음악 및 소리...', '@video|비디오 설정...', '@controls|조작...', '@lang|언어...', '@chat|채팅 설정...', '@iface|인터페이스...', '@access|접근성 설정...', '@touch|터치 컨트롤...', '@combat|게임플레이...']],
+  combat: ['게임플레이', () => ['combat*', 'attackIndicator', 'dmgNumbers', 'autosave', 'autoPause']],
+  video: ['비디오 설정', () => ['guiScale', 'brightness', 'renderDist', 'renderScale', 'maxFps', 'particles', 'clouds', 'fog', 'showHand', 'cameraDistance', 'menuBlur', 'panoSpeed']],
   sound: ['음악 및 소리', () => ['volMaster*', 'volMusic', 'volBlocks', 'volMobs', 'volPlayer', 'uiSound*']],
-  controls: ['조작', () => ['sens', 'invertY', 'autoJump', 'sneakToggle', 'sprintToggle', '@keys|키 설정...']],
-  touch: ['터치 컨트롤', () => ['touchMode', 'moveStyle', 'joyFloat', 'touchSens', 'btnSize', 'touchOpacity', 'tapPlace', 'holdDelay', 'vibrate', 'leftHanded', '#버튼 배치', '!layout|버튼 배치 편집...', '!resetLayout|배치 초기화']],
-  iface: ['인터페이스', () => ['hudScale', 'chatOpacity', 'crosshair', 'itemNames', 'showCoords', 'showFps', 'chatShow', 'menuBlur', 'panoSpeed*']],
+  controls: ['조작', () => ['sens', 'invertY', 'autoJump', 'scrollInvert', 'sneakToggle', 'sprintToggle', '@keys|키 설정...*']],
+  chat: ['채팅 설정', () => ['chatShow', 'systemMsgs', 'chatOpacity', 'chatScale']],
+  touch: ['터치 컨트롤', () => ['touchMode', 'moveStyle', 'joyFloat', 'touchSens', 'btnSize', 'touchOpacity', 'tapPlace', 'holdDelay', 'vibrate', 'leftHanded', 'hideMobileExtras', 'invHelpers', '#버튼 배치', '!layout|버튼 배치 편집...', '!resetLayout|배치 초기화']],
+  iface: ['인터페이스', () => ['hudScale', 'crosshair', 'itemNames', 'showCoords', 'showFps']],
+  access: ['접근성 설정', () => ['highContrast', 'reduceMotion', 'bob', 'fovEffect', 'hurtShake', 'panoSpeed', 'menuBlur', 'chatScale']],
 };
-const KEYDEF = [['#이동'], ['forward', '앞으로', 'KeyW'], ['back', '뒤로', 'KeyS'], ['left', '왼쪽', 'KeyA'], ['right', '오른쪽', 'KeyD'], ['jump', '점프', 'Space'], ['sneak', '웅크리기', 'ShiftLeft'], ['sprint', '달리기', 'ControlLeft'],
+const KEYDEF = [['#이동'], ['forward', '앞으로 걷기', 'KeyW'], ['back', '뒤로 걷기', 'KeyS'], ['left', '왼쪽으로 걷기', 'KeyA'], ['right', '오른쪽으로 걷기', 'KeyD'], ['jump', '점프', 'Space'], ['sneak', '웅크리기', 'ShiftLeft'], ['sprint', '달리기', 'ControlLeft'],
   ['#게임플레이'], ['inventory', '인벤토리 열기', 'KeyE'], ['drop', '아이템 버리기', 'KeyQ'], ['swap', '양손 바꾸기', 'KeyF'], ['view', '시점 전환', 'F5'], ['fly', '비행 전환 (크리에이티브)', 'KeyG'],
   ['#기타'], ['chat', '채팅 열기', 'KeyT'], ['command', '명령어 입력', 'Slash'], ['hideHud', 'HUD 숨기기', 'F1'], ['debug', '디버그 화면', 'F3']];
 const DEFAULT_KEYS = Object.fromEntries(KEYDEF.filter(k => k[2]).map(k => [k[0], k[2]]));
 function keyName(c) {
-  if (!c) return '없음';
+  if (!c) return tr('없음');
   const M = { Space: '스페이스', ShiftLeft: '왼쪽 Shift', ShiftRight: '오른쪽 Shift', ControlLeft: '왼쪽 Ctrl', ControlRight: '오른쪽 Ctrl', AltLeft: '왼쪽 Alt', AltRight: '오른쪽 Alt', MetaLeft: '왼쪽 ⌘', MetaRight: '오른쪽 ⌘', Tab: 'Tab', Enter: 'Enter', Backspace: '백스페이스', CapsLock: 'Caps Lock', Slash: '/', Backslash: '\\', Period: '.', Comma: ',', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Minus: '-', Equal: '=', Backquote: '`', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
-  if (M[c]) return M[c]; if (/^Key[A-Z]$/.test(c)) return c.slice(3); if (/^Digit\d$/.test(c)) return c.slice(5); if (/^Numpad/.test(c)) return '키패드 ' + c.slice(6); return c;
+  if (M[c]) return tr(M[c]); if (/^Key[A-Z]$/.test(c)) return c.slice(3); if (/^Digit\d$/.test(c)) return c.slice(5); if (/^Numpad/.test(c)) return tr('키패드 ') + c.slice(6); return c;
 }
-let setPage = 'main', keysParent = 'main', bindingKey = null;
+let setPage = 'main', keysParent = 'main', bindingKey = null, pageOrigin = null;
 const optGet = k => k === 'difficulty' ? (W ? W.difficulty : 2) : SAVE.settings[k];
-function optLabel(k) { const o = OPTS[k], v = optGet(k); return o.b ? `${o.l}: ${v ? '켬' : '끔'}` : `${o.l}: ${o.n[Math.max(0, o.v.indexOf(v))]}`; }
+function optLabel(k) { const o = OPTS[k], v = optGet(k); return o.b ? `${tr(o.l)}: ${tr(v ? '켬' : '끔')}` : `${tr(o.l)}: ${tr(o.n[Math.max(0, o.v.indexOf(v))])}`; }
 function optHTML(tok) {
   const wide = tok.endsWith('*'); if (wide) tok = tok.slice(0, -1);
   const cls = wide ? ' wide' : '';
-  if (tok[0] === '#') return `<div class="sect">${tok.slice(1)}</div>`;
-  if (tok[0] === '@' || tok[0] === '!') { const [a, l] = tok.slice(1).split('|'); return tok[0] === '@' ? `<button class="btn${cls}" data-act="page" data-p="${a}">${l}</button>` : `<button class="btn${cls}" data-act="${a}">${l}</button>`; }
+  if (tok[0] === '#') return `<div class="sect">${tr(tok.slice(1))}</div>`;
+  if (tok[0] === '@' || tok[0] === '!') { const [a, l] = tok.slice(1).split('|'); return tok[0] === '@' ? `<button class="btn${cls}" data-act="page" data-p="${a}">${tr(l)}</button>` : `<button class="btn${cls}" data-act="${a}">${tr(l)}</button>`; }
   const o = OPTS[tok], v = optGet(tok);
-  if (o.min != null) return `<label class="slider${cls}"><input type="range" min="${o.min}" max="${o.max}" step="${o.step || 1}" value="${v}" data-opt="${tok}" aria-label="${o.l}"><span class="lab">${o.l}: ${o.f ? o.f(v) : v}</span></label>`;
+  if (o.min != null) return `<label class="slider${cls}"><input type="range" min="${o.min}" max="${o.max}" step="${o.step || 1}" value="${v}" data-opt="${tok}" aria-label="${tr(o.l)}"><span class="lab">${tr(o.l)}: ${o.f ? o.f(v) : v}</span></label>`;
   return `<button class="btn${cls}" data-opt="${tok}">${optLabel(tok)}</button>`;
 }
 function setOpt(k, v, el) {
   SAVE.settings[k] = v;
-  const o = OPTS[k]; if (el && el.nextElementSibling) el.nextElementSibling.textContent = `${o.l}: ${o.f ? o.f(v) : v}`;
+  const o = OPTS[k]; if (el && el.nextElementSibling) el.nextElementSibling.textContent = `${tr(o.l)}: ${o.f ? o.f(v) : v}`;
   applyOpt(k);
 }
 function cycleOpt(k, dir, btn) {
@@ -1023,7 +1078,7 @@ function applyOpt(k) {
   if (G) G.settings = SAVE.settings;
   if (k === 'renderScale') resize();
   applyVisualSettings();
-  if (k === 'touchMode' || k === 'moveStyle') renderTouch();
+  if (k === 'touchMode' || k === 'moveStyle' || k === 'hideMobileExtras') renderTouch();
   saveSettingsSoon();
 }
 function showSettings(page = 'main') {
@@ -1031,37 +1086,46 @@ function showSettings(page = 'main') {
   if (G) G.ui = 'settings';
   if (page === 'keys') return showKeys();
   if (page === 'char') return showCharacter();
+  if (page === 'lang') return showLanguage();
   const [title, items] = PAGES[page];
-  const desc = page === 'combat' ? `<p class="desc">공격 쿨다운: 무기마다 공격 속도가 있고, 게이지가 다 차야 최대 피해가 나요. 게이지가 찬 상태로 떨어지면서 때리면 치명타(×1.5), 달리면서 때리면 강한 밀치기, 검으로 땅에서 때리면 옆의 몹까지 휩쓸어요. 연타 방식은 쿨다운 없이 빠르게 때려요.</p>` : page === 'touch' ? `<p class="desc">'버튼 배치 편집'에서 버튼을 끌어 옮기고, 크기를 바꾸고, 숨길 수 있어요.${touchUI() ? '' : ' 지금은 터치 기기가 아니라서 버튼이 숨겨져 있어요.'}</p>` : '';
-  screenHTML(`<div class="ms full"><div class="mtitle">${title}</div><div class="mlist">${desc}<div class="opts">${items().filter(Boolean).map(optHTML).join('')}</div></div>
-  <div class="mfoot"><button class="btn w200" data-act="setback">완료</button></div></div>`);
+  const desc = page === 'combat' ? `<p class="desc">${tr('공격 쿨다운: 무기마다 공격 속도가 있고, 게이지가 다 차야 최대 피해가 나요. 연타 방식은 쿨다운 없이 빠르게 때려요.')}</p>`
+    : page === 'touch' ? `<p class="desc">${tr("'간단한 터치 버튼'을 켜면 화면 탭·꾹 누르기와 겹치는 캐기/사용 버튼 등을 숨겨요. '버튼 배치 편집'에서 버튼을 옮기고 크기를 바꿀 수 있어요.")}${touchUI() ? '' : ' ' + tr('지금은 터치 기기가 아니라서 버튼이 숨겨져 있어요.')}</p>`
+    : page === 'chat' ? `<p class="desc">${tr("'게임 안내 메시지'를 켜면 차원문·잠자기 같은 안내 문구를 화면에 보여줘요.")}</p>` : '';
+  screenHTML(`<div class="ms full"><div class="mtitle">${tr(title)}</div><div class="mlist">${desc}<div class="opts">${items().filter(Boolean).map(optHTML).join('')}</div></div>
+  <div class="mfoot"><button class="btn w200" data-act="setback">${tr('완료')}</button></div></div>`);
+}
+function showLanguage() {
+  setPage = 'lang'; menuScreen = 'settings'; if (G) G.ui = 'settings';
+  screenHTML(`<div class="ms full"><div class="mtitle">${tr('언어')}</div><div class="mlist"><div class="wl" role="listbox">${LANGS.map(([k, n, sub]) => `<div class="we lang ${k === curLang() ? 'sel' : ''}" data-act="setlang" data-l="${k}" role="option" aria-selected="${k === curLang()}"><div class="wt"><div>${n}</div><div class="ws">${sub}</div></div></div>`).join('')}</div>
+  <p class="desc">${tr('메뉴, 설정, 아이템 이름, 안내 문구가 바뀌어요.')}</p></div>
+  <div class="mfoot"><button class="btn w200" data-act="setback">${tr('완료')}</button></div></div>`);
 }
 function showCharacter() {
   setPage = 'char'; menuScreen = 'settings'; if (G) G.ui = 'settings';
   const c = charOf(), rgb = a => `rgb(${a.join(',')})`, sw = a => `<i class="sw" style="background:${rgb(a)}"></i>`;
   const btn = (k, label) => `<button class="btn" data-act="charopt" data-k="${k}">${label}</button>`;
-  screenHTML(`<div class="ms full"><div class="mtitle">캐릭터</div><div class="mlist"><div class="charwrap"><canvas class="pview big" id="charpv" width="16" height="32" aria-label="캐릭터 미리보기"></canvas>
-  <div class="opts charopts"><div class="sect">기본 캐릭터</div>${CHAR_PRESETS.map((p, i) => `<button class="btn" data-act="charpreset" data-i="${i}">${p.name} (${p.model === 'slim' ? '슬림' : '클래식'})</button>`).join('')}
-  <div class="sect">꾸미기</div>
-  ${btn('model', `체형: ${c.slim ? '슬림 (얇은 팔)' : '클래식 (넓은 팔)'}`)}${btn('style', `머리 모양: ${c.style ? '긴 머리' : '짧은 머리'}`)}
-  ${btn('skin', sw(CHAR_SKIN[c.skin]) + '피부색')}${btn('hair', sw(CHAR_HAIR[c.hair]) + '머리 색')}${btn('shirt', sw(CHAR_SHIRT[c.shirt]) + '상의 색')}${btn('pants', sw(CHAR_PANTS[c.pants]) + '하의 색')}</div></div>
-  <p class="desc">3인칭 시점(PC: F5 · 터치: 오른쪽 위 눈 모양 버튼)에서 내 캐릭터를 볼 수 있어요. 1인칭에서도 팔 모양과 소매 색이 바뀌어요.</p></div>
-  <div class="mfoot"><button class="btn w200" data-act="setback">완료</button></div></div>`);
+  screenHTML(`<div class="ms full"><div class="mtitle">${tr('캐릭터 꾸미기')}</div><div class="mlist"><div class="charwrap"><canvas class="pview big" id="charpv" width="16" height="32" aria-label="${tr('캐릭터')}"></canvas>
+  <div class="opts charopts"><div class="sect">${tr('기본 캐릭터')}</div>${CHAR_PRESETS.map((p, i) => `<button class="btn" data-act="charpreset" data-i="${i}">${tr(p.name)} (${tr(p.model === 'slim' ? '슬림' : '클래식')})</button>`).join('')}
+  <div class="sect">${tr('꾸미기')}</div>
+  ${btn('model', tr('체형: {0}', tr(c.slim ? '슬림 (얇은 팔)' : '클래식 (넓은 팔)')))}${btn('style', tr('머리 모양: {0}', tr(c.style ? '긴 머리' : '짧은 머리')))}
+  ${btn('skin', sw(CHAR_SKIN[c.skin]) + tr('피부색'))}${btn('hair', sw(CHAR_HAIR[c.hair]) + tr('머리 색'))}${btn('shirt', sw(CHAR_SHIRT[c.shirt]) + tr('상의 색'))}${btn('pants', sw(CHAR_PANTS[c.pants]) + tr('하의 색'))}</div></div></div>
+  <div class="mfoot"><button class="btn w200" data-act="setback">${tr('완료')}</button></div></div>`);
   drawPortrait($('charpv'), G ? G.armor : null);
 }
 function setCharacter(c) { SAVE.settings.char = c; paintCharacter(); saveSettingsSoon(); showCharacter(); }
 function showKeys() {
   const K = SAVE.settings.keys;
   const rows = KEYDEF.map(k => {
-    if (k[0][0] === '#') return `<div class="khead">${k[0].slice(1)}</div>`;
+    if (k[0][0] === '#') return `<div class="khead">${tr(k[0].slice(1))}</div>`;
     const code = K[k[0]], conf = code && Object.entries(K).some(([a, c]) => a !== k[0] && c === code), lis = bindingKey === k[0];
-    return `<div class="krow"><span>${k[1]}</span><button class="btn ${lis ? 'listen' : conf ? 'conf' : ''}" data-act="bind" data-k="${k[0]}">${lis ? `&gt; ${esc(keyName(code))} &lt;` : esc(keyName(code))}</button><button class="btn" data-act="kreset" data-k="${k[0]}" ${code === DEFAULT_KEYS[k[0]] ? 'disabled' : ''}>초기화</button></div>`;
+    return `<div class="krow"><span>${tr(k[1])}</span><button class="btn ${lis ? 'listen' : conf ? 'conf' : ''}" data-act="bind" data-k="${k[0]}">${lis ? `&gt; ${esc(keyName(code))} &lt;` : esc(keyName(code))}</button><button class="btn" data-act="kreset" data-k="${k[0]}" ${code === DEFAULT_KEYS[k[0]] ? 'disabled' : ''}>${tr('초기화')}</button></div>`;
   }).join('');
-  screenHTML(`<div class="ms full"><div class="mtitle">키 설정</div><div class="mlist">${bindingKey ? '<p class="desc yellow">바꿀 키를 누르세요 (Esc: 취소)</p>' : ''}${rows}<p class="desc">방향키와 1~9 숫자 키, 마우스 버튼은 항상 함께 쓸 수 있어요.</p></div>
-  <div class="mfoot"><div class="row w308"><button class="btn" data-act="kresetAll">모두 초기화</button><button class="btn" data-act="setback">완료</button></div></div></div>`);
+  screenHTML(`<div class="ms full"><div class="mtitle">${tr('키 설정')}</div><div class="mlist">${bindingKey ? `<p class="desc yellow">${tr('바꿀 키를 누르세요 (Esc: 취소)')}</p>` : ''}${rows}<p class="desc">${tr('방향키와 1~9 숫자 키, 마우스 버튼은 항상 함께 쓸 수 있어요.')}</p></div>
+  <div class="mfoot"><div class="row w308"><button class="btn" data-act="kresetAll">${tr('모두 초기화')}</button><button class="btn" data-act="setback">${tr('완료')}</button></div></div></div>`);
 }
 function settingsBack() {
   bindingKey = null;
+  if (pageOrigin && setPage === pageOrigin.page) { const o = pageOrigin.from; pageOrigin = null; if (o === 'pause' && G) return showPause(); if (o === 'title') return showLanding(); }
   if (setPage === 'keys') { if (keysParent === 'pause' && G) return showPause(); if (keysParent !== 'pause') return showSettings(keysParent); }
   if (setPage !== 'main') return showSettings('main');
   if (G) return showPause();
@@ -1070,56 +1134,69 @@ function settingsBack() {
 function showHelp() {
   const from = G ? 'pause' : 'title'; if (G) G.ui = 'help'; menuScreen = 'help';
   const K = SAVE.settings.keys, kn = a => keyName(K[a]);
-  screenHTML(`<div class="ms full"><div class="mtitle">조작법</div><div class="mlist"><div class="help">
-  <h4>PC</h4><p>${kn('forward')}/${kn('left')}/${kn('back')}/${kn('right')} 이동 · 마우스 시점 · 좌클릭(꾹) 캐기·공격 · 우클릭 설치·사용·먹기 · 가운데 클릭 블록 집기</p>
-  <p>${kn('jump')} 점프(크리에이티브에서 두 번: 비행) · ${kn('sneak')} 웅크리기 · ${kn('sprint')} 또는 ${kn('forward')} 두 번 달리기 · 1–9/휠 아이템 선택</p>
-  <p>${kn('inventory')} 인벤토리 · ${kn('drop')} 버리기(Ctrl: 묶음) · ${kn('chat')} 채팅 · ${kn('command')} 명령어 · ${kn('hideHud')} HUD 숨기기 · ${kn('debug')} 디버그 · Esc 메뉴</p>
-  <h4>모바일</h4><p>왼쪽 조이스틱(또는 방향 패드)으로 이동 · 화면 드래그로 시점 · 짧게 탭 설치·사용 · 꾹 누르기 캐기·공격 · 오른쪽 버튼 점프/캐기/놓기/웅크리기 · 핫바 옆 ⋯ 인벤토리</p>
-  <p>크리에이티브 비행: 점프 버튼 두 번 탭 또는 비행 버튼 · 날 때 점프 = 위로, 내려가기/웅크리기 = 아래로(누르고 있는 동안)</p>
-  <p>버튼 위치·크기는 설정 → 터치 컨트롤 → 버튼 배치 편집에서 바꿀 수 있어요.</p>
-  <h4>인벤토리</h4><p>클릭: 집기/놓기 · 우클릭: 절반 집기/1개 놓기 · Shift+클릭: 빠른 이동 · 초록 책: 레시피 책(빨간 칸은 재료 부족, 같은 레시피를 다시 누르면 재료 한 세트 추가)</p>
-  <p>끌어서 놓기: 아이템을 다른 칸으로 끌면 옮겨지고(다른 아이템이 있으면 맞바꿈), 아이템을 든 채로 여러 칸을 문지르면 고르게 나눠 놓아요. 터치: 길게 누르면 절반 집기, 두 번 탭하면 빠른 이동, 결과 칸을 길게 누르면 최대한 많이 제작.</p>
-  <h4>전투</h4><p>무기마다 공격 속도가 있어 조준점 아래 게이지가 다 차야 최대 피해가 나요. 게이지가 찬 상태로 떨어지면서 때리면 치명타(×1.5, 노란 별), 달리면서 때리면 강한 밀치기, 검으로 땅에서 때리면 옆 몹까지 휩쓸기. 설정 → 전투에서 연타(구버전) 방식과 데미지 숫자를 켤 수 있어요.</p>
-  <h4>왼손 · 캐릭터 · 시점</h4><p>${kn('swap')} 또는 터치 '양손 바꾸기' 버튼으로 손에 든 아이템과 왼손 아이템을 바꿔요. 인벤토리의 방패 모양 칸이 왼손이에요. 오른손으로 쓸 게 없으면 왼손 아이템(횃불, 블록, 음식, 화살 등)을 사용해요. 설정 → 캐릭터에서 클래식/슬림 체형과 색을 고르고, ${kn('view')} 또는 터치 '시점' 버튼으로 3인칭으로 볼 수 있어요.</p>
-  <h4>갑옷과 도구</h4><p>갑옷(가죽·금·철·다이아몬드·사슬·네더라이트 투구/흉갑/레깅스/부츠)은 인벤토리 왼쪽 칸에 넣거나 손에 들고 사용하면 입어요. 방어력만큼 받는 피해가 줄고 갑옷 내구도가 닳아요. 가죽은 소에게서 얻어요.</p>
-  <p>가위: 잎·양털을 빨리 캐고 잎 블록을 그대로 얻어요. 양에게 사용하면 양털을 깎아요 · 활: 사용 버튼을 누르고 있다가 떼면 발사(화살 필요) · 침대: 밤에 사용하면 아침까지 자고, 리스폰 지점이 돼요 · 나침반/시계: 들고 있으면 리스폰 방향과 시간을 알려줘요</p>
-  <h4>시작 팁</h4><p>나무를 캐 원목 → 판자 → 작업대 → 나무 곡괭이 → 돌 → 화로 → 철. 밤에는 횃불(석탄+막대기)과 집이 필요해요.</p>
-  <h4>명령어</h4><p>/gamemode survival|creative · /time set day|night · /give 아이템 [개수] · /tp x y z · /spawnpoint · /kill · /seed · /help</p></div></div>
-  <div class="mfoot"><button class="btn w200" data-act="${from === 'pause' ? 'pause' : 'title'}">완료</button></div></div>`);
+  const sec = HELP_TEXT(kn).map(([h, ...ps]) => `<h4>${h}</h4>${ps.map(p => `<p>${p}</p>`).join('')}`).join('');
+  screenHTML(`<div class="ms full"><div class="mtitle">${tr('조작법')}</div><div class="mlist"><div class="help">${sec}</div></div>
+  <div class="mfoot"><button class="btn w200" data-act="${from === 'pause' ? 'pause' : 'title'}">${tr('완료')}</button></div></div>`);
 }
-function fmtTime(s) { s = Math.floor(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60; return h ? `${h}시간 ${m}분` : `${m}분 ${s % 60}초`; }
+function fmtTime(s) { s = Math.floor(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60; return h ? tr('{0}시간 {1}분', h, m) : tr('{0}분 {1}초', m, s % 60); }
 function showStats() {
   G.ui = 'stats'; menuScreen = 'stats'; const S = G.stats;
-  const rows = [['생존한 날', dayCount() + '일'], ['플레이 시간', fmtTime(S.time)], ['걸은 거리', ((S.walk || 0) / 1000).toFixed(2) + ' km'], ['캔 블록', S.mined], ['설치한 블록', S.placed], ['만든 아이템', S.crafted], ['사망 횟수', S.deaths]];
-  screenHTML(`<div class="ms full"><div class="mtitle">통계</div><div class="mlist">${rows.map(([a, b]) => `<div class="strow"><span>${a}</span><span>${b ?? 0}</span></div>`).join('')}</div><div class="mfoot"><button class="btn w200" data-act="pause">완료</button></div></div>`);
+  const rows = [['생존한 날', tr('{0}일', dayCount())], ['플레이 시간', fmtTime(S.time)], ['걸은 거리', ((S.walk || 0) / 1000).toFixed(2) + ' km'], ['캔 블록', S.mined], ['설치한 블록', S.placed], ['만든 아이템', S.crafted], ['사망 횟수', S.deaths]];
+  screenHTML(`<div class="ms full"><div class="mtitle">${tr('통계')}</div><div class="mlist">${rows.map(([a, b]) => `<div class="strow"><span>${tr(a)}</span><span>${b ?? 0}</span></div>`).join('')}</div><div class="mfoot"><button class="btn w200" data-act="pause">${tr('완료')}</button></div></div>`);
 }
 function showDeath(msg) {
   G.ui = 'death'; menuScreen = 'death'; releasePointer(); resetTouchHolds();
-  screenHTML(`<div class="ms center"><div class="dtitle">사망했습니다!</div><p>${esc(msg)}</p><p>생존: <span class="yellow">${dayCount()}</span>일째${G.mode === 'survival' ? ' · 소지품은 사망한 자리에 떨어졌어요' : ''}</p><div style="height:${u(16)}"></div>
-  <button class="btn w200" data-act="respawn" disabled>부활</button><button class="btn w200" data-act="quit" disabled>타이틀 화면</button></div>`, 'death');
+  screenHTML(`<div class="ms center"><div class="dtitle">${tr('사망했습니다!')}</div><p>${esc(msg)}</p><p>${tr('생존: {0}일째', `<span class="yellow">${dayCount()}</span>`)}</p><div style="height:${u(16)}"></div>
+  <button class="btn w200" data-act="respawn" disabled>${tr('부활')}</button><button class="btn w200" data-act="quit" disabled>${tr('타이틀 화면')}</button></div>`, 'death');
   ctx.timeout(() => { if (G && G.ui === 'death') root.querySelectorAll('#screen .btn').forEach(b => b.disabled = false); }, 1000);
 }
 function showLoading(pct) {
   const s = $('screen');
-  if (!s.querySelector('#loadbar')) { menuScreen = 'loading'; screenHTML(`<div class="ms center"><div class="mtitle">월드 생성 중</div><p id="loadtxt">지형 생성 중...</p><div class="chunkmap" id="chunkmap">${'<i></i>'.repeat(25)}</div><div class="pbar"><i id="loadbar"></i></div></div>`, 'dirt'); }
-  $('loadbar').style.width = Math.round(pct * 100) + '%'; $('loadtxt').textContent = `지형 생성 중... ${Math.round(pct * 100)}%`;
+  if (!s.querySelector('#loadbar')) { menuScreen = 'loading'; screenHTML(`<div class="ms center"><div class="mtitle">${tr('월드 불러오는 중')}</div><p id="loadtxt"></p><div class="chunkmap" id="chunkmap">${'<i></i>'.repeat(25)}</div><div class="pbar"><i id="loadbar"></i></div></div>`, 'menu'); }
+  $('loadbar').style.width = Math.round(pct * 100) + '%'; $('loadtxt').textContent = tr('지형 생성 중... {0}%', Math.round(pct * 100));
   if (P && W) { const pcx = Math.floor(P.x) >> 4, pcz = Math.floor(P.z) >> 4, cells = $('chunkmap').children; let i = 0; for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) { const c = getChunk(pcx + dx, pcz + dz); cells[i++].className = c ? (c.mesh ? 'm' : 'g') : ''; } }
 }
 function openChat(prefix = '') {
   G.ui = 'chat'; menuScreen = 'chat'; releasePointer(); input.mine = input.use = false; resetTouchHolds();
-  const s = $('screen'); s.hidden = false; s.className = 'screen bg-none';
-  s.innerHTML = `<input id="chatin" class="chatin" maxlength="120" placeholder="메시지 또는 /명령어 (Enter 전송, Esc 닫기)" aria-label="채팅 입력">`;
-  const inp = $('chatin'); inp.value = prefix; inp.focus();
+  const s = $('screen'); s.hidden = false; s.className = 'screen bg-none'; $('mc').classList.add('scr', 'chatting');
+  s.innerHTML = `<div class="cmdsug" id="cmdsug" hidden role="listbox"></div><input id="chatin" class="chatin" maxlength="256" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${tr('메시지 또는 /명령어 (Enter 전송, Esc 닫기)')}" aria-label="${tr('채팅')}">`;
+  const inp = $('chatin'), box = $('cmdsug'); inp.value = prefix; inp.focus();
+  let sug = null, sel = 0, hist = -1, typed = '';
+  const measure = document.createElement('canvas').getContext('2d');
+  const render = () => {
+    const v = inp.value.slice(0, inp.selectionStart ?? inp.value.length);
+    sug = v === inp.value ? commandSuggest(v) : null;
+    if (!sug || (!sug.list.length && !sug.usage)) { box.hidden = true; return; }
+    sel = clamp(sel, 0, Math.max(0, sug.list.length - 1));
+    box.innerHTML = sug.list.length ? sug.list.map((c, i) => `<div class="${i === sel ? 'on' : ''}" data-i="${i}" role="option">${esc(c)}</div>`).join('') : `<div class="usage">${esc(tr(sug.usage))}</div>`;
+    box.hidden = false; const cs = getComputedStyle(inp); measure.font = cs.font;
+    box.style.left = Math.max(0, Math.min(inp.offsetLeft + parseFloat(cs.paddingLeft) + measure.measureText(inp.value.slice(0, sug.start)).width, inp.offsetLeft + inp.offsetWidth - box.offsetWidth)) + 'px';
+    const on = box.querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest' });
+  };
+  const apply = i => { if (!sug || !sug.list[i]) return; const c = sug.list[i]; inp.value = inp.value.slice(0, sug.start) + c + (c.endsWith('=') || c.endsWith('[') ? '' : ' '); inp.setSelectionRange(inp.value.length, inp.value.length); sel = 0; inp.focus(); render(); };
+  inp.addEventListener('input', () => { sel = 0; hist = -1; render(); });
+  inp.addEventListener('click', render);
+  ctx.on(box, 'pointerdown', e => { const d = e.target.closest('[data-i]'); if (!d) return; e.preventDefault(); apply(+d.dataset.i); });
+  ctx.on(box, 'mousedown', e => e.preventDefault());
   inp.addEventListener('keydown', e => {
     e.stopPropagation();
-    if (e.key === 'Enter') { const v = inp.value.trim(); closeChat(); if (v) { if (v.startsWith('/')) command(v); else chat('<나> ' + v); } }
+    const open = sug && sug.list.length && !box.hidden;
+    if (e.key === 'Tab') { e.preventDefault(); if (open) apply(sel); return; }
+    if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && open) { e.preventDefault(); sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + sug.list.length) % sug.list.length; render(); return; }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { // sent-message history
+      e.preventDefault(); if (!CHAT_HIST.length) return; if (hist < 0) typed = inp.value;
+      hist = clamp(hist + (e.key === 'ArrowUp' ? 1 : -1), -1, CHAT_HIST.length - 1); inp.value = hist < 0 ? typed : CHAT_HIST[CHAT_HIST.length - 1 - hist]; render(); return;
+    }
+    if (e.key === 'Enter') { const v = inp.value.trim(); closeChat(); if (v) { if (CHAT_HIST[CHAT_HIST.length - 1] !== v) CHAT_HIST.push(v); if (CHAT_HIST.length > 50) CHAT_HIST.shift(); if (v.startsWith('/')) command(v); else chat('<' + tr('나') + '> ' + v); } }
     else if (e.key === 'Escape') closeChat();
   });
+  render();
   if (touchUI()) inp.addEventListener('blur', () => ctx.timeout(() => { if (G && G.ui === 'chat' && document.activeElement !== inp) closeChat(); }, 150));
 }
+const CHAT_HIST = [];
 function closeChat() { hideScreens(); if (G) G.ui = null; capture(); }
 function dayCount() { return Math.floor(W.time / DAY_TICKS) + 1; }
-async function toggleFull() { try { if (document.fullscreenElement) await document.exitFullscreen(); else if ($('mc').requestFullscreen) await $('mc').requestFullscreen(); else toast('이 브라우저에서는 전체화면을 지원하지 않아요.'); } catch { toast('전체화면을 열 수 없어요. 허브 상단 전체화면 버튼도 이용해 주세요.'); } }
+async function toggleFull() { try { if (document.fullscreenElement) await document.exitFullscreen(); else if ($('mc').requestFullscreen) await $('mc').requestFullscreen(); else toast(tr('이 브라우저에서는 전체화면을 지원하지 않아요.')); } catch { toast(tr('전체화면을 열 수 없어요. 허브 상단 전체화면 버튼도 이용해 주세요.')); } }
 function menuEscape() {
   if (bindingKey) return;
   switch (menuScreen) {
@@ -1156,12 +1233,12 @@ function menuAction(a, el) {
     case 'cbonus': createOpts.bonus = !createOpts.bonus; updateCreate(); break;
     case 'ccancel': if (createFrom === 'worlds') showTitle(); else showLanding(); break;
     case 'create': {
-      const name = ($('wname').value.trim() || '새로운 세계').slice(0, 32), seedText = $('wseed').value.trim() || String(Math.floor(Math.random() * 1e9));
-      const w = { id: 'w' + Date.now().toString(36), name, mode: createOpts.mode, difficulty: createOpts.difficulty, bonus: createOpts.bonus, cheats:createOpts.cheats, seedText, seed: /^-?\d+$/.test(seedText) ? (+seedText | 0) >>> 0 : hashSeed(seedText), created: Date.now(), played: Date.now(), data: null };
+      const name = ($('wname').value.trim() || tr('새로운 세계')).slice(0, 32), seedText = $('wseed').value.trim() || String(Math.floor(Math.random() * 1e9));
+      const w = { id: 'w' + Date.now().toString(36), name, mode: createOpts.mode, difficulty: createOpts.difficulty, bonus: createOpts.bonus, cheats:createOpts.cheats, structures: createOpts.structures, seedText, seed: /^-?\d+$/.test(seedText) ? (+seedText | 0) >>> 0 : hashSeed(seedText), created: Date.now(), played: Date.now(), data: null };
       SAVE.worlds.push(w); selectedWorld = w.id; startWorld(w); break;
     }
     case 'settings': keysParent = 'main'; showSettings('main'); break;
-    case 'page': { const p = el.dataset.p; if (menuScreen === 'settings') { if (p === 'keys') keysParent = setPage; showSettings(p); } else { keysParent = 'pause'; showSettings(p); } break; }
+    case 'page': { const p = el.dataset.p; if (menuScreen === 'settings') { if (p === 'keys') keysParent = setPage; showSettings(p); } else { keysParent = 'pause'; pageOrigin = { page: p, from: G ? 'pause' : 'title' }; showSettings(p); } break; }
     case 'setback': settingsBack(); break;
     case 'bind': bindingKey = bindingKey === el.dataset.k ? null : el.dataset.k; showKeys(); break;
     case 'kreset': SAVE.settings.keys[el.dataset.k] = DEFAULT_KEYS[el.dataset.k]; saveSettingsSoon(); showKeys(); break;
@@ -1176,7 +1253,9 @@ function menuAction(a, el) {
     case 'quit': quitToTitle(); break;
     case 'respawn': respawn(); break;
     case 'layout': openLayoutEditor(menuScreen === 'settings' ? 'settings' : G ? 'pause' : 'title'); break;
-    case 'resetLayout': SAVE.settings.layout = {}; saveSettingsSoon(); positionTouch(); toast('터치 버튼 배치를 기본값으로 되돌렸어요.'); break;
+    case 'resetLayout': SAVE.settings.layout = {}; saveSettingsSoon(); positionTouch(); toast(tr('터치 버튼 배치를 기본값으로 되돌렸어요.')); break;
+    case 'setlang': SAVE.settings.lang = el.dataset.l; applyLanguage(); applyVisualSettings(); renderTouch(); saveSettingsSoon(); if (G) invChanged(); showLanguage(); break;
+    case 'cstruct': createOpts.structures = !createOpts.structures; updateCreate(); break;
     case 'full': toggleFull(); break;
     case 'charpreset': setCharacter({ ...CHAR_PRESETS[+el.dataset.i] }); break;
     case 'charopt': {
