@@ -1082,6 +1082,8 @@ function initGL(canvas) {
   const vs = `attribute vec3 aPos;attribute vec2 aUV;attribute vec4 aLight;uniform mat4 uVP;uniform vec3 uOffset;uniform float uScale;uniform vec3 uEye;
 varying vec2 vUV;varying vec4 vL;varying float vDist;varying vec3 vW;
 void main(){vec3 w=aPos*uScale+uOffset;vW=w;vUV=aUV;vL=aLight;vDist=length(w-uEye);gl_Position=uVP*vec4(w,1.0);}`;
+  // cv(): light curve. Full sky light (l=1) can round to a hair above 1 on mobile GPUs; pow() of the resulting
+  // tiny negative base is NaN there (black terrain, striped clouds), so clamp and avoid pow() entirely.
   const fs = `#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
 #else
@@ -1089,7 +1091,7 @@ precision mediump float;
 #endif
 uniform sampler2D uTex;uniform float uSky;uniform vec3 uFog;uniform vec2 uFogR;uniform float uBlend;uniform float uTime;uniform float uWater;uniform float uMin;uniform float uAlpha;uniform vec3 uSkyTint;uniform float uGamma;
 varying vec2 vUV;varying vec4 vL;varying float vDist;varying vec3 vW;
-float cv(float l){float a=l/(4.0-3.0*l);return mix(a,1.0-pow(1.0-a,4.0),uGamma);}
+float cv(float l){l=clamp(l,0.0,1.0);float a=clamp(l/(4.0-3.0*l),0.0,1.0);float q=1.0-a;q*=q;return mix(a,1.0-q*q,uGamma);}
 void main(){vec4 t=texture2D(uTex,vUV);
 if(uBlend<0.5){if(t.a<0.5)discard;t.a=1.0;}
 float s=cv(vL.x)*uSky;float b=cv(vL.y);
