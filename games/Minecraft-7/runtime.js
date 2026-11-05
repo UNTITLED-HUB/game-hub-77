@@ -256,7 +256,7 @@ function step(dt) {
   if(getBlock(Math.floor(P.x),Math.floor(P.y-0.1),Math.floor(P.z))===MAGMA&&!P.sneaking&&G.mode==='survival'){P.dimensionBurn=(P.dimensionBurn||0)+dt;if(P.dimensionBurn>=1){P.dimensionBurn=0;damagePlayer(1,'magma');}}
   G.stats.time = (G.stats.time || 0) + dt;
   shake = Math.max(0, shake - dt * 2);
-  if(W.weather&&W.weather!=='clear'){W.weatherTime-=dt;if(W.weatherTime<=0)W.weather='clear';if(Math.random()<dt*25&&getLight(Math.floor(P.x),Math.floor(P.y+3),Math.floor(P.z))>>4>=14)particles(P.x+(Math.random()-.5)*14,P.y+8,P.z+(Math.random()-.5)*14,T.water,3,.1,1,.8);}
+  if(W.weather&&W.weather!=='clear'){if(G.world.rules?.doWeatherCycle!==false)W.weatherTime-=dt;if(W.weatherTime<=0)W.weather='clear';if(Math.random()<dt*25&&getLight(Math.floor(P.x),Math.floor(P.y+3),Math.floor(P.z))>>4>=14)particles(P.x+(Math.random()-.5)*14,P.y+8,P.z+(Math.random()-.5)*14,T.water,3,.1,1,.8);}
   music(dt);
 }
 
@@ -437,7 +437,7 @@ function renderHandItem(hi, id, sky, blk) {
     const xf = ps.fn(), slim = charOf().slim, x0 = (slim ? -7 : -8) / 16, fp = T.pl_arm_fp;
     box(HAND, [x0, 0, -2 / 16], [-4 / 16, 12 / 16, 2 / 16], [fp, fp, T.pl_arm_u, T.pl_arm_t, fp, fp], xf, sky, blk);
     const ch = G.armor[1], am = ch && armorOf(ch.id);
-    if (am) { const st = [T['equip_' + ARMOR_MATS[am.mat].key+'_chest'],.25,.2,.75,.7], e = 0.6 / 16; box(HAND, [x0 - e, -e, -2 / 16 - e], [-4 / 16 + e, 5 / 16, 2 / 16 + e], [st, st, st, st, st, st], xf, sky, blk); }
+    if (am&&ch.id!==ELYTRA) { const st = [T['equip_' + ARMOR_MATS[am.mat].key+'_chest'],.25,.2,.75,.7], e = 0.6 / 16; box(HAND, [x0 - e, -e, -2 / 16 - e], [-4 / 16 + e, 5 / 16, 2 / 16 + e], [st, st, st, st, st, st], xf, sky, blk); }
     return;
   }
   const eatK = using && P.eating > 0 ? P.eating / 1.6 : 0;
@@ -533,7 +533,7 @@ function drawPortrait(cv, armor) {
   const blit = (rows, x0, y0, w, h) => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const r = rows[Math.floor(y * rows.length / h)], col = pal[r[Math.floor(x * r.length / w)]] || pal['.']; g.fillStyle = `rgb(${col[0] | 0},${col[1] | 0},${col[2] | 0})`; g.fillRect(x0 + x, y0 + y, 1, 1); } };
   blit(A.headF[c.style ? 1 : 0], 4, 0, 8, 8); blit(A.bodyF, 4, 8, 8, 12);
   blit(A.arm, 4 - aw, 8, aw, 12); blit(A.arm, 12, 8, aw, 12); blit(A.leg, 4, 20, 4, 12); blit(A.leg, 8, 20, 4, 12);
-  const over = (slot, rects) => { const s = armor && armor[slot], a = s && armorOf(s.id); if (!a) return; const col = ARMOR_MATS[a.mat].col; for (const [x, y, w, h, f] of rects) { g.fillStyle = `rgb(${col.map(v => clamp(v * (f || 1), 0, 255) | 0).join(',')})`; g.fillRect(x, y, w, h);const part=['helmet','chest','legs','boots'][slot],ti=T['equip_'+ARMOR_MATS[a.mat].key+'_'+part];if(ti!==undefined){g.imageSmoothingEnabled=false;g.drawImage(atlasCanvas,(ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS,x,y,w,h);} } };
+  const over = (slot, rects) => { const s = armor && armor[slot], a = s && armorOf(s.id); if (!a||s.id===ELYTRA) return; const col = ARMOR_MATS[a.mat].col; for (const [x, y, w, h, f] of rects) { g.fillStyle = `rgb(${col.map(v => clamp(v * (f || 1), 0, 255) | 0).join(',')})`; g.fillRect(x, y, w, h);const part=['helmet','chest','legs','boots'][slot],ti=T['equip_'+ARMOR_MATS[a.mat].key+'_'+part];if(ti!==undefined){g.imageSmoothingEnabled=false;g.drawImage(atlasCanvas,(ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS,x,y,w,h);} } };
   over(0, [[4, 0, 8, 2, 1.1], [3, 2, 1, 3, 0.8], [12, 2, 1, 3, 0.8]]);
   over(1, [[4, 8, 8, 9, 1], [4 - aw, 8, aw, 4, 0.85], [12, 8, aw, 4, 0.85], [7, 9, 2, 6, 1.15]]);
   over(2, [[4, 17, 8, 3, 0.95], [4, 20, 4, 7, 0.9], [8, 20, 4, 7, 0.9]]);

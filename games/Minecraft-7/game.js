@@ -3791,7 +3791,7 @@ function commandChunk(x,z){const key=ckey(x>>4,z>>4);if(!W.chunks.has(key)){if(W
 function commandSet(x,y,z,id){if(y<YMIN||y>=WH)throw Error('건축 높이는 -55~320입니다.');commandChunk(x,z);return setBlock(x,y,z,id);}
 const EFFECTS=new Set(['speed','slowness','jump_boost','strength','weakness','regeneration','resistance','fire_resistance','night_vision','haste','mining_fatigue','poison','wither','hunger','saturation','water_breathing','slow_falling','levitation','instant_health','instant_damage','invisibility']);
 function effectLevel(e,name){return e?.effects?.[name]?.amp??-1;}
-function updateEffects(dt){for(const e of [P,...W.mobs]){if(!e.effects)continue;e.effectTick=(e.effectTick||0)+dt;const tick=e.effectTick>=1;if(tick)e.effectTick=0;for(const [name,v]of Object.entries(e.effects)){v.time-=dt;if(v.time<=0){delete e.effects[name];continue;}if(tick){if(name==='regeneration'){if(e===P)P.health=Math.min(20,P.health+v.amp+1);else e.hp=Math.min(MOBDEF[e.type].hp,e.hp+v.amp+1);}if(name==='poison'&& (e===P?P.health:e.hp)>1){if(e===P)damagePlayer(1,'poison');else hurtMob(e,1,e.x,e.z,true);}if(name==='wither'){if(e===P)damagePlayer(1,'wither');else hurtMob(e,1,e.x,e.z,true);}if(e===P&&name==='saturation')P.hunger=Math.min(20,P.hunger+v.amp+1);if(e===P&&name==='hunger')P.exhaustion+=v.amp+1;}if(name==='levitation'){e.vy=2*(v.amp+1);e.fallStart=e.y;}if(name==='slow_falling'&&e.vy<-.5){e.vy=-.5;e.fallStart=e.y;}}}hudDirty=true;}
+function updateEffects(dt){let active=false;for(const e of [P,...W.mobs]){if(!e.effects||!Object.keys(e.effects).length)continue;active=true;e.effectTick=(e.effectTick||0)+dt;const tick=e.effectTick>=1;if(tick)e.effectTick=0;for(const [name,v]of Object.entries(e.effects)){v.time-=dt;if(v.time<=0){delete e.effects[name];continue;}if(tick){if(name==='regeneration'){if(e===P)P.health=Math.min(20,P.health+v.amp+1);else e.hp=Math.min(MOBDEF[e.type].hp,e.hp+v.amp+1);}if(name==='poison'&& (e===P?P.health:e.hp)>1){if(e===P)damagePlayer(1,'poison');else hurtMob(e,1,e.x,e.z,true);}if(name==='wither'){if(e===P)damagePlayer(1,'wither');else hurtMob(e,1,e.x,e.z,true);}if(e===P&&name==='saturation')P.hunger=Math.min(20,P.hunger+v.amp+1);if(e===P&&name==='hunger')P.exhaustion+=v.amp+1;}if(name==='levitation'){e.vy=2*(v.amp+1);e.fallStart=e.y;}if(name==='slow_falling'&&e.vy<-.5){e.vy=-.5;e.fallStart=e.y;}}}if(active)hudDirty=true;}
 function command(line,context,depth=0){
  const ctx=context||{self:P,pos:{x:P.x,y:P.y,z:P.z}},tokens=String(line).replace(/^\//,'').match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)||[],cmd=(tokens.shift()||'').toLowerCase(),a=tokens;
  const ok=m=>chat(String(m),'#aaa');
@@ -4347,7 +4347,7 @@ function step(dt) {
   if(getBlock(Math.floor(P.x),Math.floor(P.y-0.1),Math.floor(P.z))===MAGMA&&!P.sneaking&&G.mode==='survival'){P.dimensionBurn=(P.dimensionBurn||0)+dt;if(P.dimensionBurn>=1){P.dimensionBurn=0;damagePlayer(1,'magma');}}
   G.stats.time = (G.stats.time || 0) + dt;
   shake = Math.max(0, shake - dt * 2);
-  if(W.weather&&W.weather!=='clear'){W.weatherTime-=dt;if(W.weatherTime<=0)W.weather='clear';if(Math.random()<dt*25&&getLight(Math.floor(P.x),Math.floor(P.y+3),Math.floor(P.z))>>4>=14)particles(P.x+(Math.random()-.5)*14,P.y+8,P.z+(Math.random()-.5)*14,T.water,3,.1,1,.8);}
+  if(W.weather&&W.weather!=='clear'){if(G.world.rules?.doWeatherCycle!==false)W.weatherTime-=dt;if(W.weatherTime<=0)W.weather='clear';if(Math.random()<dt*25&&getLight(Math.floor(P.x),Math.floor(P.y+3),Math.floor(P.z))>>4>=14)particles(P.x+(Math.random()-.5)*14,P.y+8,P.z+(Math.random()-.5)*14,T.water,3,.1,1,.8);}
   music(dt);
 }
 
@@ -4528,7 +4528,7 @@ function renderHandItem(hi, id, sky, blk) {
     const xf = ps.fn(), slim = charOf().slim, x0 = (slim ? -7 : -8) / 16, fp = T.pl_arm_fp;
     box(HAND, [x0, 0, -2 / 16], [-4 / 16, 12 / 16, 2 / 16], [fp, fp, T.pl_arm_u, T.pl_arm_t, fp, fp], xf, sky, blk);
     const ch = G.armor[1], am = ch && armorOf(ch.id);
-    if (am) { const st = [T['equip_' + ARMOR_MATS[am.mat].key+'_chest'],.25,.2,.75,.7], e = 0.6 / 16; box(HAND, [x0 - e, -e, -2 / 16 - e], [-4 / 16 + e, 5 / 16, 2 / 16 + e], [st, st, st, st, st, st], xf, sky, blk); }
+    if (am&&ch.id!==ELYTRA) { const st = [T['equip_' + ARMOR_MATS[am.mat].key+'_chest'],.25,.2,.75,.7], e = 0.6 / 16; box(HAND, [x0 - e, -e, -2 / 16 - e], [-4 / 16 + e, 5 / 16, 2 / 16 + e], [st, st, st, st, st, st], xf, sky, blk); }
     return;
   }
   const eatK = using && P.eating > 0 ? P.eating / 1.6 : 0;
@@ -4624,7 +4624,7 @@ function drawPortrait(cv, armor) {
   const blit = (rows, x0, y0, w, h) => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const r = rows[Math.floor(y * rows.length / h)], col = pal[r[Math.floor(x * r.length / w)]] || pal['.']; g.fillStyle = `rgb(${col[0] | 0},${col[1] | 0},${col[2] | 0})`; g.fillRect(x0 + x, y0 + y, 1, 1); } };
   blit(A.headF[c.style ? 1 : 0], 4, 0, 8, 8); blit(A.bodyF, 4, 8, 8, 12);
   blit(A.arm, 4 - aw, 8, aw, 12); blit(A.arm, 12, 8, aw, 12); blit(A.leg, 4, 20, 4, 12); blit(A.leg, 8, 20, 4, 12);
-  const over = (slot, rects) => { const s = armor && armor[slot], a = s && armorOf(s.id); if (!a) return; const col = ARMOR_MATS[a.mat].col; for (const [x, y, w, h, f] of rects) { g.fillStyle = `rgb(${col.map(v => clamp(v * (f || 1), 0, 255) | 0).join(',')})`; g.fillRect(x, y, w, h);const part=['helmet','chest','legs','boots'][slot],ti=T['equip_'+ARMOR_MATS[a.mat].key+'_'+part];if(ti!==undefined){g.imageSmoothingEnabled=false;g.drawImage(atlasCanvas,(ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS,x,y,w,h);} } };
+  const over = (slot, rects) => { const s = armor && armor[slot], a = s && armorOf(s.id); if (!a||s.id===ELYTRA) return; const col = ARMOR_MATS[a.mat].col; for (const [x, y, w, h, f] of rects) { g.fillStyle = `rgb(${col.map(v => clamp(v * (f || 1), 0, 255) | 0).join(',')})`; g.fillRect(x, y, w, h);const part=['helmet','chest','legs','boots'][slot],ti=T['equip_'+ARMOR_MATS[a.mat].key+'_'+part];if(ti!==undefined){g.imageSmoothingEnabled=false;g.drawImage(atlasCanvas,(ti%TPR)*TS,Math.floor(ti/TPR)*TS,TS,TS,x,y,w,h);} } };
   over(0, [[4, 0, 8, 2, 1.1], [3, 2, 1, 3, 0.8], [12, 2, 1, 3, 0.8]]);
   over(1, [[4, 8, 8, 9, 1], [4 - aw, 8, aw, 4, 0.85], [12, 8, aw, 4, 0.85], [7, 9, 2, 6, 1.15]]);
   over(2, [[4, 17, 8, 3, 0.95], [4, 20, 4, 7, 0.9], [8, 20, 4, 7, 0.9]]);
