@@ -91,7 +91,10 @@ const MOSSY = 56, OBSIDIAN = 57, BOOKSHELF = 58, PUMPKIN = 59, MELON = 60;
 
 const STICK = 256, COAL = 257, IRON = 258, GOLD = 259, DIAMOND = 260, PICK0 = 261, AXE0 = 266, SHOVEL0 = 271, SWORD0 = 276,
   APPLE = 281, PORK = 282, COOKED_PORK = 283, BEEF = 284, STEAK = 285, MUTTON = 286, COOKED_MUTTON = 287, FLESH = 288,
-  STRING = 289, BUCKET = 290, WATER_BUCKET = 291, FLINT = 292, FLINT_STEEL = 293, MELON_SLICE = 294, BREAD = 295;
+  STRING = 289, BUCKET = 290, WATER_BUCKET = 291, FLINT = 292, FLINT_STEEL = 293, MELON_SLICE = 294, BREAD = 295,
+  LEATHER = 296, SHEARS = 297, BOW = 298, ARROW = 299, COMPASS = 300, CLOCK = 301,
+  ARMOR0 = 310; // 310..325 = 4 materials × [helmet, chestplate, leggings, boots]
+const BED = 61;
 
 const BLOCK = [];
 function B(id, name, tex, o = {}) {
@@ -107,7 +110,7 @@ B(SAND, '모래', 'sand', { hard: 0.5, tool: 'shovel', gravity: true });
 B(GRAVEL, '자갈', 'gravel', { hard: 0.6, tool: 'shovel', gravity: true, drop: r => r() < 0.12 ? FLINT : GRAVEL });
 B(LOG, '참나무 원목', { top: 'log_top', bottom: 'log_top', side: 'log_side' }, { hard: 2, tool: 'axe' });
 B(PLANKS, '나무 판자', 'planks', { hard: 2, tool: 'axe' });
-B(LEAVES, '참나무 잎', 'leaves', { opaque: false, render: 'cutout', hard: 0.2, tool: 'hoe', drop: r => { const v = r(); return v < 0.06 ? SAPLING : v < 0.085 ? APPLE : 0; } });
+B(LEAVES, '참나무 잎', 'leaves', { opaque: false, render: 'cutout', hard: 0.2, tool: 'shears', drop: r => { const v = r(); return v < 0.06 ? SAPLING : v < 0.085 ? APPLE : 0; } });
 B(GLASS, '유리', 'glass', { opaque: false, render: 'cutout', hard: 0.3, drop: 0 });
 B(COAL_ORE, '석탄 광석', 'coal_ore', { hard: 3, tool: 'pickaxe', tier: 1, drop: COAL });
 B(IRON_ORE, '철 광석', 'iron_ore', { hard: 3, tool: 'pickaxe', tier: 2 });
@@ -132,9 +135,9 @@ B(FLOWER_YELLOW, '민들레', 'flower_yellow', Object.assign({}, plant, { needsS
 B(SAPLING, '묘목', 'sapling', Object.assign({}, plant, { needsSoil: true }));
 B(DEAD_BUSH, '마른 덤불', 'dead_bush', Object.assign({}, plant, { replaceable: true, drop: r => r() < 0.5 ? STICK : 0, needsSand: true }));
 B(SPRUCE_LOG, '가문비나무 원목', { top: 'log_top', bottom: 'log_top', side: 'spruce_log' }, { hard: 2, tool: 'axe' });
-B(SPRUCE_LEAVES, '가문비나무 잎', 'spruce_leaves', { opaque: false, render: 'cutout', hard: 0.2, drop: r => r() < 0.05 ? SAPLING : 0 });
+B(SPRUCE_LEAVES, '가문비나무 잎', 'spruce_leaves', { opaque: false, render: 'cutout', hard: 0.2, tool: 'shears', drop: r => r() < 0.05 ? SAPLING : 0 });
 B(BIRCH_LOG, '자작나무 원목', { top: 'log_top', bottom: 'log_top', side: 'birch_log' }, { hard: 2, tool: 'axe' });
-B(BIRCH_LEAVES, '자작나무 잎', 'birch_leaves', { opaque: false, render: 'cutout', hard: 0.2, drop: r => r() < 0.05 ? SAPLING : 0 });
+B(BIRCH_LEAVES, '자작나무 잎', 'birch_leaves', { opaque: false, render: 'cutout', hard: 0.2, tool: 'shears', drop: r => r() < 0.05 ? SAPLING : 0 });
 B(GLOWSTONE, '발광석', 'glowstone', { hard: 0.3, light: 15, cat: '장식' });
 B(TNT, 'TNT', { top: 'tnt_top', bottom: 'tnt_bottom', side: 'tnt_side' }, { hard: 0, use: 'tnt', cat: '기능' });
 for (let l = 0; l < 8; l++) B(WATER + l, l ? '흐르는 물' : '물', 'water', { solid: false, opaque: false, render: 'water', hard: -1, drop: 0, replaceable: true, creative: false, fluid: true, level: l });
@@ -144,6 +147,7 @@ B(OBSIDIAN, '흑요석', 'obsidian', { hard: 50, tool: 'pickaxe', tier: 4 });
 B(BOOKSHELF, '책장', { top: 'planks', bottom: 'planks', side: 'bookshelf' }, { hard: 1.5, tool: 'axe', drop: PLANKS, cat: '장식' });
 B(PUMPKIN, '호박', { top: 'pumpkin_top', bottom: 'pumpkin_top', side: 'pumpkin_side' }, { hard: 1, tool: 'axe', cat: '장식' });
 B(MELON, '수박', { top: 'melon_top', bottom: 'melon_top', side: 'melon_side' }, { hard: 1, tool: 'axe', drop: () => MELON_SLICE, dropCount: r => 3 + Math.floor(r() * 5), cat: '장식' });
+B(BED, '침대', { top: 'bed_top', bottom: 'planks', side: 'bed_side' }, { opaque: false, render: 'bed', hard: 0.2, tool: 'axe', use: 'bed', cat: '기능', height: 9 / 16 });
 BLOCK[BEDROCK].creative = true;
 const isWater = id => id >= WATER && id <= WATER + 7;
 const waterLevel = id => id - WATER;
@@ -180,6 +184,23 @@ I(BUCKET, '양동이', 'bucket', { stack: 16, cat: '도구' });
 I(WATER_BUCKET, '물 양동이', 'water_bucket', { stack: 1, cat: '도구' });
 I(FLINT, '부싯돌', 'flint');
 I(FLINT_STEEL, '부싯돌과 부시', 'flint_steel', { stack: 1, cat: '도구', tool: { kind: 'lighter', level: 0, speed: 1, dur: 64, dmg: 1 } });
+I(LEATHER, '가죽', 'leather');
+I(SHEARS, '가위', 'shears', { stack: 1, cat: '도구', tool: { kind: 'shears', level: 0, speed: 5, dur: 238, dmg: 1 } });
+I(BOW, '활', 'bow_0', { stack: 1, cat: '전투', tool: { kind: 'bow', level: 0, speed: 1, dur: 384, dmg: 1 } });
+I(ARROW, '화살', 'arrow', { cat: '전투' });
+I(COMPASS, '나침반', 'compass', { stack: 1, cat: '도구', gadget: 'compass' });
+I(CLOCK, '시계', 'clock', { stack: 1, cat: '도구', gadget: 'clock' });
+// armor: defence points and durability follow the original game's values
+const ARMOR_MATS = [
+  { key: 'leather', name: '가죽', mat: LEATHER, def: [1, 3, 2, 1], mul: 5, tough: 0, col: [152, 96, 58] },
+  { key: 'gold', name: '금', mat: GOLD, def: [2, 5, 3, 1], mul: 7, tough: 0, col: [246, 208, 62] },
+  { key: 'iron', name: '철', mat: IRON, def: [2, 6, 5, 2], mul: 15, tough: 0, col: [212, 212, 216] },
+  { key: 'diamond', name: '다이아몬드', mat: DIAMOND, def: [3, 8, 6, 3], mul: 33, tough: 2, col: [78, 220, 208] }];
+const ARMOR_PARTS = [['helmet', '투구', 11], ['chest', '흉갑', 16], ['legs', '레깅스', 15], ['boots', '부츠', 13]];
+const ARMOR_SLOT_NAME = ['머리', '몸통', '다리', '발'];
+ARMOR_MATS.forEach((m, mi) => ARMOR_PARTS.forEach(([pk, pn, base], pi) => I(ARMOR0 + mi * 4 + pi, m.name + ' ' + pn, 'armor_' + m.key + '_' + pk, { stack: 1, cat: '전투', armor: { slot: pi, def: m.def[pi], tough: m.tough, dur: base * m.mul, mat: mi } })));
+const armorOf = id => (id >= 256 && ITEM[id] && ITEM[id].armor) || null;
+const durOf = id => { const t = toolOf(id), a = armorOf(id); return (t && t.dur) || (a && a.dur) || 0; };
 
 function info(id) {
   if (id < 256) { const b = BLOCK[id]; return b ? { id, name: b.name, stack: 64, block: b, cat: b.cat } : null; }
@@ -209,6 +230,19 @@ shaped(['GSG', 'SGS', 'GSG'], { G: GRAVEL, S: SAND }, TNT);
 shaped(['PPP', 'BBB', 'PPP'], { P: PLANKS, B: STRING }, BOOKSHELF);
 shaped(['MMM', 'MMM', 'MMM'], { M: MELON_SLICE }, MELON);
 shaped(['AAA'], { A: APPLE }, BREAD);
+shaped([' I', 'I '], { I: IRON }, SHEARS);
+shaped([' TS', 'T S', ' TS'], { T: STICK, S: STRING }, BOW);
+shaped(['F', 'T', 'S'], { F: FLINT, T: STICK, S: STRING }, ARROW, 4);
+shaped(['WWW', 'PPP'], { W: 'wool', P: 'planks' }, BED);
+shaped([' I ', 'ICI', ' I '], { I: IRON, C: COAL }, COMPASS);
+shaped([' G ', 'GCG', ' G '], { G: GOLD, C: COAL }, CLOCK);
+ARMOR_MATS.forEach((m, mi) => {
+  const M = m.mat, a = ARMOR0 + mi * 4;
+  shaped(['MMM', 'M M'], { M }, a);
+  shaped(['M M', 'MMM', 'MMM'], { M }, a + 1);
+  shaped(['MMM', 'M M', 'M M'], { M }, a + 2);
+  shaped(['M M', 'M M'], { M }, a + 3);
+});
 TIERS.forEach((t, i) => {
   const M = t.mat;
   shaped(['MMM', ' S ', ' S '], { M, S: STICK }, PICK0 + i);
@@ -252,7 +286,7 @@ function craft(grid, w) {
   return null;
 }
 const SMELT = { [IRON_ORE]: IRON, [GOLD_ORE]: GOLD, [SAND]: GLASS, [COBBLE]: STONE, [PORK]: COOKED_PORK, [BEEF]: STEAK, [MUTTON]: COOKED_MUTTON, [CLAY]: BRICKS, [LOG]: COAL, [SPRUCE_LOG]: COAL, [BIRCH_LOG]: COAL, [CACTUS]: COLOR_WOOL + 3 };
-const FUEL = { [COAL]: 80, [PLANKS]: 15, [LOG]: 15, [SPRUCE_LOG]: 15, [BIRCH_LOG]: 15, [STICK]: 5, [SAPLING]: 5, [TABLE]: 15, [CHEST]: 15, [BOOKSHELF]: 15 };
+const FUEL = { [COAL]: 80, [PLANKS]: 15, [LOG]: 15, [SPRUCE_LOG]: 15, [BIRCH_LOG]: 15, [STICK]: 5, [SAPLING]: 5, [TABLE]: 15, [CHEST]: 15, [BOOKSHELF]: 15, [BOW]: 15 };
 TIERS.forEach((t, i) => { if (i === 0) [PICK0, AXE0, SHOVEL0, SWORD0].forEach(b => FUEL[b + i] = 10); });
 const SMELT_TIME = 8;
 
@@ -448,6 +482,51 @@ function paintAll() {
     tile('shovel_' + i, t => { for (let x = 2; x < 10; x++) t.set(x, 15 - x - 1, STICKC); shape(t, (x, y) => Math.hypot(x - 11, y - 4) <= 3.2 ? H : 0, H, 0.15); outline(t, 0.45); });
     tile('sword_' + i, t => { for (let x = 5; x < 14; x++) { t.set(x, 15 - x, mul(H, 1.12)); t.set(x, 14 - x, H); t.set(x + 1, 15 - x, mul(H, 0.8)); } for (let k = 0; k < 5; k++) t.set(2 + k, 9 + k, [80, 60, 40]); for (let x = 1; x < 4; x++) t.set(x, 15 - x - 0, STICKC); outline(t, 0.45); });
   }
+  // ── armor, tools & gadgets ──
+  const ARM_SHAPES = [
+    ['................', '................', '................', '....########....', '...#HXXXXXXX#...', '..#HXXXXXXXXS#..', '..#XXXXXXXXXS#..', '..#XS######XS#..', '..#XS#....#XS#..', '..#XS#....#XS#..', '..####....####..', '................', '................', '................', '................', '................'],
+    ['................', '..####....####..', '.#HXX#....#XXS#.', '.#XXXX####XXXS#.', '.#XXXXXXXXXXXS#.', '.###XXXXXXXXS###', '...#HXXXXXXXS#..', '...#XXXXXXXXS#..', '...#XXXXXXXXS#..', '...#XXXXXXXXS#..', '...#XXXXXXXXS#..', '...#SSSSSSSSS#..', '...###########..', '................', '................', '................'],
+    ['................', '................', '...##########...', '...#HXXXXXXS#...', '...#XXXXXXXS#...', '...#XXX##XXS#...', '...#XXS#.#XS#...', '...#XXS#.#XS#...', '...#XXS#.#XS#...', '...#XXS#.#XS#...', '...#XXS#.#XS#...', '...#####.####...', '................', '................', '................', '................'],
+    ['................', '................', '................', '................', '................', '................', '...####..####...', '...#HX#..#HX#...', '...#XS#..#XS#...', '...#XS#..#XS#...', '..#XXS#..#XXS#..', '..#XXS#..#XXS#..', '..#####..#####..', '................', '................', '................']];
+  ARMOR_MATS.forEach(m => ARMOR_PARTS.forEach(([pk], pi) => tile('armor_' + m.key + '_' + pk, t => {
+    mask(t, ARM_SHAPES[pi], { '#': mul(m.col, 0.38), X: m.col, H: mul(m.col, 1.25), S: mul(m.col, 0.72) });
+    t.each((x, y) => { const p = t.get(x, y); if (p[3] && t.r() < 0.18) t.set(x, y, mul(p, 0.92 + t.r() * 0.12)); });
+  })));
+  // worn-armor skin for the first-person sleeve
+  ARMOR_MATS.forEach(m => tile('armor_skin_' + m.key, t => t.noise(m.col, 0.1)));
+  tile('leather', t => { shape(t, (x, y) => x > 2 && x < 13 && y > 3 && y < 13 && !((x === 3 || x === 12) && (y === 4 || y === 12)) ? [150, 92, 52] : 0, null, 0.2); for (let i = 0; i < 6; i++) t.set(4 + Math.floor(t.r() * 8), 5 + Math.floor(t.r() * 7), [120, 70, 38]); outline(t, 0.5); });
+  tile('shears', t => {
+    for (let k = 0; k < 7; k++) { t.set(8 + k, 7 - k, [222, 222, 228]); t.set(8 + k, 8 - k, [170, 170, 176]); t.set(7 - k + 7, 7 - k + 1, [200, 200, 206]); }
+    blob(t, 5, 11, 2.6, 2.6, [60, 60, 66], 0.1); blob(t, 9.5, 12.5, 2.4, 2.4, [60, 60, 66], 0.1);
+    t.set(5, 11, [0, 0, 0], 0); t.set(9, 12, [0, 0, 0], 0); outline(t, 0.45);
+  });
+  // diagonal like the original: the arrow points to the top-left, which the first-person pose aims at the crosshair
+  const bowTile = pull => t => {
+    const W = [128, 90, 50], Wd = [92, 62, 32], S = [232, 232, 232];
+    const dx = -Math.SQRT1_2, dy = -Math.SQRT1_2, px = Math.SQRT1_2, py = -Math.SQRT1_2, cx = 8.5 + pull * 0.5, cy = 8.5 + pull * 0.5;
+    const pt = (a, b) => [cx + px * a + dx * b, cy + py * a + dy * b];
+    const flex = 1 - pull * 0.12;
+    for (let i = 0; i <= 40; i++) { const sN = i / 20 - 1, [x, y] = pt(sN * 6.6 * flex, 2.6 * (1 - sN * sN)); t.set(Math.floor(x), Math.floor(y), i % 7 < 2 ? Wd : W); }
+    const [ax, ay] = pt(-6.6 * flex, 0), [bx, by] = pt(6.6 * flex, 0), [qx, qy] = pt(0, -pull * 1.7);
+    const line = (x0, y0, x1, y1, c) => { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2); for (let k = 0; k <= n; k++) { const x = Math.floor(x0 + (x1 - x0) * k / n), y = Math.floor(y0 + (y1 - y0) * k / n); if (!t.get(x, y)[3]) t.set(x, y, c); } };
+    line(ax, ay, qx, qy, S); line(qx, qy, bx, by, S);
+    if (pull > 0) {
+      const [hx, hy] = pt(0, 8.2);
+      line(qx, qy, hx, hy, [150, 110, 64]);
+      t.set(Math.floor(hx), Math.floor(hy), [92, 92, 98]); t.set(Math.floor(hx) + 1, Math.floor(hy), [70, 70, 76]); t.set(Math.floor(hx), Math.floor(hy) + 1, [70, 70, 76]);
+      t.set(Math.floor(qx), Math.floor(qy) + 1, [236, 236, 236]); t.set(Math.floor(qx) + 1, Math.floor(qy), [236, 236, 236]);
+    }
+    outline(t, 0.4);
+  };
+  for (let k = 0; k < 4; k++) tile('bow_' + k, bowTile(k));
+  tile('arrow', t => { for (let k = 0; k < 10; k++) t.set(3 + k, 12 - k, [140, 102, 60]); t.set(12, 3, [80, 80, 86]); t.set(13, 2, [110, 110, 116]); t.set(11, 3, [80, 80, 86]); t.set(12, 4, [80, 80, 86]); t.set(13, 3, [60, 60, 64]); t.set(12, 2, [60, 60, 64]);
+    for (const [x, y] of [[2, 12], [3, 13], [2, 13], [4, 13], [2, 11], [3, 14], [1, 12]]) t.set(x, y, [236, 236, 236]); outline(t, 0.45); });
+  tile('compass', t => { blob(t, 8, 8, 6, 6, [150, 150, 156], 0.1); blob(t, 8, 8, 4.6, 4.6, [228, 228, 214], 0.05); for (let k = 0; k < 3; k++) { t.set(8 + k, 7 - k, [220, 40, 40]); t.set(7 - k, 8 + k, [70, 70, 80]); } t.set(8, 8, [40, 40, 40]); outline(t, 0.45); });
+  tile('clock', t => { blob(t, 8, 8, 6, 6, [232, 196, 60], 0.1); blob(t, 8, 8, 4.6, 4.6, [96, 150, 220], 0.05); t.each((x, y) => { if (y >= 8 && Math.hypot(x + 0.5 - 8, y + 0.5 - 8) < 4.6) t.set(x, y, [40, 50, 96]); }); t.set(7, 6, [255, 240, 120]); t.set(8, 6, [255, 240, 120]); t.set(8, 7, [60, 60, 60]); t.set(8, 8, [60, 60, 60]); outline(t, 0.45); });
+  tile('bed_top', t => { t.each((x, y) => { const edge = x === 0 || x === 15; t.set(x, y, y < 5 ? mul([236, 236, 236], 0.92 + t.r() * 0.08) : edge ? [150, 26, 26] : mul([196, 40, 40], 0.9 + 0.1 * Math.sin(y * 2.2) + t.r() * 0.06)); }); for (let x = 1; x < 15; x++) t.set(x, 5, [170, 170, 170]); });
+  tile('bed_side', t => { t.each((x, y) => { if (y < 7) return; if (y < 10) t.set(x, y, mul([196, 40, 40], 0.9 + t.r() * 0.1)); else if (y < 13) t.set(x, y, mul([168, 132, 82], 0.9 + t.r() * 0.1)); else if (x < 3 || x > 12) t.set(x, y, mul([120, 88, 50], 0.9 + t.r() * 0.1)); }); });
+  tile('sheep_shorn', t => t.noise([218, 196, 170], 0.06));
+  tile('arrow_shaft', t => t.each((x, y) => t.set(x, y, y < 3 ? [96, 96, 102] : y > 12 ? [236, 236, 236] : mul([140, 102, 60], 0.9 + t.r() * 0.15))));
   // ── mobs ──
   tile('pig_skin', t => t.noise([240, 164, 160], 0.06));
   tile('pig_face', t => { t.copy('pig_skin'); [[3, 5], [12, 5]].forEach(([x, y]) => { t.set(x, y, [255, 255, 255]); t.set(x + (x < 8 ? 1 : -1), y, [20, 20, 20]); }); for (let y = 8; y < 12; y++) for (let x = 5; x < 11; x++) t.set(x, y, [226, 128, 128]); t.set(6, 9, [120, 60, 60]); t.set(9, 9, [120, 60, 60]); });
@@ -463,7 +542,31 @@ function paintAll() {
   tile('player_arm', t => t.noise([214, 168, 128], 0.05));
   tile('sun', t => t.each((x, y) => { const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5)); t.set(x, y, d < 4 ? [255, 255, 230] : d < 6 ? [255, 240, 150] : [255, 220, 110], d < 6 ? 255 : 150); }));
   tile('moon', t => { t.each((x, y) => { const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5)); t.set(x, y, [222, 226, 236], d < 6 ? 255 : 0); }); [[5, 5], [9, 9], [10, 5], [6, 10]].forEach(([x, y]) => { t.set(x, y, [170, 175, 190]); t.set(x + 1, y, [180, 185, 200]); }); });
-  for (let k = 0; k < 10; k++) tile('crack_' + k, t => { const rr = mulberry32(99); for (let l = 0; l < 2 + k * 1.6; l++) { let x = 8 + (rr() - 0.5) * 4, y = 8 + (rr() - 0.5) * 4; const dx = rr() - 0.5, dy = rr() - 0.5; for (let s = 0; s < 3 + k * 0.6; s++) { t.set(Math.floor(x), Math.floor(y), [30, 30, 30], 220); x += dx * 2 + (rr() - 0.5); y += dy * 2 + (rr() - 0.5); } } });
+  // destroy stages 0–9 like the original: jagged cracks branch out from the centre, every stage keeps
+  // the previous ones, and late stages add splinters and chipped corners until the face is shattered.
+  {
+    const rr = mulberry32(4242), pts = []; // [x, y, reveal 0..1, kind] kind 0 = crack, 1 = chip
+    const walk = (x, y, a, len, r0, r1, depth) => {
+      for (let s = 0; s < len; s++) {
+        pts.push([Math.round(x), Math.round(y), r0 + (r1 - r0) * s / len, 0]);
+        a += (rr() - 0.5) * 0.9; x += Math.cos(a); y += Math.sin(a);
+        if (x < 0 || y < 0 || x > 15 || y > 15) break;
+        if (depth < 2 && rr() < 0.16) walk(x, y, a + (rr() < 0.5 ? 1 : -1) * (0.7 + rr() * 0.6), 2 + rr() * 5, r0 + (r1 - r0) * s / len + 0.1, Math.min(1, r1 + 0.15), depth + 1);
+      }
+    };
+    const arms = 6;
+    for (let b = 0; b < arms; b++) { const a = b / arms * Math.PI * 2 + rr() * 0.7; walk(7.5 + (rr() - 0.5) * 2, 7.5 + (rr() - 0.5) * 2, a, 7 + rr() * 6, b * 0.06, 0.55 + b * 0.07, 0); }
+    for (let i = 0; i < 40; i++) pts.push([Math.floor(rr() * 16), Math.floor(rr() * 16), 0.55 + rr() * 0.45, 1]);
+    for (let k = 0; k < 10; k++) tile('crack_' + k, t => {
+      const lim = (k + 1) / 10;
+      for (const [x, y, rv, kind] of pts) {
+        if (rv > lim) continue;
+        if (kind === 1) { t.set(x, y, [30, 30, 30], 120); continue; }
+        t.set(x, y, [24, 24, 24], 205);
+        if (t.get(x + 1, y + 1)[3] === 0 && x < 15 && y < 15) t.set(x + 1, y + 1, [255, 255, 255], 85);
+      }
+    });
+  }
   // ── HUD ──
   const heartRows = ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'];
   const heart = mode => t => heartRows.forEach((s, y) => { for (let x = 0; x < 7; x++) if (s[x] === '#') { const fill = mode === 'full' || (mode === 'half' && x < 4); const edge = (heartRows[y - 1]?.[x] !== '#') || (heartRows[y + 1]?.[x] !== '#') || s[x - 1] !== '#' || s[x + 1] !== '#'; t.set(4 + x, 5 + y, edge ? [24, 10, 10] : fill ? (y === 1 && x < 3 ? [255, 140, 140] : [220, 20, 30]) : [60, 30, 30]); } });
@@ -471,6 +574,9 @@ function paintAll() {
   const food = mode => t => { const rows = ['..###..', '.#####.', '.#####.', '..####.', '...##..', '....#..', '.....##']; rows.forEach((s, y) => { for (let x = 0; x < 7; x++) if (s[x] === '#') { const fill = mode === 'full' || (mode === 'half' && x >= 3); t.set(4 + x, 4 + y, y > 4 ? [230, 220, 200] : fill ? (x < 3 && y < 2 ? [220, 140, 80] : [170, 90, 40]) : [60, 40, 30]); } }); outline(t, 0.3); };
   tile('food_full', food('full')); tile('food_half', food('half')); tile('food_empty', food('empty'));
   tile('bubble', t => t.each((x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); if (d < 3.5 && d > 2.2) t.set(x, y, [120, 180, 255]); else if (d <= 2.2 && x < 8 && y < 8) t.set(x, y, [230, 240, 255]); }));
+  const armRows = ['.##...##.', '#XX###XX#', '#XXXXXXX#', '.##XXX##.', '..#XXX#..', '..#XXX#..', '..#XXX#..', '..#####..', '.........'];
+  const armIcon = mode => t => armRows.forEach((s, y) => { for (let x = 0; x < 9; x++) { const ch = s[x]; if (ch === '.') continue; const fill = mode === 'full' || (mode === 'half' && x < 4); t.set(3 + x, 3 + y, ch === '#' ? [26, 26, 30] : fill ? (y < 3 && x < 4 ? [244, 244, 248] : [196, 196, 204]) : [58, 58, 64]); } });
+  tile('armor_full', armIcon('full')); tile('armor_half', armIcon('half')); tile('armor_empty', armIcon('empty'));
 }
 
 
@@ -520,7 +626,7 @@ function buildIcons() {
   for (const id of all) {
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 32, 32);
     const b = id < 256 ? BLOCK[id] : null;
-    if (b && (b.render === 'cube' || b.render === 'cutout' || b.render === 'translucent' || b.render === 'water')) {
+    if (b && (b.render === 'cube' || b.render === 'cutout' || b.render === 'translucent' || b.render === 'water' || b.render === 'bed')) {
       const tx = typeof b.tex === 'string' ? { top: b.tex, side: b.tex } : b.tex;
       face(tx.top, 15 / 16, -7.5 / 16, 15 / 16, 7.5 / 16, 1, 8.5, 0);
       face(tx.front || tx.side, 15 / 16, 7.5 / 16, 0, 15.5 / 16, 1, 8.5, 0.22);
@@ -531,7 +637,7 @@ function buildIcons() {
     }
     ICON[id] = c.toDataURL();
   }
-  for (const n of ['heart_full', 'heart_half', 'heart_empty', 'food_full', 'food_half', 'food_empty', 'bubble']) {
+  for (const n of ['heart_full', 'heart_half', 'heart_empty', 'food_full', 'food_half', 'food_empty', 'bubble', 'armor_full', 'armor_half', 'armor_empty']) {
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 32, 32); const [sx, sy] = src(n); g.drawImage(atlasCanvas, sx + 3, sy + 3, 9, 9, 0, 0, 32, 32); HUDICON[n] = c.toDataURL();
   }
 }
@@ -964,10 +1070,10 @@ function fillPadded(ch) {
   }
 }
 
-const OPAQUE = new Uint8Array(256), RTYPE = new Uint8Array(256); // 1 cube 2 cutout 3 translucent 4 water 5 cross 6 torch
+const OPAQUE = new Uint8Array(256), RTYPE = new Uint8Array(256); // 1 cube 2 cutout 3 translucent 4 water 5 cross 6 torch 7 bed (low cube)
 const FTILE = []; // [blockId][face] = tile index ; front stored separately
 function prepareBlockTables() {
-  const rmap = { cube: 1, cutout: 2, translucent: 3, water: 4, cross: 5, torch: 6 };
+  const rmap = { cube: 1, cutout: 2, translucent: 3, water: 4, cross: 5, torch: 6, bed: 7 };
   for (let id = 0; id < 256; id++) {
     const b = BLOCK[id]; if (!b) continue;
     OPAQUE[id] = b.opaque ? 1 : 0; RTYPE[id] = rmap[b.render];
@@ -999,6 +1105,7 @@ function meshChunk(ch) {
     if (b.facing) { const te = W.te.get(pkey(ox + x, y, oz + z)); front = te ? te.facing : 4; }
     let wh = 1;
     if (rt === 4) { const lv = waterLevel(id); wh = isWater(PB[p + PW * PW]) ? 1 : lv === 0 ? 0.875 : (8 - lv) / 9; }
+    else if (rt === 7) wh = b.height;
     for (let fi = 0; fi < 6; fi++) {
       const f = FACES[fi], q = p + f.nd;
       if (f.n[1] === -1 && y === 0) continue;
@@ -1007,7 +1114,7 @@ function meshChunk(ch) {
         if (isWater(nid)) continue;
         if (OPAQUE[nid] && !(f.top && wh < 1)) continue;
         if (f.bottom && nid === ICE) continue;
-      } else if (OPAQUE[nid]) continue;
+      } else if (OPAQUE[nid] && !(rt === 7 && f.top)) continue;
       else if (rt === 3 && nid === id) continue;
       else if (rt === 2 && nid === id && id === GLASS) continue;
       let tile = FTILE[id][fi];
@@ -1020,11 +1127,11 @@ function meshChunk(ch) {
       for (let k = 0; k < 4; k++) {
         const c = f.v[k];
         let cy = c[1];
-        if (rt === 4 && cy === 1) cy = wh;
+        if ((rt === 4 || rt === 7) && cy === 1) cy = wh;
         if (rt === 2 && id === CACTUS && f.side) { corners[k][0] = x + (f.n[0] ? (c[0] ? 15 / 16 : 1 / 16) : c[0]); corners[k][2] = z + (f.n[2] ? (c[2] ? 15 / 16 : 1 / 16) : c[2]); }
         else { corners[k][0] = x + c[0]; corners[k][2] = z + c[2]; }
         corners[k][1] = y + cy;
-        const t = uvOf(tile, f.uv[k][0], f.uv[k][1]); uvs[k][0] = t[0]; uvs[k][1] = t[1];
+        const t = uvOf(tile, f.uv[k][0], rt === 7 && f.side && c[1] ? 1 - wh : f.uv[k][1]); uvs[k][0] = t[0]; uvs[k][1] = t[1];
         // smooth light + AO
         if (qq < 0) { ls[k][0] = 255; ls[k][1] = 0; ls[k][2] = Math.round(f.shade * 255); continue; }
         const a = f.ao[k], s1 = qq + a[0], s2 = qq + a[1], cr = qq + a[2];
@@ -1270,6 +1377,79 @@ function particles(x, y, z, tile, n, spread = 0.4, speed = 3, life = 0.8) {
   for (let i = 0; i < n; i++) W.particles.push({ x: x + (Math.random() - 0.5) * spread * 2, y: y + (Math.random() - 0.5) * spread * 2, z: z + (Math.random() - 0.5) * spread * 2, vx: (Math.random() - 0.5) * speed, vy: Math.random() * speed, vz: (Math.random() - 0.5) * speed, life: life * (0.5 + Math.random() * 0.6), tile, su: Math.floor(Math.random() * 12) / 16, sv: Math.floor(Math.random() * 12) / 16, size: 0.06 + Math.random() * 0.06, grav: 14 });
 }
 function blockParticles(x, y, z, id, n = 18) { const t = FTILE[id]; if (t) particles(x + 0.5, y + 0.5, z + 0.5, t[4], n, 0.35, 3.2); }
+// small chips that fly off the face being mined, like the original
+function digParticles(t) {
+  const tl = FTILE[t.id], pq = SAVE.settings.particles ?? 2; if (!tl || pq === 0 || W.particles.length > 500) return;
+  const fi = t.face >= 0 ? t.face : 2, n = FACES[fi].n, h = (BLOCK[t.id] && BLOCK[t.id].height) || 1, r = Math.random;
+  for (let k = 0; k < (pq === 1 ? 1 : 2); k++) {
+    const x = t.x + (n[0] ? 0.5 + n[0] * 0.52 : 0.05 + r() * 0.9), y = t.y + (n[1] ? h / 2 + n[1] * (h / 2 + 0.02) : (0.05 + r() * 0.9) * h), z = t.z + (n[2] ? 0.5 + n[2] * 0.52 : 0.05 + r() * 0.9);
+    W.particles.push({ x, y, z, vx: n[0] * 1.4 + (r() - 0.5) * 1.6, vy: n[1] * 1.4 + r() * 1.8, vz: n[2] * 1.4 + (r() - 0.5) * 1.6, life: 0.35 + r() * 0.45, tile: tl[fi], su: Math.floor(r() * 12) / 16, sv: Math.floor(r() * 12) / 16, size: 0.04 + r() * 0.04, grav: 14 });
+  }
+}
+// ── arrows ──
+function shootArrow(d) {
+  let f = Math.min(1, d); f = (f * f + f * 2) / 3; if (f < 0.1) return;
+  const dir = lookDir(), e = eyePos(), sp = f * 54;
+  const base = Math.ceil(f * 6), crit = f >= 0.99;
+  W.arrows.push({ x: e[0] + dir[0] * 0.4, y: e[1] - 0.1 + dir[1] * 0.4, z: e[2] + dir[2] * 0.4, vx: dir[0] * sp, vy: dir[1] * sp, vz: dir[2] * sp, yaw: P.yaw, pitch: P.pitch, age: 0, stuck: false, crit, dmg: base + (crit ? Math.floor(Math.random() * (base / 2 + 2)) : 0), pick: G.mode === 'survival' });
+  if (G.mode === 'survival') { const i = G.inv.findIndex(x => x && x.id === ARROW); if (i >= 0) { G.inv[i].count--; if (!G.inv[i].count) G.inv[i] = null; } damageTool(1); invChanged(); }
+  sfx('bow');
+}
+function updateArrows(dt) {
+  for (let i = W.arrows.length - 1; i >= 0; i--) {
+    const a = W.arrows[i]; a.age += dt;
+    if (a.age > 60 || a.y < -20) { W.arrows.splice(i, 1); continue; }
+    if (a.stuck) {
+      if (!solidAt(a.bx, a.by, a.bz)) { a.stuck = false; a.vx = a.vy = a.vz = 0; continue; }
+      if (a.pick && !P.dead && Math.hypot(P.x - a.x, P.y + 0.9 - a.y, P.z - a.z) < 1.7 && !addToInventory(ARROW, 1)) { sfx('pop'); invChanged(); W.arrows.splice(i, 1); }
+      continue;
+    }
+    a.vy -= 20 * dt; const drag = Math.pow(entityInWater(a, 0) ? 0.6 : 0.99, dt * 20); a.vx *= drag; a.vy *= drag; a.vz *= drag;
+    const len = Math.hypot(a.vx, a.vy, a.vz) * dt, steps = Math.max(1, Math.ceil(len / 0.2));
+    let gone = false;
+    for (let k = 0; k < steps && !gone; k++) {
+      const nx = a.x + a.vx * dt / steps, ny = a.y + a.vy * dt / steps, nz = a.z + a.vz * dt / steps;
+      for (const m of W.mobs) {
+        if (m.dead || nx < m.x - m.w - 0.1 || nx > m.x + m.w + 0.1 || nz < m.z - m.w - 0.1 || nz > m.z + m.w + 0.1 || ny < m.y || ny > m.y + m.h) continue;
+        if (hurtMob(m, a.dmg, m.x - a.vx, m.z - a.vz)) { if (m.type === 'spider') m.angry = true; if (a.crit) particles(m.x, m.y + m.h * 0.7, m.z, T.white, 8, 0.3, 2, 0.4); sfx('arrowhit'); }
+        else if (a.pick) spawnItem(ARROW, 1, nx, ny, nz);
+        W.arrows.splice(i, 1); gone = true; break;
+      }
+      if (gone) break;
+      if (solidAt(Math.floor(nx), Math.floor(ny), Math.floor(nz))) { a.stuck = true; a.bx = Math.floor(nx); a.by = Math.floor(ny); a.bz = Math.floor(nz); a.x += (nx - a.x) * 0.6; a.y += (ny - a.y) * 0.6; a.z += (nz - a.z) * 0.6; sfx('arrowhit', 0.5); break; }
+      a.x = nx; a.y = ny; a.z = nz;
+    }
+    if (!gone && !a.stuck) { const h = Math.hypot(a.vx, a.vz); a.yaw = Math.atan2(a.vx, -a.vz); a.pitch = Math.atan2(a.vy, h); if (a.crit && Math.random() < 0.5) particles(a.x, a.y, a.z, T.white, 1, 0.02, 0.2, 0.3); }
+  }
+}
+// ── beds ──
+function trySleep(t) {
+  G.spawn = { x: t.x + 0.5, y: t.y + 1, z: t.z + 0.5 };
+  const tt = W.time % DAY_TICKS;
+  if (tt < 12540 || tt > 23460) { toast('리스폰 지점을 정했어요. 잠은 밤에만 잘 수 있어요.'); return; }
+  if (G.mode === 'survival' && W.difficulty > 0 && W.mobs.some(m => !m.dead && MOBDEF[m.type].hostile && Math.hypot(m.x - t.x - 0.5, m.z - t.z - 0.5) < 8 && Math.abs(m.y - t.y) < 5)) { toast('근처에 몬스터가 있어 잘 수 없어요!'); return; }
+  input.mine = input.use = false; input.fwd = input.side = 0; resetTouchHolds();
+  P.x = t.x + 0.5; P.z = t.z + 0.5; P.y = t.y + 1; P.vx = P.vy = P.vz = 0; P.flying = false;
+  G.sleep = 0.001; toast('리스폰 지점을 정했어요. 잘 자요…');
+}
+function updateSleep(dt) {
+  if (!G.sleep) return;
+  if (G.sleep < 0) { G.sleep = Math.min(0, G.sleep + dt * 1.2); return; }
+  G.sleep += dt; input.fwd = input.side = 0; input.jump = false;
+  if (G.sleep > 2.4) { W.time = Math.ceil(W.time / DAY_TICKS) * DAY_TICKS + 300; updateSky(); G.sleep = -1; chat('좋은 아침이에요!', '#ff5'); saveSoon(); }
+}
+// ── armor ──
+function armorPoints() { let d = 0, t = 0; for (const s of G.armor) { const a = s && armorOf(s.id); if (a) { d += a.def; t += a.tough; } } return [d, t]; }
+function damageArmor(amount) {
+  const n = Math.max(1, Math.floor(amount / 4));
+  for (let i = 0; i < 4; i++) {
+    const s = G.armor[i], a = s && armorOf(s.id); if (!a) continue;
+    s.dmg = (s.dmg || 0) + n;
+    if (s.dmg >= a.dur) { G.armor[i] = null; sfx('toolbreak'); toast(info(s.id).name + '이(가) 부서졌어요!'); }
+  }
+  invChanged();
+}
+const ARMOR_BYPASS = { starve: 1, drown: 1, void: 1, fall: 1, kill: 1 };
 function updateParticles(dt) {
   for (let i = W.particles.length - 1; i >= 0; i--) {
     const p = W.particles[i]; p.life -= dt;
@@ -1319,7 +1499,7 @@ function explode(x, y, z, power) {
 // ── mobs ──
 const MOBDEF = {
   pig: { name: '돼지', hp: 10, w: 0.45, h: 0.9, speed: 1.3, passive: true, drops: [[PORK, 1, 3]], cooked: COOKED_PORK },
-  cow: { name: '소', hp: 10, w: 0.45, h: 1.3, speed: 1.2, passive: true, drops: [[BEEF, 1, 3]], cooked: STEAK },
+  cow: { name: '소', hp: 10, w: 0.45, h: 1.3, speed: 1.2, passive: true, drops: [[BEEF, 1, 3], [LEATHER, 0, 2]], cooked: STEAK },
   sheep: { name: '양', hp: 8, w: 0.45, h: 1.25, speed: 1.2, passive: true, drops: [[WOOL, 1, 1], [MUTTON, 1, 2]] },
   zombie: { name: '좀비', hp: 20, w: 0.3, h: 1.9, speed: 2.3, hostile: true, dmg: 3, drops: [[FLESH, 0, 2]], burns: true },
   spider: { name: '거미', hp: 16, w: 0.65, h: 0.9, speed: 3.1, hostile: true, dmg: 2, drops: [[STRING, 0, 2]], climbs: true },
@@ -1351,11 +1531,12 @@ function updateMobs(dt) {
       if (m.dead > 0.9) {
         W.mobs.splice(i, 1);
         particles(m.x, m.y + m.h / 2, m.z, T.white, 14, 0.4, 2, 0.7);
-        for (const [id, a, b] of d.drops) { const n = a + Math.floor(Math.random() * (b - a + 1)); const outId = (m.burn > 0 && d.cooked && id !== WOOL) ? d.cooked : (id === WOOL && m.color >= 8 ? COLOR_WOOL + 7 : id); spawnItem(outId, n, m.x, m.y + 0.5, m.z); }
+        for (const [id, a, b] of d.drops) { if (id === WOOL && m.sheared) continue; const n = a + Math.floor(Math.random() * (b - a + 1)); const outId = (m.burn > 0 && d.cooked && id === d.drops[0][0]) ? d.cooked : (id === WOOL && m.color >= 8 ? COLOR_WOOL + 7 : id); spawnItem(outId, n, m.x, m.y + 0.5, m.z); }
         continue;
       }
     }
     m.hurt = Math.max(0, m.hurt - dt); m.panic = Math.max(0, m.panic - dt); m.attackCd = Math.max(0, m.attackCd - dt);
+    if (m.sheared) m.sheared = Math.max(0, m.sheared - dt);
     const hostileNow = d.hostile && !(m.type === 'spider' && isDay() && !m.angry) && survival && W.difficulty !== 0;
     let tx = 0, tz = 0, speed = 0;
     if (!m.dead && hostileNow && pdist < 18 && Math.abs(pdy) < 10) {
@@ -1472,7 +1653,8 @@ function drawMobs(B, ox, oy, oz) {
       const legT = m.type === 'pig' ? T.pig_skin : big ? T.cow_skin : T.sheep_face;
       const bw = big ? 0.38 : sheep ? 0.33 : 0.3, by0 = big ? 0.75 : sheep ? 0.6 : 0.38, by1 = big ? 1.3 : sheep ? 1.15 : 0.85, bl = big ? 0.6 : 0.5;
       const lh = by0, lw = big ? 0.13 : 0.12;
-      part([-bw, by0, -bl], [bw, by1, bl], sheep && m.color >= 8 ? six(woolT) : skinFaces(m.type,[7,6,8,9,7,6]), [0, 0, 0], 0);
+      if (sheep && m.sheared) part([-bw * 0.72, by0 + 0.06, -bl * 0.9], [bw * 0.72, by1 - 0.12, bl * 0.9], six(T.sheep_shorn), [0, 0, 0], 0);
+      else part([-bw, by0, -bl], [bw, by1, bl], sheep && m.color >= 8 ? six(woolT) : skinFaces(m.type,[7,6,8,9,7,6]), [0, 0, 0], 0);
       for (const [lx, lz, s] of [[-1, -1, 1], [1, -1, -1], [-1, 1, -1], [1, 1, 1]]) {
         const cx = lx * (bw - lw), cz = lz * (bl - lw - 0.04);
         part([cx - lw, 0, cz - lw], [cx + lw, lh, cz + lw], skinFaces(m.type,[10,10,12,13,10,11]), [cx, lh, cz], swing * s);
@@ -1492,16 +1674,19 @@ function drawItems(B, ox, oy, oz) {
     const copies = e.count > 16 ? 3 : e.count > 1 ? 2 : 1;
     for (let k = 0; k < copies; k++) {
       const offx = k * 0.07, offy = k * 0.05;
-      if (b && (b.render === 'cube' || b.render === 'cutout' || b.render === 'translucent')) {
-        const hs = 0.125;
-        box(B, [-hs, 0, -hs], [hs, hs * 2, hs], blockTiles(e.id), p => [e.x - ox + offx + p[0] * c - p[2] * s, e.y - oy + bob + offy + p[1], e.z - oz + p[0] * s + p[2] * c], sky, blk);
+      if (isCubeItem(e.id)) {
+        const hs = 0.125, hy = hs * 2 * (b.height || 1);
+        box(B, [-hs, 0, -hs], [hs, hy, hs], blockTiles(e.id), p => [e.x - ox + offx + p[0] * c - p[2] * s, e.y - oy + bob + offy + p[1], e.z - oz + p[0] * s + p[2] * c], sky, blk);
       } else {
-        const tile = b ? T[b.tex] : T[ITEM[e.id].icon], hs = 0.2;
-        const P4 = [[-hs, 0, 0], [hs, 0, 0], [hs, hs * 2, 0], [-hs, hs * 2, 0]].map(p => [e.x - ox + offx + p[0] * c, e.y - oy + bob + offy + p[1], e.z - oz + p[0] * s]);
-        const uv = [uvOf(tile, 0, 1), uvOf(tile, 1, 1), uvOf(tile, 1, 0), uvOf(tile, 0, 0)];
-        B.quad(P4, uv, sky, blk, 0.95);
+        // extruded 3D sprite, 0.4 blocks wide, spinning around its vertical axis
+        drawItemMesh(B, itemTile(e.id), p => { const x = (p[0] - 0.5) * 0.4, y = p[1] * 0.4, z = (p[2] - 0.5) * 0.4; return [e.x - ox + offx + x * c - z * s, e.y - oy + bob + offy + y, e.z - oz + x * s + z * c]; }, sky, blk, 0.95);
       }
     }
+  }
+  for (const a of W.arrows) {
+    const [sky, blk] = lightAt(a.x, a.y, a.z), cy = Math.cos(a.yaw), sy = Math.sin(a.yaw), cp = Math.cos(a.pitch), sp = Math.sin(a.pitch);
+    const F = [sy * cp, sp, -cy * cp], R = [cy, 0, sy], Up = [R[1] * F[2] - R[2] * F[1], R[2] * F[0] - R[0] * F[2], R[0] * F[1] - R[1] * F[0]], t = T.arrow_shaft;
+    box(B, [-0.035, -0.035, -0.5], [0.035, 0.035, 0], [t, t, t, t, t, t], p => [a.x - ox + R[0] * p[0] + Up[0] * p[1] - F[0] * p[2], a.y - oy + R[1] * p[0] + Up[1] * p[1] - F[1] * p[2], a.z - oz + R[2] * p[0] + Up[2] * p[1] - F[2] * p[2]], sky, blk);
   }
   for (const t of W.tnts) {
     const [sky, blk] = lightAt(t.x, t.y + 0.5, t.z);
@@ -1523,13 +1708,20 @@ function drawParticles(B, ox, oy, oz, right, up) {
 
 // ─────────────────────────── player, survival, interaction ───────────────────────────
 let G = null, P = null, shake = 0;
-const input = { fwd: 0, side: 0, jump: false, sneak: false, sprintKey: false, mine: false, use: false };
+const input = { fwd: 0, side: 0, jump: false, sneak: false, descend: false, sprintKey: false, mine: false, use: false };
+// creative flight on/off; lifts you off the ground a little so you don't land straight away
+function setFlying(on) {
+  if (!G || G.mode !== 'creative') return;
+  P.flying = on; P.vy = on && P.onGround ? 4 : 0;
+  if (on && touchSneak) { touchSneak = false; input.sneak = touchDown; }
+  buzz(10);
+}
 const keys = {};
 
 function newPlayer(spawn) {
   return { x: spawn.x, y: spawn.y, z: spawn.z, vx: 0, vy: 0, vz: 0, w: 0.3, h: 1.8, yaw: 0.6, pitch: -0.15, onGround: false, inWater: false, eyeInWater: false,
     flying: false, sneaking: false, sprinting: false, fallStart: spawn.y, health: 20, hunger: 20, sat: 5, exhaustion: 0, airT: 15, hurt: 0, regenT: 0, starveT: 0, drownT: 0, cactusT: 0, voidT: 0,
-    dead: false, swing: 0, bob: 0, eating: 0, mining: null, mineCd: 0, useCd: 0, attackCd: 0, poison: 0, lastJump: 0, lastFwd: 0, jumpCd: 0, stepAcc: 0 };
+    dead: false, swingT: -1, draw: 0, noArrowT: 0, bob: 0, eating: 0, mining: null, mineCd: 0, useCd: 0, attackCd: 0, poison: 0, lastJump: 0, lastFwd: 0, jumpCd: 0, stepAcc: 0 };
 }
 const eyeHeight = () => P.sneaking && !P.flying ? 1.27 : 1.62;
 const lookDir = () => [Math.sin(P.yaw) * Math.cos(P.pitch), Math.sin(P.pitch), -Math.cos(P.yaw) * Math.cos(P.pitch)];
@@ -1586,6 +1778,9 @@ function rayMob(o, d, maxD) {
 }
 
 // ── mining & placing ──
+const isLeaves = id => id === LEAVES || id === SPRUCE_LEAVES || id === BIRCH_LEAVES;
+const isWool = id => id === WOOL || (id >= COLOR_WOOL && id < COLOR_WOOL + 8);
+function startSwing() { if (P.swingT < 0 || P.swingT >= 0.5) P.swingT = 0; }
 function canHarvest(b, tool) { return !b.tier || (tool && tool.kind === 'pickaxe' && tool.level >= b.tier); }
 function breakTime(id) {
   const b = BLOCK[id]; if (!b || b.hard < 0) return Infinity; if (b.hard === 0) return 0.05;
@@ -1593,6 +1788,7 @@ function breakTime(id) {
   let speed = 1;
   if (tool && tool.kind === b.tool) speed = tool.speed;
   if (tool && tool.kind === 'sword' && (id === LEAVES || id === SPRUCE_LEAVES || id === BIRCH_LEAVES || id === MELON || id === PUMPKIN)) speed = 1.5;
+  if (tool && tool.kind === 'shears') speed = isLeaves(id) ? 15 : isWool(id) ? 5 : 1;
   if (P.eyeInWater) speed /= 5;
   if (!P.onGround && !P.flying && !P.inWater) speed /= 5;
   return b.hard * (canHarvest(b, tool) ? 1.5 : 5) / speed;
@@ -1607,7 +1803,8 @@ function breakBlock(t) {
   const id = t.id, b = BLOCK[id];
   if (G.mode === 'survival') {
     const s = held(), tool = s && toolOf(s.id);
-    if (canHarvest(b, tool)) dropBlockItems(t.x, t.y, t.z, id);
+    if (tool && tool.kind === 'shears' && (isLeaves(id) || id === TALL_GRASS || id === DEAD_BUSH)) spawnItem(id, 1, t.x + 0.5, t.y + 0.4, t.z + 0.5);
+    else if (canHarvest(b, tool)) dropBlockItems(t.x, t.y, t.z, id);
     else { const te = W.te.get(pkey(t.x, t.y, t.z)); if (te) for (const sl of te.slots) if (sl) spawnItem(sl.id, sl.count, t.x + 0.5, t.y + 0.5, t.z + 0.5, sl.dmg); }
     if (tool && b.hard > 0) damageTool(tool.kind === 'sword' ? 2 : 1);
     P.exhaustion += 0.005;
@@ -1624,7 +1821,7 @@ function attack(m) {
   let dmg = tool ? tool.dmg : 1;
   if (P.vy < -1 && !P.onGround && !P.inWater) { dmg *= 1.5; particles(m.x, m.y + m.h * 0.7, m.z, T.white, 8, 0.3, 2, 0.4); }
   if (hurtMob(m, dmg, P.x, P.z)) { if (m.type === 'spider') m.angry = true; if (tool) damageTool(tool.kind === 'sword' ? 1 : 2); P.exhaustion += 0.1; }
-  P.swing = 1;
+  startSwing();
 }
 function facingFor() { const d = lookDir(); return Math.abs(d[0]) > Math.abs(d[2]) ? (d[0] > 0 ? 1 : 0) : (d[2] > 0 ? 5 : 4); }
 function tryPlace(t, id) {
@@ -1652,7 +1849,7 @@ function tryPlace(t, id) {
   if (cur !== AIR && cb && cb.replaceable && !cb.fluid) dropBlockItems(x, y, z, cur);
   setBlock(x, y, z, id);
   if (b.use === 'chest' || b.use === 'furnace') { const ch = getChunk(x >> 4, z >> 4); if (ch) ch.needMesh = true; }
-  sfx('place_' + material(id)); P.swing = 1;
+  sfx('place_' + material(id)); startSwing();
   G.stats.placed++;
   return true;
 }
@@ -1667,8 +1864,18 @@ function useItem() {
       if (!W.te.has(k)) W.te.set(k, b.use === 'furnace' ? { type: 'furnace', facing: 4, slots: [null, null, null], burn: 0, burnMax: 0, cook: 0 } : { type: 'chest', facing: 4, slots: Array(27).fill(null) });
       G.container = { pos: k, te: W.te.get(k) }; openScreen(b.use); sfx('chest'); return;
     }
-    if (b && b.use === 'tnt' && id === FLINT_STEEL) { setBlock(t.x, t.y, t.z, AIR); primeTNT(t.x, t.y, t.z); damageTool(1); P.swing = 1; return; }
+    if (b && b.use === 'tnt' && id === FLINT_STEEL) { setBlock(t.x, t.y, t.z, AIR); primeTNT(t.x, t.y, t.z); damageTool(1); startSwing(); return; }
+    if (b && b.use === 'bed') { trySleep(t); return; }
   }
+  // shear a sheep
+  const tm = G.targetMob;
+  if (id === SHEARS && tm && tm.type === 'sheep' && !tm.sheared && !tm.dead) {
+    tm.sheared = 60 + Math.random() * 60; spawnItem(tm.color >= 8 ? COLOR_WOOL + 7 : WOOL, 1 + Math.floor(Math.random() * 3), tm.x, tm.y + 1, tm.z);
+    sfx('shear'); damageTool(1); startSwing(); return;
+  }
+  // put on armor straight from the hand
+  const arm = armorOf(id);
+  if (arm) { const cur = G.armor[arm.slot]; G.armor[arm.slot] = s; G.inv[G.sel] = cur; sfx('equip'); startSwing(); hudDirty = true; invChanged(); return; }
   if (id === BUCKET) {
     const w = raycast(eyePos(), lookDir(), REACH, true);
     if (w && w.id === WATER) {
@@ -1699,7 +1906,8 @@ function eat(s) {
 const eyePos = () => [P.x, P.y + eyeHeight(), P.z];
 
 function updateInteraction(dt) {
-  P.swing = Math.max(0, P.swing - dt * 4.5);
+  if (P.swingT >= 0) { P.swingT += dt / 0.3; if (P.swingT >= 1) P.swingT = -1; }
+  P.noArrowT = Math.max(0, P.noArrowT - dt);
   P.mineCd = Math.max(0, P.mineCd - dt); P.useCd = Math.max(0, P.useCd - dt); P.attackCd = Math.max(0, P.attackCd - dt);
   const s = held();
   const fluids = s && s.id === BUCKET;
@@ -1710,16 +1918,25 @@ function updateInteraction(dt) {
     if (G.targetMob) { if (P.attackCd <= 0) { attack(G.targetMob); P.attackCd = 0.45; } P.mining = null; }
     else if (G.target && !isWater(G.target.id)) {
       const t = G.target;
-      if (G.mode === 'creative') { if (P.mineCd <= 0) { if (!(s && toolOf(s.id) && toolOf(s.id).kind === 'sword')) breakBlock(t); P.mineCd = 0.22; P.swing = 1; } }
+      if (G.mode === 'creative') { if (P.mineCd <= 0) { if (!(s && toolOf(s.id) && toolOf(s.id).kind === 'sword')) breakBlock(t); P.mineCd = 0.22; startSwing(); } }
       else if (P.mineCd <= 0) {
         if (!P.mining || P.mining.x !== t.x || P.mining.y !== t.y || P.mining.z !== t.z || P.mining.id !== t.id) P.mining = { x: t.x, y: t.y, z: t.z, id: t.id, p: 0, snd: 0 };
         const bt = breakTime(t.id);
-        P.mining.p += dt / bt; P.mining.snd -= dt; P.swing = Math.max(P.swing, 0.6);
-        if (P.mining.snd <= 0) { P.mining.snd = 0.24; sfx('dig_' + material(t.id), 0.5); blockParticles(t.x, t.y, t.z, t.id, 2); }
+        P.mining.p += dt / bt; P.mining.snd -= dt; if (P.swingT < 0) startSwing();
+        if (P.mining.snd <= 0) { P.mining.snd = 0.24; sfx('dig_' + material(t.id), 0.5); digParticles(t); }
         if (P.mining.p >= 1) { breakBlock(t); P.mining = null; P.mineCd = 0.12; }
       }
-    } else P.mining = null;
+    } else { P.mining = null; if (P.swingT < 0) startSwing(); }
   } else P.mining = null;
+  // bow: hold "use" to draw, release to shoot
+  const bow = s && s.id === BOW;
+  if (bow && input.use && !P.dead) {
+    if (P.draw > 0) P.draw = Math.min(1.5, P.draw + dt);
+    else if (G.mode === 'creative' || G.inv.some(x => x && x.id === ARROW)) P.draw = 0.001;
+    else if (!P.noArrowT) { toast('화살이 없어요.'); P.noArrowT = 2; }
+    return;
+  }
+  if (P.draw > 0) { if (bow && !P.dead) shootArrow(P.draw); P.draw = 0; }
   if (input.use && !P.dead) {
     const f = s && ITEM[s.id] && ITEM[s.id].food;
     if (f && (P.hunger < 20 || G.mode === 'creative' && false)) {
@@ -1740,7 +1957,7 @@ function updatePlayer(dt) {
   P.inWater = entityInWater(P, 0.4); P.eyeInWater = isWater(getBlock(Math.floor(P.x), Math.floor(P.y + eyeHeight()), Math.floor(P.z)));
   let speed = P.flying ? (P.sprinting ? 21.6 : 10.9) : P.sneaking ? 1.31 : P.sprinting ? 5.61 : 4.317;
   if (P.inWater && !P.flying) speed *= 0.45;
-  if (P.eating > 0) speed *= 0.35;
+  if (P.eating > 0 || P.draw > 0) speed *= 0.35;
   const n = Math.max(1, Math.hypot(fwd, side));
   const wx = (Math.sin(P.yaw) * fwd + Math.cos(P.yaw) * side) / n * speed, wz = (-Math.cos(P.yaw) * fwd + Math.sin(P.yaw) * side) / n * speed;
   const below = getBlock(Math.floor(P.x), Math.floor(P.y - 0.05), Math.floor(P.z));
@@ -1748,8 +1965,8 @@ function updatePlayer(dt) {
   const acc = P.flying ? 6 : P.onGround ? (icy ? 1.6 : 16) : P.inWater ? 6 : 3.5;
   P.vx += (wx - P.vx) * Math.min(1, acc * dt); P.vz += (wz - P.vz) * Math.min(1, acc * dt);
   if (P.flying) {
-    const ty = ((input.jump ? 1 : 0) - (input.sneak ? 1 : 0)) * 8.5;
-    P.vy += (ty - P.vy) * Math.min(1, 10 * dt);
+    const ty = ((input.jump ? 1 : 0) - (input.descend ? 1 : 0)) * 8.5;
+    P.vy += (ty - P.vy) * Math.min(1, 12 * dt);
   } else if (P.inWater) {
     if (input.jump) P.vy = Math.min(P.vy + 26 * dt, 3.4); else P.vy = Math.max(P.vy - 10 * dt, -2.6);
     P.fallStart = P.y;
@@ -1802,7 +2019,9 @@ function damagePlayer(amount, cause, src) {
   const bypass = cause === 'starve' || cause === 'drown' || cause === 'void' || cause === 'explosion';
   if (P.hurt > 0 && !bypass) return;
   if (src && W.difficulty === 1) amount = Math.max(1, Math.round(amount / 2 + 0.5)); else if (src && W.difficulty === 3) amount = Math.round(amount * 1.5);
-  P.health = Math.max(0, P.health - amount); P.hurt = 0.5; G.hurtFlash = 1;
+  if (!ARMOR_BYPASS[cause]) { const [def, tough] = armorPoints(); if (def > 0) { const eff = clamp(def - amount / (2 + tough / 4), def * 0.2, 20); damageArmor(amount); amount *= 1 - eff / 25; } }
+  if (G.sleep > 0) G.sleep = 0;
+  P.health = Math.max(0, Math.round((P.health - amount) * 10) / 10); P.hurt = 0.5; G.hurtFlash = 1;
   P.exhaustion += 0.1;
   if (src) { const dx = P.x - src.x, dz = P.z - src.z, d = Math.hypot(dx, dz) || 1; P.vx += dx / d * 6; P.vz += dz / d * 6; P.vy = Math.max(P.vy, 5); }
   sfx('hurt'); buzz(40); shake = Math.max(shake, 0.25);
@@ -1814,6 +2033,7 @@ function die(cause) {
   P.dead = true; P.health = 0; input.mine = input.use = false;
   if (G.mode === 'survival') {
     for (let i = 0; i < 36; i++) { const s = G.inv[i]; if (s) { spawnItem(s.id, s.count, P.x, P.y + 1, P.z, s.dmg, [(Math.random() - 0.5) * 6, 3 + Math.random() * 3, (Math.random() - 0.5) * 6]); G.inv[i] = null; } }
+    for (let i = 0; i < 4; i++) { const s = G.armor[i]; if (s) { spawnItem(s.id, 1, P.x, P.y + 1, P.z, s.dmg, [(Math.random() - 0.5) * 6, 3 + Math.random() * 3, (Math.random() - 0.5) * 6]); G.armor[i] = null; } }
     invChanged();
   }
   G.stats.deaths++;
@@ -1897,7 +2117,13 @@ canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
 .bars .hr{display:flex}.bars img,.air img{width:${u(9)};height:${u(9)};margin-right:${u(-1)};display:block}
 .bars .food{flex-direction:row-reverse}.bars .food img,.air img{margin:0 0 0 ${u(-1)}}
 .bars .shake img{animation:shk .25s infinite}@keyframes shk{50%{transform:translateY(${u(-1)})}}
-.air{display:flex;flex-direction:row-reverse;height:${u(9)};margin-bottom:${u(1)}}
+.air{display:flex;flex-direction:row-reverse;height:${u(9)}}
+.toprow{display:flex;justify-content:space-between;align-items:flex-end;height:${u(9)};margin-bottom:${u(1)}}
+.armor{display:flex;visibility:hidden}.armor img{width:${u(9)};height:${u(9)};margin-right:${u(-1)};display:block}
+.sleepov{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+.iinfo{position:absolute;left:50%;top:calc(50% + ${u(16)});transform:translateX(-50%);display:none;align-items:center;gap:${u(3)};background:#00000060;padding:${u(1)} ${u(4)};text-shadow:var(--sh);white-space:nowrap}
+.ndl{position:relative;display:inline-block;width:${u(9)};height:${u(9)};border-radius:50%;background:#c8c8b4;border:${u(1)} solid #555}
+.ndl::before{content:"";position:absolute;left:50%;top:${u(.5)};width:0;height:0;margin-left:${u(-1.5)};border-left:${u(1.5)} solid transparent;border-right:${u(1.5)} solid transparent;border-bottom:${u(3.5)} solid #e02828}
 .hotbar{position:relative;width:${u(182)};height:${u(22)};background:var(--tx-hot) 0 0/100% 100%;image-rendering:pixelated;pointer-events:auto;--sel:0}
 .hs{position:absolute;top:${u(1)};width:${u(20)};height:${u(20)};display:flex;align-items:center;justify-content:center}
 .hsel{position:absolute;top:${u(-1)};left:calc(var(--g)*(var(--sel)*20 - 1));width:${u(24)};height:${u(24)};background:var(--tx-hsel) 0 0/100% 100%;image-rendering:pixelated;pointer-events:none;z-index:1}
@@ -2027,6 +2253,13 @@ canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
 .slot.ghosted::before{content:"";position:absolute;inset:0;background:#ff000038;pointer-events:none}
 .slot .ghost{opacity:.5}
 .slot.trash{background:#8b8b8b var(--tx-trash) center/${u(16)} ${u(16)} no-repeat;image-rendering:pixelated}
+#mc.touchui .slot{touch-action:none}
+.ico.sil{filter:brightness(0);opacity:.28}
+.armcol{display:grid;grid-template-columns:${u(18)};align-self:center}
+#mc.short .armcol{grid-template-columns:repeat(2,${u(18)})}
+.armrow{display:flex}
+.cursor.drag{transform:translateY(${u(-14)}) scale(1.45)}
+.slot.hl.spread::after{background:#ffffa070}
 .invgap{height:${u(4)}}
 .craft{display:flex;align-items:center;gap:${u(7)};padding:${u(1)} ${u(6)} ${u(2)} 0;min-height:${u(40)}}
 .craft .sp{min-width:${u(2)}}
@@ -2202,13 +2435,13 @@ function buildDOM() {
 <canvas id="cv" tabindex="0" aria-label="3D 블록 월드"></canvas>
 <div class="hud" id="hud">
  <div class="uw" id="uw"></div><div class="flash" id="flash"></div>
- <div class="cross" id="cross"></div>
+ <div class="cross" id="cross"></div><div class="iinfo" id="iinfo"></div><div class="sleepov" id="sleepov"></div>
  <div class="hinfo" id="hinfo"></div><div class="debug" id="debug"></div>
  <div class="chatlog" id="chatlog"></div>
  <div class="eat" id="eat"><i></i></div>
  <div class="tools"><button class="btn sq dk" id="bInv" aria-label="인벤토리" title="인벤토리 (E)"><img id="iInv" alt=""></button><button class="btn sq" id="bFull" aria-label="전체화면 전환" title="전체화면"><img id="iFull" alt=""></button><button class="btn sq dk" id="bPause" aria-label="일시정지" title="게임 메뉴 (Esc)"><img id="iPause" alt=""></button></div>
  <div class="touch" id="touch"></div>
- <div class="bottom" id="bottomHud"><div class="itemname" id="itemname"></div><div class="statrows"><div class="air" id="air"></div><div class="bars" id="bars"><div class="hr" id="hearts"></div><div class="hr food" id="food"></div></div></div><div class="hotbar" id="hotbar"></div></div>
+ <div class="bottom" id="bottomHud"><div class="itemname" id="itemname"></div><div class="statrows"><div class="toprow"><div class="armor" id="armor"></div><div class="air" id="air"></div></div><div class="bars" id="bars"><div class="hr" id="hearts"></div><div class="hr food" id="food"></div></div></div><div class="hotbar" id="hotbar"></div></div>
 </div>
 <div class="screen" id="screen" hidden></div>
 <div class="editor" id="editor" hidden></div>
@@ -2217,7 +2450,7 @@ function buildDOM() {
 </section>`;
   canvas = $('cv');
   $('hotbar').innerHTML = Array.from({ length: 9 }, (_, i) => `<div class="hs" data-hot="${i}" style="left:calc(var(--g)*${1 + i * 20})"></div>`).join('') + '<div class="hsel"></div><button id="hotInv" class="hot-inv" aria-label="인벤토리 열기"></button>';
-  $('hearts').innerHTML = '<img alt="">'.repeat(10); $('food').innerHTML = '<img alt="">'.repeat(10); $('air').innerHTML = '<img alt="">'.repeat(10);
+  $('hearts').innerHTML = '<img alt="">'.repeat(10); $('food').innerHTML = '<img alt="">'.repeat(10); $('air').innerHTML = '<img alt="">'.repeat(10); $('armor').innerHTML = '<img alt="">'.repeat(10);
 }
 // GUI scale: "auto" picks the largest scale that still fits, like the original game's option
 let guiG = 2;
@@ -2234,14 +2467,17 @@ function applyGui() {
 }
 function slotHTML(s) {
   if (!s) return '';
-  const t = toolOf(s.id), dur = t && s.dmg ? `<div class="dur"><i style="width:${Math.max(0, 100 - s.dmg / t.dur * 100)}%;background:hsl(${120 * (1 - s.dmg / t.dur)},90%,50%)"></i></div>` : '';
+  const dm = durOf(s.id), dur = dm && s.dmg ? `<div class="dur"><i style="width:${Math.max(0, 100 - s.dmg / dm * 100)}%;background:hsl(${120 * (1 - s.dmg / dm)},90%,50%)"></i></div>` : '';
   return `<img class="ico" src="${ICON[s.id]}" alt="">${s.count > 1 ? `<span class="cnt">${s.count}</span>` : ''}${dur}`;
 }
 function tipHTML(id, s) {
   const inf = info(id); if (!inf) return '';
   let extra = '';
-  const t = toolOf(id); if (t && s) extra = `<div class="tl">내구도: ${t.dur - (s.dmg || 0)} / ${t.dur}</div>`;
+  const t = toolOf(id), a = armorOf(id), dm = durOf(id); if (dm && s) extra = `<div class="tl">내구도: ${dm - (s.dmg || 0)} / ${dm}</div>`;
   else if (inf.food) extra = `<div class="tl">허기 +${inf.food[0] / 2}</div>`;
+  if (a) extra += `<div class="tl" style="color:#5555ff">방어력 +${a.def} (${ARMOR_SLOT_NAME[a.slot]})</div>`;
+  if (inf.gadget === 'compass') extra += '<div class="tl">들고 있으면 리스폰 지점 방향을 알려줘요</div>';
+  if (inf.gadget === 'clock') extra += '<div class="tl">들고 있으면 시간을 알려줘요</div>';
   if (t && t.dmg && t.kind !== 'lighter') extra += `<div class="tl">공격력 ${t.dmg}</div>`;
   return `<div>${esc(inf.name)}</div>${extra}`;
 }
@@ -2252,7 +2488,7 @@ function updateHUD(dt) {
   if (invDirty) {
     invDirty = false;
     root.querySelectorAll('[data-hot]').forEach((el, i) => { el.innerHTML = slotHTML(G.inv[i]); });
-    $('hotbar').style.setProperty('--sel', G.sel);
+    $('hotbar').style.setProperty('--sel', G.sel); updateArmorBar();
     const s = held(); $('itemname').textContent = s ? info(s.id).name : ''; $('itemname').style.opacity = 1; nameTimer = 2.5;
   }
   if (nameTimer > 0) { nameTimer -= dt; if (nameTimer <= 0) $('itemname').style.opacity = 0; }
@@ -2266,7 +2502,10 @@ function updateHUD(dt) {
       fs[i].src = HUDICON[P.hunger >= i * 2 + 2 ? 'food_full' : P.hunger >= i * 2 + 1 ? 'food_half' : 'food_empty'];
     }
     $('hearts').classList.toggle('shake', P.health <= 4);
+    updateArmorBar();
   }
+  $('sleepov').style.opacity = G.sleep > 0 ? Math.min(1, G.sleep / 1.6) : G.sleep < 0 ? -G.sleep : 0;
+  updateGadget();
   const bubbles = Math.ceil(P.airT / 1.5);
   const air = $('air');
   if (surv && P.airT < 15) { air.style.visibility = 'visible'; [...air.children].forEach((im, i) => { im.src = HUDICON.bubble; im.style.visibility = i < bubbles ? 'visible' : 'hidden'; }); } else air.style.visibility = 'hidden';
@@ -2291,6 +2530,27 @@ function updateHUD(dt) {
   // chat fade
   for (const el of $('chatlog').children) { const age = (performance.now() - el.dataset.t) / 1000; el.style.opacity = G.ui === 'chat' ? 1 : age > 8 ? 0 : 1; }
   while ($('chatlog').children.length > 10) $('chatlog').firstChild.remove();
+}
+function updateArmorBar() {
+  const ar = $('armor'), [def] = armorPoints(), show = def > 0 && G.mode === 'survival';
+  ar.style.visibility = show ? 'visible' : 'hidden';
+  if (show) [...ar.children].forEach((im, i) => { im.src = HUDICON[def >= i * 2 + 2 ? 'armor_full' : def >= i * 2 + 1 ? 'armor_half' : 'armor_empty']; });
+}
+let gadgetKey = '';
+function updateGadget() {
+  const el = $('iinfo'), s = held(), g = s && ITEM[s.id] && ITEM[s.id].gadget;
+  let key = '', html = '';
+  if (g === 'compass' && !G.ui) {
+    const dx = G.spawn.x - P.x, dz = G.spawn.z - P.z, d = Math.hypot(dx, dz), a = Math.atan2(dx, -dz) - P.yaw;
+    key = 'c' + Math.round(d) + ',' + Math.round(a * 20);
+    html = `<i class="ndl" style="transform:rotate(${a.toFixed(2)}rad)"></i><span>${d < 2 ? '리스폰 지점이에요' : `리스폰 지점까지 ${Math.round(d)}m`}</span>`;
+  } else if (g === 'clock' && !G.ui) {
+    const tt = W.time % DAY_TICKS, mins = Math.floor(((tt / 1000 + 6) % 24) * 60), hh = Math.floor(mins / 60), mm = mins % 60;
+    const ph = tt < 12000 ? '낮' : tt < 13800 ? '해 질 녘' : tt < 22200 ? '밤' : '새벽';
+    key = 't' + hh + ':' + mm; html = `<span>${dayCount()}일째 · ${ph} ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</span>`;
+  }
+  if (key === gadgetKey) return; gadgetKey = key;
+  el.style.display = key ? 'flex' : 'none'; if (key) el.innerHTML = html;
 }
 let toastT = 0;
 function toast(msg) { const t = $('toast'); if (!t) return; t.textContent = msg; t.style.opacity = 1; clearTimeout(toastT); toastT = setTimeout(() => { if (t.isConnected) t.style.opacity = 0; }, 2600); }
@@ -2329,29 +2589,29 @@ function invGrid() {
 }
 const touchTools = () => `<div class="mobtools"><button class="tgl ${quickMove ? 'on' : ''}" data-act="quick">빠른 이동</button><button class="tgl ${oneMode ? 'on' : ''}" data-act="one">1개씩</button></div>`;
 const contHead = title => `<div class="chead"><span class="ctitle">${title}</span><span class="sp"></span>${touchTools()}<button class="xbtn" data-act="close" aria-label="닫기" title="닫기 (E)"></button></div>`;
-const RB_TABS = [['전체', null], ['도구', ['도구']], ['블록', ['블록', '장식', '기능']], ['기타', ['재료', '음식']]];
+const RB_TABS = [['전체', null], ['도구', ['도구', '전투']], ['블록', ['블록', '장식', '기능']], ['기타', ['재료', '음식']]];
 function recipeBookHTML() {
   return `<div class="panel rbook" aria-label="레시피 책"><div class="rhead"><input class="mfield" id="rsearch" placeholder="검색..." value="${esc(rbSearch)}" aria-label="레시피 검색"><button class="tgl ${rbCraftable ? 'on' : ''}" data-act="rfilter" title="제작 가능한 것만 보기">제작 가능</button></div>
   <div class="rtabs">${RB_TABS.map(([t]) => `<button class="rtab ${t === rbTab ? 'on' : ''}" data-act="rtab" data-t="${t}">${t}</button>`).join('')}</div>
   <div class="rgrid" id="recipes"></div>
   <div class="rpage"><button class="pg prev" data-act="rprev" aria-label="이전 쪽"></button><span id="rpg">1/1</span><button class="pg" data-act="rnext" aria-label="다음 쪽"></button></div></div>`;
 }
-const CR_TABS = [['블록', BRICKS], ['장식', FLOWER_RED], ['기능', CHEST], ['도구', PICK0 + 2], ['음식', APPLE], ['재료', IRON]];
+const CR_TABS = [['블록', BRICKS], ['장식', FLOWER_RED], ['기능', CHEST], ['도구', PICK0 + 2], ['전투', ARMOR0 + 9], ['음식', APPLE], ['재료', IRON]];
 function renderScreen() {
   const s = $('screen'); s.hidden = false; s.className = 'screen bg-cont'; menuScreen = 'cont';
   const k = G.uiKind; recipeCache = null;
   if (k === 'inventory' || k === 'table') {
     const w = G.craftW;
     s.innerHTML = `<div class="cwrap">${rbOpen ? recipeBookHTML() : ''}<div class="panel" role="dialog" aria-label="${k === 'table' ? '작업대' : '인벤토리'}">${contHead('제작')}
-    <div class="craft"><button class="bookbtn ${rbOpen ? 'on' : ''}" data-act="book" aria-label="레시피 책" title="레시피 책"></button><span class="sp"></span><div class="grid g${w}">${G.craft.map((_, i) => slotEl('craft:' + i)).join('')}</div><div class="carrow"></div>${slotEl('out', 'big')}</div>
-    <div class="ctitle sub">인벤토리</div>${invGrid()}</div></div>`;
+    <div class="craft">${k === 'inventory' ? `<div class="armcol" title="갑옷">${[0, 1, 2, 3].map(i => slotEl('arm:' + i)).join('')}</div>` : ''}<button class="bookbtn ${rbOpen ? 'on' : ''}" data-act="book" aria-label="레시피 책" title="레시피 책"></button><span class="sp"></span><div class="grid g${w}">${G.craft.map((_, i) => slotEl('craft:' + i)).join('')}</div><div class="carrow"></div>${slotEl('out', 'big')}</div>
+    <div class="ctitle sub" id="invsub">인벤토리</div>${invGrid()}</div></div>`;
     const inp = $('rsearch'); if (inp) { inp.addEventListener('input', () => { rbSearch = inp.value; rbPage = 0; renderRecipes(); }); inp.addEventListener('keydown', e => { if (e.key !== 'Escape') e.stopPropagation(); }); }
   } else if (k === 'creative') {
     const tab = creativeTab, title = tab === '전체' ? '아이템 검색' : tab === '인벤토리' ? '생존 인벤토리' : tab;
     const tabBtn = (t, icon, name) => `<button class="crtab ${t === tab ? 'on' : ''}" data-tab="${t}" data-name="${name || t}" aria-label="${name || t}"><img class="ico" src="${icon}" alt=""></button>`;
     s.innerHTML = `<div class="cr"><div class="crtabs">${CR_TABS.map(([t, id]) => tabBtn(t, ICON[id])).join('')}<span class="sp"></span>${tabBtn('전체', UIT.i_search, '아이템 검색')}</div>
     <div class="panel crp" role="dialog" aria-label="크리에이티브 인벤토리">${contHead(title)}
-    ${tab === '인벤토리' ? invGrid() + `<div class="hotrow"><span class="sp"></span><span class="ctitle">버리기</span>${slotEl('trash', 'trash')}</div>`
+    ${tab === '인벤토리' ? `<div class="hotrow" style="margin:0 0 ${u(3)}"><span class="ctitle" id="invsub">갑옷</span><span class="sp"></span><div class="armrow">${[0, 1, 2, 3].map(i => slotEl('arm:' + i)).join('')}</div></div>` + invGrid() + `<div class="hotrow"><span class="sp"></span><span class="ctitle">버리기</span>${slotEl('trash', 'trash')}</div>`
       : `${tab === '전체' ? `<input class="mfield csearch" id="csearch" placeholder="아이템 검색..." value="${esc(creativeSearch)}" aria-label="아이템 검색">` : ''}<div class="palette" id="palette"></div>
       <div class="hotrow"><div class="grid">${Array.from({ length: 9 }, (_, i) => slotEl('inv:' + i)).join('')}</div>${slotEl('trash', 'trash')}</div>`}</div>
     <div class="crtabs bot"><span class="sp"></span>${tabBtn('인벤토리', ICON[CHEST], '생존 인벤토리')}</div></div>`;
@@ -2382,12 +2642,14 @@ function renderSlots() {
     const r = el.dataset.slot; if (r.startsWith('pal:') || r === 'trash') return;
     const st = getSlot(r);
     if (r.startsWith('craft:')) { const gi = +r.slice(6), gid = gm && !st ? gm[gi] : null; el.classList.toggle('ghosted', gid != null); el.innerHTML = st ? slotHTML(st) : gid != null ? `<img class="ico ghost" src="${ICON[gid]}" alt="">` : ''; return; }
+    if (r.startsWith('arm:')) { el.innerHTML = st ? slotHTML(st) : `<img class="ico sil" src="${ICON[ARMOR0 + 8 + +r.slice(4)]}" alt="">`; el.title = ARMOR_SLOT_NAME[+r.slice(4)]; return; }
     el.innerHTML = slotHTML(st);
   });
   const out = s.querySelector('[data-slot="out"]');
   if (out) { const r = craftResult(); out.classList.toggle('ghosted', !r && ghost != null); out.innerHTML = r ? slotHTML(r) : ghost != null ? `<img class="ico ghost" src="${ICON[RECIPES[ghost].out]}" alt="">` : ''; }
   $('cursor').innerHTML = slotHTML(cursorStack);
-  const held = $('touchHeld'); if (held) { held.innerHTML = cursorStack ? `<span class="held-slot">${slotHTML(cursorStack)}</span><span>선택: ${esc(info(cursorStack.id).name)} · 놓을 칸을 누르세요</span>` : '<span>아이템을 누른 뒤 옮길 칸을 누르세요</span>'; }
+  const held = $('touchHeld'); if (held) { held.innerHTML = cursorStack ? `<span class="held-slot">${slotHTML(cursorStack)}</span><span>${esc(info(cursorStack.id).name)} · 놓을 칸을 누르거나, 끌어서 여러 칸에 나눠 놓으세요</span>` : '<span>끌어서 옮기기 · 길게 눌러 반 나누기 · 두 번 탭해 빠른 이동</span>'; }
+  const sub = $('invsub'); if (sub && G.armor) { const [def] = armorPoints(); sub.textContent = (G.uiKind === 'creative' ? '갑옷' : '인벤토리') + (def ? ` · 방어력 ${def}` : ''); }
   if (G.uiKind === 'furnace' && G.container) { const te = G.container.te; const f = $('fflame'), a = $('farrow'); if (f) f.style.height = (te.burn > 0 ? te.burn / te.burnMax * 100 : 0) + '%'; if (a) a.style.width = (te.cook / SMELT_TIME * 100) + '%'; }
   if (G.uiKind === 'inventory' || G.uiKind === 'table') renderRecipes();
 }
@@ -2396,12 +2658,13 @@ function getSlot(ref) {
   if (k === 'inv') return G.inv[+i];
   if (k === 'craft') return G.craft[+i];
   if (k === 'c') return G.container.te.slots[+i];
+  if (k === 'arm') return G.armor[+i];
   if (k === 'out') return craftResult();
   return null;
 }
 function setSlot(ref, v) {
   const [k, i] = ref.split(':');
-  if (k === 'inv') G.inv[+i] = v; else if (k === 'craft') G.craft[+i] = v; else if (k === 'c') G.container.te.slots[+i] = v;
+  if (k === 'inv') G.inv[+i] = v; else if (k === 'craft') G.craft[+i] = v; else if (k === 'c') G.container.te.slots[+i] = v; else if (k === 'arm') G.armor[+i] = v;
 }
 function craftResult() { if (!G.craft) return null; const r = craft(G.craft.map(s => s ? s.id : 0), G.craftW); return r ? { id: r.id, count: r.count, dmg: 0 } : null; }
 function consumeGrid() { for (let i = 0; i < G.craft.length; i++) { const s = G.craft[i]; if (s) { s.count--; if (s.count <= 0) { G.craft[i] = s.id === WATER_BUCKET ? { id: BUCKET, count: 1, dmg: 0 } : null; } } } }
@@ -2421,6 +2684,8 @@ function shiftMove(ref) {
   const st = getSlot(ref); if (!st) return;
   const [k, idx] = ref.split(':'), i = +idx;
   let rest;
+  const am = armorOf(st.id);
+  if (k === 'inv' && am && (G.uiKind === 'inventory' || G.uiKind === 'creative') && !G.armor[am.slot]) { G.armor[am.slot] = st; setSlot(ref, null); sfx('equip'); return; }
   if (k === 'inv') {
     if (G.uiKind === 'chest') rest = moveToRange(st, 0, 27, 'c:');
     else if (G.uiKind === 'furnace') { const tgt = SMELT[st.id] != null ? 0 : FUEL[st.id] ? 1 : -1; rest = st; if (tgt >= 0) { const cur = G.container.te.slots[tgt]; if (!cur) { G.container.te.slots[tgt] = clone(st); rest = null; } else if (same(cur, st)) { const n = Math.min(maxStack(st.id) - cur.count, st.count); cur.count += n; st.count -= n; rest = st.count ? st : null; } } }
@@ -2454,6 +2719,16 @@ function slotClick(ref, right, shift) {
     if (shift) { shiftMove(ref); }
     else if (!cursorStack) { cursorStack = st; setSlot(ref, null); }
     else if (same(cursorStack, st)) { const k = Math.min(maxStack(st.id) - cursorStack.count, st.count); cursorStack.count += k; st.count -= k; if (!st.count) setSlot(ref, null); }
+    renderSlots(); invChanged(); return;
+  }
+  if (ref.startsWith('arm:')) {
+    const ai = +ref.slice(4), st = G.armor[ai];
+    if (shift) { if (st && !addToInventory(st.id, 1, st.dmg)) G.armor[ai] = null; }
+    else if (cursorStack) {
+      const a = armorOf(cursorStack.id);
+      if (!a || a.slot !== ai) { toast(ARMOR_SLOT_NAME[ai] + ' 칸에는 ' + ARMOR_SLOT_NAME[ai] + ' 갑옷만 넣을 수 있어요.'); return; }
+      G.armor[ai] = cursorStack; cursorStack = st; sfx('equip');
+    } else if (st) { cursorStack = st; G.armor[ai] = null; }
     renderSlots(); invChanged(); return;
   }
   if (shift) { shiftMove(ref); renderSlots(); invChanged(); return; }
@@ -2508,6 +2783,15 @@ function renderRecipes() {
 }
 function fillRecipe(ri) {
   const r = RECIPES[ri];
+  // tapping the same recipe again adds one more set to every filled grid cell
+  const cur = craftResult();
+  if (cur && cur.id === r.out && ghost == null) {
+    const need = {}; G.craft.forEach(s => { if (s) need[s.id] = (need[s.id] || 0) + 1; });
+    if (G.craft.some(s => s && s.count >= maxStack(s.id))) { toast('더 이상 넣을 수 없어요.'); return; }
+    for (const id in need) if (G.inv.reduce((a, s) => a + (s && s.id === +id ? s.count : 0), 0) < need[id]) { toast('재료가 부족해서 더 넣을 수 없어요.'); return; }
+    for (const s of G.craft) if (s) { const i = G.inv.findIndex(x => x && x.id === s.id); G.inv[i].count--; if (!G.inv[i].count) G.inv[i] = null; s.count++; }
+    renderSlots(); invChanged(); return;
+  }
   if (!canFill(r)) {
     const names = {}; for (const k of recipeNeeds(r)) { const n = typeof k === 'string' ? ({ log: '아무 원목', planks: '나무 판자', wool: '양털' })[k] : info(k).name; names[n] = (names[n] || 0) + 1; }
     ghost = ri; renderSlots();
@@ -2529,12 +2813,13 @@ function renderPalette() {
   const list = ids.filter(id => { const inf = info(id); if (q && !inf.name.includes(q)) return false; if (creativeTab === '전체') return true; return (inf.cat || '블록') === creativeTab; });
   el.innerHTML = list.map(id => `<div class="slot" data-slot="pal:${id}" data-name="${esc(info(id).name)}"><img class="ico" src="${ICON[id]}" alt=""></div>`).join('') || '<p class="pe">결과가 없어요.</p>';
 }
+let lastPtrSlot = 0;
 function screenEvents() {
   const s = $('screen');
   const handle = (e, right) => {
     const sl = e.target.closest('[data-slot]'), rc = e.target.closest('[data-recipe]'), act = e.target.closest('[data-act]'), tab = e.target.closest('[data-tab]'), opt = e.target.closest('[data-opt]');
     if (e.target.closest('button,.we,[data-recipe]')) uiClick();
-    if (sl && G && G.ui) { slotClick(sl.dataset.slot, right, e.shiftKey); return; }
+    if (sl && G && G.ui) { if (performance.now() - lastPtrSlot > 900) slotClick(sl.dataset.slot, right, e.shiftKey); return; }
     if (rc) { fillRecipe(+rc.dataset.recipe); return; }
     if (tab) { creativeTab = tab.dataset.tab; renderScreen(); return; }
     if (opt && opt.tagName === 'BUTTON') { cycleOpt(opt.dataset.opt, e.shiftKey ? -1 : 1, opt); return; }
@@ -2542,7 +2827,7 @@ function screenEvents() {
   };
   ctx.on(s, 'click', e => handle(e, false));
   ctx.on(s, 'dblclick', e => { const w = e.target.closest('.we'); if (w) { selectedWorld = w.dataset.id; menuAction('play'); } });
-  ctx.on(s, 'contextmenu', e => { e.preventDefault(); if (e.target.closest('[data-slot]')) handle(e, true); });
+  ctx.on(s, 'contextmenu', e => { e.preventDefault(); }); // right clicks on slots are handled by the pointer code below
   ctx.on(s, 'input', e => { const sl = e.target.closest('.slider [data-opt]'); if (sl) setOpt(sl.dataset.opt, +sl.value, sl); });
   ctx.on(s, 'pointermove', e => {
     const r = $('mc').getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
@@ -2559,6 +2844,97 @@ function screenEvents() {
     }
     if (html && e.pointerType === 'mouse' && !cursorStack) { tip.innerHTML = html; tip.style.display = 'block'; tip.style.left = Math.min(x + 14, r.width - tip.offsetWidth - 4) + 'px'; tip.style.top = Math.max(2, y - tip.offsetHeight - 6) + 'px'; } else tip.style.display = 'none';
   });
+  // ── slot drag & drop (touch and mouse) ──
+  // tap: pick up / put down · drag a stack: carry it to another slot (swaps if occupied, leftovers go back)
+  // drag while already holding a stack: spread it evenly over every slot you cross (1 each in "1개씩" mode)
+  // long-press: take half / place one · long-press the craft result: craft as many as possible
+  // double-tap: quick-move to the other section · palette: swipe to scroll, hold then drag to take
+  let D = null, lastTap = null;
+  const placeable = r => !!r && !r.startsWith('pal:') && r !== 'out' && r !== 'trash' && !(r === 'c:2' && G.uiKind === 'furnace');
+  const canSpread = r => placeable(r) && !r.startsWith('arm:') && !!cursorStack && (!getSlot(r) || (same(getSlot(r), cursorStack) && getSlot(r).count < maxStack(cursorStack.id)));
+  const slotAt = (x, y) => { const rn = root.getRootNode ? root.getRootNode() : document, h = (rn && rn.elementFromPoint ? rn : document).elementFromPoint(x, y), el = h && h.closest ? h.closest('[data-slot]') : null; return el && s.contains(el) ? el : null; };
+  const slotNode = r => s.querySelector(`[data-slot="${r}"]`);
+  const clearHL = () => s.querySelectorAll('.slot.hl').forEach(e => e.classList.remove('hl', 'spread'));
+  const dragCur = (on, x, y) => { const c = $('cursor'); c.classList.toggle('drag', on && D && D.touch); if (x != null) { const r = $('mc').getBoundingClientRect(); c.style.left = (x - r.left) + 'px'; c.style.top = (y - r.top) + 'px'; } };
+  // Long-press is decided from the events' own timestamps, not from the timer firing first, so a busy
+  // frame on a slow phone can't turn a quick drag into a long-press. The timer only gives feedback.
+  const LONG_MS = 420;
+  const isLong = (d, ts) => d.touch && !quickMove && ts - d.t0 >= LONG_MS;
+  const longFeedback = d => { if (D !== d || d.moved || !G || !G.ui) return; buzz(15); d.el.classList.add('hl'); };
+  const startDrag = (d, ts) => {
+    if (isLong(d, ts) && !d.pal && d.ref !== 'out' && !d.had && getSlot(d.ref)) { slotClick(d.ref, true, false); d.mode = 'carry'; return; } // hold, then drag = take half
+    if (isLong(d, ts) && d.pal) { const id = +d.ref.slice(4); cursorStack = { id, count: maxStack(id), dmg: 0 }; d.mode = 'carry'; renderSlots(); return; }
+    if (d.pal) { if (Math.abs(d.y - d.y0) > Math.abs(d.x - d.x0)) { d.mode = 'scroll'; d.scrollEl = d.el.closest('.palette'); d.st0 = d.scrollEl ? d.scrollEl.scrollTop : 0; return; } const id = +d.ref.slice(4); cursorStack = { id, count: d.right ? 1 : maxStack(id), dmg: 0 }; d.mode = 'carry'; renderSlots(); return; }
+    if (d.had && cursorStack) { d.mode = 'spread'; if (canSpread(d.ref)) d.visited.push(d.ref); return; }
+    if (d.ref === 'out' ? !craftResult() : !getSlot(d.ref) || d.ref === 'trash') { d.mode = 'scroll'; d.scrollEl = s; d.st0 = s.scrollTop; return; }
+    slotClick(d.ref, d.right, false); d.mode = cursorStack ? 'carry' : null;
+  };
+  ctx.on(s, 'pointerdown', e => {
+    if (!G || !G.ui || D) return;
+    const sl = e.target.closest('[data-slot]'); if (!sl) return;
+    if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2) return;
+    e.preventDefault();
+    const ref = sl.dataset.slot, touch = e.pointerType !== 'mouse';
+    D = { pid: e.pointerId, ref, el: sl, t0: e.timeStamp, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, touch, right: e.button === 2, shift: e.shiftKey, moved: false, mode: null, had: !!cursorStack, visited: [], pal: ref.startsWith('pal:') };
+    if (touch && !quickMove) { const d = D; d.timer = ctx.timeout(() => longFeedback(d), LONG_MS); }
+    try { s.setPointerCapture(e.pointerId); } catch { }
+  });
+  ctx.on(s, 'pointermove', e => {
+    const d = D; if (!d || d.pid !== e.pointerId) return;
+    d.x = e.clientX; d.y = e.clientY;
+    if (!d.moved && Math.hypot(d.x - d.x0, d.y - d.y0) > (d.touch ? 9 : 4)) { d.moved = true; clearTimeout(d.timer); d.el.classList.remove('hl'); startDrag(d, e.timeStamp); }
+    if (d.mode === 'scroll') { if (d.scrollEl) d.scrollEl.scrollTop = d.st0 - (d.y - d.y0); return; }
+    if (!d.mode) return;
+    clearHL(); dragCur(true, d.x, d.y);
+    const tg = slotAt(d.x, d.y), tr = tg && tg.dataset.slot;
+    if (d.mode === 'spread') {
+      if (tr && !d.visited.includes(tr) && canSpread(tr)) d.visited.push(tr);
+      d.visited.forEach(r => { const n = slotNode(r); if (n) n.classList.add('hl', 'spread'); });
+    } else if (tg) tg.classList.add('hl');
+  });
+  const spread = (list, one) => {
+    const per = one ? 1 : Math.max(1, Math.floor(cursorStack.count / list.length));
+    for (const r of list) {
+      if (!cursorStack) break;
+      const cur = getSlot(r), k = Math.min(per, maxStack(cursorStack.id) - (cur ? cur.count : 0), cursorStack.count); if (k <= 0) continue;
+      if (cur) cur.count += k; else setSlot(r, { id: cursorStack.id, count: k, dmg: cursorStack.dmg });
+      cursorStack.count -= k; if (!cursorStack.count) cursorStack = null;
+    }
+  };
+  const endDrag = e => {
+    const d = D; if (!d || d.pid !== e.pointerId) return;
+    D = null; clearTimeout(d.timer); clearHL(); dragCur(false); lastPtrSlot = performance.now();
+    if (!G || !G.ui) return;
+    // put whatever is still held back where it came from (merging with what stayed there)
+    const back = () => {
+      if (!cursorStack || !placeable(d.ref)) return;
+      const o = getSlot(d.ref);
+      if (!o) { setSlot(d.ref, cursorStack); cursorStack = null; }
+      else if (same(o, cursorStack)) { const k = Math.min(maxStack(o.id) - o.count, cursorStack.count); o.count += k; cursorStack.count -= k; if (!cursorStack.count) cursorStack = null; }
+    };
+    if (e.type === 'pointercancel') { if (d.mode === 'carry') back(); renderSlots(); invChanged(); return; }
+    if (!d.moved) {
+      if (isLong(d, e.timeStamp)) { slotClick(d.ref, true, d.ref === 'out'); return; } // half / one · craft all on the result
+      const now = e.timeStamp, dbl = d.touch && lastTap && lastTap.ref === d.ref && now - lastTap.t < 380 && lastTap.picked;
+      const before = !!cursorStack, hadItem = !!getSlot(d.ref);
+      slotClick(d.ref, d.right, d.shift);
+      if (dbl && placeable(d.ref) && !cursorStack && getSlot(d.ref)) { shiftMove(d.ref); lastTap = null; renderSlots(); invChanged(); return; }
+      lastTap = { ref: d.ref, t: now, picked: !before && hadItem && !!cursorStack };
+      return;
+    }
+    const tg = slotAt(e.clientX, e.clientY), tr = tg && tg.dataset.slot;
+    if (d.mode === 'carry') {
+      if (tr && tr !== d.ref) { slotClick(tr, false, false); back(); }
+      else if (d.pal) cursorStack = null;
+      else back();
+    } else if (d.mode === 'spread') {
+      const list = d.visited.filter(canSpread);
+      if (list.length > 1) spread(list, d.right || oneMode);
+      else if (tr) slotClick(tr, d.right, false);
+    }
+    renderSlots(); invChanged();
+  };
+  ctx.on(s, 'pointerup', endDrag); ctx.on(s, 'pointercancel', endDrag);
 }
 
 // ── menus ──
@@ -2738,8 +3114,12 @@ function showHelp() {
   <p>${kn('jump')} 점프(크리에이티브에서 두 번: 비행) · ${kn('sneak')} 웅크리기 · ${kn('sprint')} 또는 ${kn('forward')} 두 번 달리기 · 1–9/휠 아이템 선택</p>
   <p>${kn('inventory')} 인벤토리 · ${kn('drop')} 버리기(Ctrl: 묶음) · ${kn('chat')} 채팅 · ${kn('command')} 명령어 · ${kn('hideHud')} HUD 숨기기 · ${kn('debug')} 디버그 · Esc 메뉴</p>
   <h4>모바일</h4><p>왼쪽 조이스틱(또는 방향 패드)으로 이동 · 화면 드래그로 시점 · 짧게 탭 설치·사용 · 꾹 누르기 캐기·공격 · 오른쪽 버튼 점프/캐기/놓기/웅크리기 · 핫바 옆 ⋯ 인벤토리</p>
+  <p>크리에이티브 비행: 점프 버튼 두 번 탭 또는 비행 버튼 · 날 때 점프 = 위로, 내려가기/웅크리기 = 아래로(누르고 있는 동안)</p>
   <p>버튼 위치·크기는 설정 → 터치 컨트롤 → 버튼 배치 편집에서 바꿀 수 있어요.</p>
-  <h4>인벤토리</h4><p>클릭: 집기/놓기 · 우클릭: 절반 집기/1개 놓기 · Shift+클릭: 빠른 이동 · 초록 책: 레시피 책(빨간 칸은 재료 부족)</p>
+  <h4>인벤토리</h4><p>클릭: 집기/놓기 · 우클릭: 절반 집기/1개 놓기 · Shift+클릭: 빠른 이동 · 초록 책: 레시피 책(빨간 칸은 재료 부족, 같은 레시피를 다시 누르면 재료 한 세트 추가)</p>
+  <p>끌어서 놓기: 아이템을 다른 칸으로 끌면 옮겨지고(다른 아이템이 있으면 맞바꿈), 아이템을 든 채로 여러 칸을 문지르면 고르게 나눠 놓아요. 터치: 길게 누르면 절반 집기, 두 번 탭하면 빠른 이동, 결과 칸을 길게 누르면 최대한 많이 제작.</p>
+  <h4>갑옷과 도구</h4><p>갑옷(가죽·금·철·다이아몬드 투구/흉갑/레깅스/부츠)은 인벤토리 왼쪽 칸에 넣거나 손에 들고 사용하면 입어요. 방어력만큼 받는 피해가 줄고 갑옷 내구도가 닳아요. 가죽은 소에게서 얻어요.</p>
+  <p>가위: 잎·양털을 빨리 캐고 잎 블록을 그대로 얻어요. 양에게 사용하면 양털을 깎아요 · 활: 사용 버튼을 누르고 있다가 떼면 발사(화살 필요) · 침대: 밤에 사용하면 아침까지 자고, 리스폰 지점이 돼요 · 나침반/시계: 들고 있으면 리스폰 방향과 시간을 알려줘요</p>
   <h4>시작 팁</h4><p>나무를 캐 원목 → 판자 → 작업대 → 나무 곡괭이 → 돌 → 화로 → 철. 밤에는 횃불(석탄+막대기)과 집이 필요해요.</p>
   <h4>명령어</h4><p>/gamemode survival|creative · /time set day|night · /give 아이템 [개수] · /tp x y z · /spawnpoint · /kill · /seed · /help</p></div></div>
   <div class="mfoot"><button class="btn w200" data-act="${from === 'pause' ? 'pause' : 'title'}">완료</button></div></div>`);
@@ -2919,7 +3299,7 @@ function positionTouch() {
   }
 }
 function resetTouchHolds() {
-  touchJump = touchDown = false; input.jump = false; input.sneak = touchSneak;
+  touchJump = touchDown = false; input.jump = false; input.sneak = touchSneak; input.descend = false;
   J.pid = null; DP.pid = null; DP.f = 0; DP.sprint = false; input.sprintKey = touchSprint;
   for (const p of tptr.values()) clearTimeout(p.timer); tptr.clear();
   if (root) root.querySelectorAll('#touch .down').forEach(e => e.classList.remove('down'));
@@ -2952,13 +3332,18 @@ function ctlDown(id, e, el) {
   el.classList.add('down');
   switch (id) {
     case 'move': if (SAVE.settings.moveStyle === 'dpad') { DP.pid = e.pointerId; dpadMove(e, true); } else { const r = el.getBoundingClientRect(); joyStart(e, r.left + r.width / 2, r.top + r.height / 2); } break;
-    case 'jump': touchJump = true; input.jump = true; break;
+    case 'jump': {
+      touchJump = true; input.jump = true;
+      // double-tap jump toggles flight in creative, like the original
+      const n = e.timeStamp; if (G.mode === 'creative') { if (n - P.lastJump < 380) { setFlying(!P.flying); P.lastJump = 0; } else P.lastJump = n; }
+      break;
+    }
     case 'mine': input.mine = true; P.attackCd = 0; P.mineCd = 0; break;
     case 'use': input.use = true; P.useCd = 0; break;
-    case 'sneak': touchSneak = !touchSneak; input.sneak = touchSneak; break;
+    case 'sneak': { const p = tptr.get(e.pointerId); if (P.flying) { p.flyHold = true; touchDown = true; input.descend = true; } else { touchSneak = !touchSneak; input.sneak = touchSneak; } break; }
     case 'sprint': touchSprint = !touchSprint; input.sprintKey = touchSprint; break;
-    case 'fly': if (G.mode === 'creative') { P.flying = !P.flying; P.vy = 0; } break;
-    case 'down': touchDown = true; input.sneak = true; break;
+    case 'fly': if (G.mode === 'creative') setFlying(!P.flying); break;
+    case 'down': touchDown = true; input.sneak = true; input.descend = true; break;
     case 'drop': { const p = tptr.get(e.pointerId); p.timer = ctx.timeout(() => { if (tptr.get(e.pointerId) === p) { p.fired = true; dropItem(true); buzz(25); } }, 450); break; }
   }
 }
@@ -2970,7 +3355,8 @@ function ctlUp(id, e, el, p) {
     case 'jump': touchJump = false; input.jump = false; break;
     case 'mine': input.mine = false; break;
     case 'use': input.use = false; break;
-    case 'down': touchDown = false; input.sneak = touchSneak; break;
+    case 'down': touchDown = false; input.sneak = touchSneak; input.descend = false; break;
+    case 'sneak': if (p && p.flyHold) { touchDown = false; input.descend = false; input.sneak = touchSneak; } break;
     case 'drop': clearTimeout(p.timer); if (!p.fired && ok && G && !G.ui) dropItem(false); break;
     case 'chat': if (ok && G && !G.ui) openChat(''); break;
     case 'pause': if (ok && G && !G.ui) showPause(); break;
@@ -3152,6 +3538,10 @@ function sfx(name, vol = 1) {
     case 'bucket': noise(0.3, 700, 0.8, 0.4, 'lowpass'); break;
     case 'chest': tone('triangle', 170, 120, 0.16, 0.12); break;
     case 'click': tone('square', 1250, 700, 0.035, 0.035); noise(0.03, 2600, 1.2, 0.12); break;
+    case 'equip': noise(0.12, 900, 0.8, 0.35); tone('triangle', 330, 260, 0.08, 0.06); break;
+    case 'bow': noise(0.18, 1800, 0.6, 0.3); tone('triangle', 420, 160, 0.14, 0.07); break;
+    case 'arrowhit': noise(0.08, 1200, 1.4, 0.4); tone('triangle', 260, 140, 0.06, 0.06); break;
+    case 'shear': noise(0.06, 4200, 2, 0.3); noise(0.06, 3800, 2, 0.3, 'bandpass', 0.09); break;
   }
 }
 let musicT = 40;
@@ -3212,9 +3602,9 @@ function applyVisualSettings() {
 function serializeWorld() {
   return {
     player: { x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, health: P.health, hunger: P.hunger, sat: P.sat, airT: P.airT, flying: P.flying, dead: P.dead },
-    inv: G.inv.map(s => s ? [s.id, s.count, s.dmg || 0] : 0), sel: G.sel, time: W.time, spawn: G.spawn, stats: G.stats,
+    inv: G.inv.map(s => s ? [s.id, s.count, s.dmg || 0] : 0), armor: G.armor.map(s => s ? [s.id, 1, s.dmg || 0] : 0), sel: G.sel, time: W.time, spawn: G.spawn, stats: G.stats,
     mods: encodeMods(), te: Object.fromEntries(W.te),
-    mobs: W.mobs.filter(m => !m.dead && Math.hypot(m.x - P.x, m.z - P.z) < 80).map(m => [m.type, +m.x.toFixed(2), +m.y.toFixed(2), +m.z.toFixed(2), m.hp, m.color]),
+    mobs: W.mobs.filter(m => !m.dead && Math.hypot(m.x - P.x, m.z - P.z) < 80).map(m => [m.type, +m.x.toFixed(2), +m.y.toFixed(2), +m.z.toFixed(2), m.hp, m.color, Math.round(m.sheared || 0)]),
   };
 }
 function persist() {
@@ -3232,7 +3622,7 @@ function startWorld(w) {
   wake();
   const d = w.data;
   W = { seed: w.seed >>> 0, noise: makeNoise(w.seed >>> 0), noise2: makeNoise((w.seed ^ 0x9e3779b9) >>> 0), chunks: new Map(), mods: decodeMods(d && d.mods), te: new Map(Object.entries((d && d.te) || {})),
-    fluidQ: new Set(), gravQ: new Set(), mobs: [], items: [], particles: [], tnts: [], time: d ? d.time : 1000, difficulty: w.difficulty ?? 2, daylight: 1, skyLevel: 15 };
+    fluidQ: new Set(), gravQ: new Set(), mobs: [], items: [], particles: [], tnts: [], arrows: [], time: d ? d.time : 1000, difficulty: w.difficulty ?? 2, daylight: 1, skyLevel: 15 };
   lastChunk = null; lastPc = null;
   G = { world: w, mode: w.mode, inv: Array(36).fill(null), sel: (d && d.sel) || 0, ui: 'loading', settings: SAVE.settings, spawn: (d && d.spawn) || findSpawn(), stats: Object.assign({ mined: 0, placed: 0, crafted: 0, deaths: 0, time: 0, walk: 0 }, (d && d.stats) || {}),
     target: null, targetMob: null, hurtFlash: 0, loading: true, fresh: !d, craft: null, craftW: 2 };
@@ -3240,7 +3630,9 @@ function startWorld(w) {
   if (d && d.player) { Object.assign(P, d.player); P.fallStart = P.y; if (P.dead) { P.dead = false; P.health = 20; P.hunger = 20; Object.assign(P, { x: G.spawn.x, y: G.spawn.y, z: G.spawn.z }); } }
   if (d && d.inv) G.inv = d.inv.map(s => s && info(s[0]) ? { id: s[0], count: s[1], dmg: s[2] || 0 } : null);
   else if (w.mode === 'creative') [GRASS, DIRT, STONE, COBBLE, PLANKS, LOG, GLASS, BRICKS, TORCH].forEach((id, i) => G.inv[i] = { id, count: 64, dmg: 0 });
-  if (d && d.mobs) for (const [type, x, y, z, hp, color] of d.mobs) if (MOBDEF[type]) { const m = spawnMob(type, x, y, z); m.hp = hp; m.color = color || 0; }
+  G.armor = [0, 1, 2, 3].map(i => { const s = d && d.armor && d.armor[i]; return s && armorOf(s[0]) && armorOf(s[0]).slot === i ? { id: s[0], count: 1, dmg: s[2] || 0 } : null; });
+  G.sleep = 0;
+  if (d && d.mobs) for (const [type, x, y, z, hp, color, sheared] of d.mobs) if (MOBDEF[type]) { const m = spawnMob(type, x, y, z); m.hp = hp; m.color = color || 0; m.sheared = +sheared || 0; }
   invDirty = hudDirty = true;
   w.played = Date.now();
   showLoading(0);
@@ -3283,7 +3675,9 @@ function updateChunks(budget) {
   const sig = pcx + ',' + pcz + ',' + R;
   if (sig !== lastPc) {
     lastPc = sig; wantList = [];
-    for (let dx = -R - 1; dx <= R + 1; dx++) for (let dz = -R - 1; dz <= R + 1; dz++) { const d = Math.hypot(dx, dz); if (d <= R + 1.5) wantList.push([dx, dz, d]); }
+    // generate one ring further than we mesh: a chunk is meshed only once all 8 neighbours exist, and a
+    // meshed chunk (d ≤ R+0.5) can have neighbours out to R+0.5+√2 — with R+1.5 those edge chunks never meshed
+    for (let dx = -R - 2; dx <= R + 2; dx++) for (let dz = -R - 2; dz <= R + 2; dz++) { const d = Math.hypot(dx, dz); if (d <= R + 2) wantList.push([dx, dz, d]); }
     wantList.sort((a, b) => a[2] - b[2]);
     for (const [k, ch] of W.chunks) if (Math.max(Math.abs(ch.cx - pcx), Math.abs(ch.cz - pcz)) > R + 3) { freeChunkGL(ch); W.chunks.delete(k); if (lastChunk === ch) lastChunk = null; }
   }
@@ -3305,7 +3699,9 @@ function updateChunks(budget) {
 }
 function loadProgress() {
   const pcx = Math.floor(P.x) >> 4, pcz = Math.floor(P.z) >> 4; let ok = 0, total = 0;
-  for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) { total++; const c = getChunk(pcx + dx, pcz + dz); if (c && c.mesh) ok++; }
+  // only count chunks that updateChunks will actually mesh (with view distance 2 the corners never are)
+  const R = SAVE.settings.renderDist;
+  for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) { if (Math.hypot(dx, dz) > R + 0.5) continue; total++; const c = getChunk(pcx + dx, pcz + dz); if (c && c.mesh) ok++; }
   return ok / total;
 }
 
@@ -3341,7 +3737,7 @@ function step(dt) {
   updateSky();
   updatePlayer(dt); updateInteraction(dt); updateSurvival(dt);
   tickAcc += dt; while (tickAcc >= TICK) { tickAcc -= TICK; gameTick(); }
-  updateMobs(dt); updateItems(dt); updateParticles(dt); updateTNT(dt); spawnLogic(dt);
+  updateMobs(dt); updateItems(dt); updateArrows(dt); updateParticles(dt); updateTNT(dt); spawnLogic(dt); updateSleep(dt);
   G.stats.time = (G.stats.time || 0) + dt;
   shake = Math.max(0, shake - dt * 2);
   music(dt);
@@ -3366,7 +3762,7 @@ function render(dt) {
   const bx = Math.cos(P.bob * 1.6) * 0.05 * bobA, by = Math.abs(Math.sin(P.bob * 1.6)) * 0.07 * bobA;
   const sh = shake > 0 && SAVE.settings.hurtShake !== false ? [(Math.random() - 0.5) * shake * 0.3, (Math.random() - 0.5) * shake * 0.3] : [0, 0];
   const eye = [P.x + Math.cos(P.yaw) * bx + sh[0], P.y + eyeHeight() + by + sh[1], P.z + Math.sin(P.yaw) * bx];
-  const fe = SAVE.settings.fovEffect !== false, targetFov = SAVE.settings.fov * (fe && P.sprinting ? 1.12 : 1) * (fe && P.flying && P.sprinting ? 1.05 : 1);
+  const fe = SAVE.settings.fovEffect !== false, targetFov = SAVE.settings.fov * (fe && P.sprinting ? 1.12 : 1) * (fe && P.flying && P.sprinting ? 1.05 : 1) * (fe && P.draw > 0 ? 1 - 0.15 * Math.min(1, P.draw) : 1);
   fov += (targetFov - fov) * Math.min(1, dt * 8);
   const proj = perspective(fov * Math.PI / 180, w / Math.max(1, h), 0.05, far + 60);
   const view = viewMatrix(eye, P.yaw, P.pitch), vp = mat4mul(proj, view), planes = frustumPlanes(vp);
@@ -3410,7 +3806,7 @@ function render(dt) {
   const t = G.target;
   if (t && !G.ui && !G.targetMob) {
     const lo = -0.002, hi = 1.002, x = t.x - o[0], y = t.y - o[1], z = t.z - o[2];
-    const b = BLOCK[t.id]; let y1 = hi; if (b && b.render === 'torch') y1 = 0.65; if (b && b.render === 'water') y1 = 0.9;
+    const b = BLOCK[t.id]; let y1 = hi; if (b && b.render === 'torch') y1 = 0.65; if (b && b.render === 'water') y1 = 0.9; if (b && b.height) y1 = b.height + 0.002;
     const c = [[lo, lo, lo], [hi, lo, lo], [hi, y1, lo], [lo, y1, lo], [lo, lo, hi], [hi, lo, hi], [hi, y1, hi], [lo, y1, hi]];
     const uv = uvOf(T.black, 0.5, 0.5); let n = 0;
     for (const [a, bb] of [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]) for (const k of [a, bb]) { LINES.set([x + c[k][0], y + c[k][1], z + c[k][2], uv[0], uv[1], 1, 1, 0.35, 0], n); n += 9; }
@@ -3444,6 +3840,48 @@ function render(dt) {
   // first-person hand
   if ((!G.ui || G.ui === 'chat' || G.ui === 'inventory' || G.ui === 'creative' || G.ui === 'table' || G.ui === 'container') && !hudHidden) drawHand(w, h, dt);
 }
+// ── first-person hand ──
+// Small 3×4 affine "pose stack" so the held item and arm follow the original game's transforms
+// (equip, swing arc, bow draw, eating) instead of a hand-tuned approximation.
+const DEG = Math.PI / 180;
+function mMul(a, b) { const o = new Array(12); for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) o[r * 4 + c] = a[r * 4] * b[c] + a[r * 4 + 1] * b[4 + c] + a[r * 4 + 2] * b[8 + c] + (c === 3 ? a[r * 4 + 3] : 0); return o; }
+class Pose {
+  constructor() { this.m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]; }
+  t(x, y, z) { this.m = mMul(this.m, [1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z]); return this; }
+  rx(d) { const c = Math.cos(d * DEG), s = Math.sin(d * DEG); this.m = mMul(this.m, [1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0]); return this; }
+  ry(d) { const c = Math.cos(d * DEG), s = Math.sin(d * DEG); this.m = mMul(this.m, [c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0]); return this; }
+  rz(d) { const c = Math.cos(d * DEG), s = Math.sin(d * DEG); this.m = mMul(this.m, [c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0]); return this; }
+  s(x, y = x, z = x) { this.m = mMul(this.m, [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0]); return this; }
+  fn() { const m = this.m.slice(); return p => [m[0] * p[0] + m[1] * p[1] + m[2] * p[2] + m[3], m[4] * p[0] + m[5] * p[1] + m[6] * p[2] + m[7], m[8] * p[0] + m[9] * p[1] + m[10] * p[2] + m[11]]; }
+}
+// Items are drawn as 1-pixel-thick extruded sprites (like the original): a front and back face plus a
+// side wall for every opaque pixel edge. Built once per tile from the atlas alpha channel.
+let atlasAlpha = null;
+const ITEM_MESH = new Map();
+function itemMesh(tile) {
+  let m = ITEM_MESH.get(tile); if (m) return m;
+  if (!atlasAlpha) atlasAlpha = atlasCanvas.getContext('2d').getImageData(0, 0, ATLAS, ATLAS).data;
+  const ox = (tile % TPR) * TS, oy = Math.floor(tile / TPR) * TS;
+  const A = (x, y) => x >= 0 && y >= 0 && x < 16 && y < 16 && atlasAlpha[((oy + y) * ATLAS + ox + x) * 4 + 3] >= 128;
+  const z0 = 7.5 / 16, z1 = 8.5 / 16, uv = (u, v) => uvOf(tile, u, v);
+  m = [{ p: [[0, 0, z1], [1, 0, z1], [1, 1, z1], [0, 1, z1]], uv: [uv(0, 1), uv(1, 1), uv(1, 0), uv(0, 0)], sh: 1 },
+    { p: [[1, 0, z0], [0, 0, z0], [0, 1, z0], [1, 1, z0]], uv: [uv(1, 1), uv(0, 1), uv(0, 0), uv(1, 0)], sh: 0.78 }];
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    if (!A(x, y)) continue;
+    const X0 = x / 16, X1 = (x + 1) / 16, Y0 = 1 - (y + 1) / 16, Y1 = 1 - y / 16, c = uv((x + 0.5) / 16, (y + 0.5) / 16), C = [c, c, c, c];
+    if (!A(x - 1, y)) m.push({ p: [[X0, Y0, z0], [X0, Y0, z1], [X0, Y1, z1], [X0, Y1, z0]], uv: C, sh: 0.7 });
+    if (!A(x + 1, y)) m.push({ p: [[X1, Y0, z1], [X1, Y0, z0], [X1, Y1, z0], [X1, Y1, z1]], uv: C, sh: 0.7 });
+    if (!A(x, y - 1)) m.push({ p: [[X0, Y1, z1], [X1, Y1, z1], [X1, Y1, z0], [X0, Y1, z0]], uv: C, sh: 0.92 });
+    if (!A(x, y + 1)) m.push({ p: [[X0, Y0, z0], [X1, Y0, z0], [X1, Y0, z1], [X0, Y0, z1]], uv: C, sh: 0.55 });
+  }
+  ITEM_MESH.set(tile, m); return m;
+}
+function drawItemMesh(B, tile, xf, sky, blk, shadeMul = 1) { for (const q of itemMesh(tile)) B.quad(q.p.map(xf), q.uv, sky, blk, q.sh * shadeMul); }
+const isCubeItem = id => { const b = id && id < 256 ? BLOCK[id] : null; return !!(b && (b.render === 'cube' || b.render === 'cutout' || b.render === 'translucent' || b.render === 'bed')); };
+function itemTile(id) {
+  if (id === BOW && P && P.draw > 0) return T['bow_' + (P.draw < 0.35 ? 1 : P.draw < 0.8 ? 2 : 3)];
+  const b = id < 256 ? BLOCK[id] : null; return b ? T[typeof b.tex === 'string' ? b.tex : b.tex.side] : T[ITEM[id].icon];
+}
 let handLower = 0, lastHeld = -1;
 function drawHand(w, h, dt) {
   if (P.dead) return;
@@ -3455,27 +3893,38 @@ function drawHand(w, h, dt) {
   const s = held(), id = s ? s.id : 0;
   if (id !== lastHeld) { handLower = 1; lastHeld = id; }
   handLower = Math.max(0, handLower - Math.min(dt, 0.1) * 4.8);
-  const sw = Math.sin(P.swing * Math.PI), sw2 = Math.sin(Math.sqrt(P.swing) * Math.PI);
-  const sp = Math.hypot(P.vx, P.vz), bobA = SAVE.settings.bob && P.onGround ? Math.min(1, sp / 4) : 0;
-  const bx = Math.cos(P.bob * 1.6) * 0.03 * bobA, by = -Math.abs(Math.sin(P.bob * 1.6)) * 0.03 * bobA;
-  const eatB = P.eating > 0 ? Math.sin(P.eating * 18) * 0.03 : 0;
-  const base = [0.56 + bx - sw2 * 0.18 - (P.eating > 0 ? 0.3 : 0), -0.52 + by - handLower * 0.5 + sw2 * 0.12 + eatB + (P.eating > 0 ? 0.2 : 0), -0.82 - sw * 0.1];
-  const rotY = -0.6 + sw * 0.4, rotX = -sw2 * 0.8;
-  const xf = p => {
-    let [x, y, z] = p;
-    const c1 = Math.cos(rotX), s1 = Math.sin(rotX); [y, z] = [y * c1 - z * s1, y * s1 + z * c1];
-    const c2 = Math.cos(rotY), s2 = Math.sin(rotY); [x, z] = [x * c2 + z * s2, -x * s2 + z * c2];
-    return [x + base[0], y + base[1], z + base[2]];
-  };
-  const b = id && id < 256 ? BLOCK[id] : null;
-  if (b && (b.render === 'cube' || b.render === 'cutout' || b.render === 'translucent')) box(HAND, [-0.2, -0.2, -0.2], [0.2, 0.2, 0.2], blockTiles(id), xf, sky, blk);
-  else if (id) {
-    const tile = b ? T[b.tex] : T[ITEM[id].icon], q = 0.34;
-    const pts = [[-q, -q, 0], [q, -q, 0], [q, q, 0], [-q, q, 0]].map(p => { const r = 0.7, c = Math.cos(r), sn = Math.sin(r); return xf([p[0] * c - p[1] * sn * 0, p[1], p[0] * sn]); });
-    HAND.quad(pts, [uvOf(tile, 0, 1), uvOf(tile, 1, 1), uvOf(tile, 1, 0), uvOf(tile, 0, 0)], sky, blk, 1);
+  const sw = P.swingT >= 0 ? P.swingT : 0, sq = Math.sqrt(sw), equip = handLower;
+  // view bobbing applied to the whole hand
+  const sp = Math.hypot(P.vx, P.vz), bobA = SAVE.settings.bob && P.onGround && !P.flying ? Math.min(1, sp / 4) : 0;
+  const ps = new Pose().t(Math.sin(P.bob * 1.6) * 0.025 * bobA, -Math.abs(Math.cos(P.bob * 1.6)) * 0.03 * bobA, 0);
+  if (!id) {
+    // empty hand: the player's arm, posed exactly like the original renderPlayerArm
+    ps.t(0.64 - 0.3 * Math.sin(sq * Math.PI), 0.4 * Math.sin(sq * 2 * Math.PI) - 0.6 - equip * 0.6, -0.4 * Math.sin(sw * Math.PI) - 0.72)
+      .ry(45).ry(Math.sin(sq * Math.PI) * 70).rz(Math.sin(sw * sw * Math.PI) * -20)
+      .t(-1, 3.6, 3.5).rz(120).rx(200).ry(-135).t(5.6, 0, 0);
+    const xf = ps.fn(), at = T.player_arm;
+    box(HAND, [-8 / 16, 0, -2 / 16], [-4 / 16, 12 / 16, 2 / 16], [at, at, at, at, at, at], xf, sky, blk);
+    const ch = G.armor[1], am = ch && armorOf(ch.id);
+    if (am) { const st = T['armor_skin_' + ARMOR_MATS[am.mat].key], e = 0.6 / 16; box(HAND, [-8 / 16 - e, -e, -2 / 16 - e], [-4 / 16 + e, 5 / 16, 2 / 16 + e], [st, st, st, st, st, st], xf, sky, blk); }
   } else {
-    const at = T.player_arm, six = [at, at, at, at, at, at];
-    box(HAND, [-0.09, -0.09, -0.15], [0.09, 0.09, 0.55], six, p => { const q = xf([p[0], p[1], p[2]]); return [q[0] + 0.12, q[1] - 0.08, q[2] + 0.1]; }, sky, blk);
+    const eatK = P.eating > 0 ? P.eating / 1.6 : 0;
+    if (P.draw > 0 && id === BOW) {
+      ps.t(0.56, -0.52 - equip * 0.6, -0.72).t(-0.2785682, 0.18344387, 0.15731531).rx(-13.935).ry(35.3).rz(-9.785);
+      const f = Math.min(1, (P.draw * P.draw + P.draw * 2) / 3);
+      if (f > 0.1) ps.t(0, Math.sin((P.draw * 20 - 2) * 1.3) * (f - 0.1) * 0.004, 0);
+      ps.t(0, 0, f * 0.04).s(1, 1, 1 + f * 0.2).ry(-45);
+    } else if (eatK > 0) {
+      const left = (1 - eatK) * 32, f1 = 1 - eatK;
+      if (f1 < 0.8) ps.t(0, Math.abs(Math.cos(left / 4 * Math.PI) * 0.1), 0);
+      const f3 = 1 - Math.pow(f1, 27);
+      ps.t(f3 * 0.6, f3 * -0.5, 0).ry(f3 * 90).rx(f3 * 10).rz(f3 * 30).t(0.56, -0.52 - equip * 0.6, -0.72);
+    } else {
+      ps.t(-0.4 * Math.sin(sq * Math.PI), 0.2 * Math.sin(sq * 2 * Math.PI), -0.2 * Math.sin(sw * Math.PI))
+        .t(0.56, -0.52 - equip * 0.6, -0.72)
+        .ry(45 + Math.sin(sw * sw * Math.PI) * -20).rz(Math.sin(sq * Math.PI) * -20).rx(Math.sin(sq * Math.PI) * -80).ry(-45);
+    }
+    if (isCubeItem(id)) { ps.ry(45).s(0.4).t(-0.5, -0.5, -0.5); const hgt = BLOCK[id].height || 1; box(HAND, [0, 0, 0], [1, hgt, 1], blockTiles(id), ps.fn(), sky, blk); }
+    else { ps.t(1.13 / 16, 3.2 / 16, 1.13 / 16).ry(-90).rz(25).s(0.68).t(-0.5, -0.5, -0.5); drawItemMesh(HAND, itemTile(id), ps.fn(), sky, blk); }
   }
   gl.disable(gl.CULL_FACE); HAND.draw();
 }
@@ -3495,6 +3944,7 @@ function refreshMove() {
   input.side = (k('right') || keys.ArrowRight ? 1 : 0) - (k('left') || keys.ArrowLeft ? 1 : 0);
   input.jump = k('jump') || touchJump;
   input.sneak = (st.sneakToggle ? sneakLatch : k('sneak') || !!keys.ShiftRight) || touchSneak || touchDown;
+  input.descend = k('sneak') || !!keys.ShiftRight || (st.sneakToggle && sneakLatch) || touchDown;
   input.sprintKey = (st.sprintToggle ? sprintLatch : k('sprint') || !!keys.ControlRight) || sprintTap || touchSprint;
 }
 function dropItem(all) {
@@ -3548,7 +3998,7 @@ function bindInput() {
     if (G.ui) return;
     const st = SAVE.settings;
     if (act === 'forward' && !e.repeat) { const n = performance.now(); if (n - P.lastFwd < 280) sprintTap = true; P.lastFwd = n; }
-    if (act === 'jump' && !e.repeat && G.mode === 'creative') { const n = performance.now(); if (n - P.lastJump < 300) { P.flying = !P.flying; P.vy = 0; P.lastJump = 0; } else P.lastJump = n; }
+    if (act === 'jump' && !e.repeat && G.mode === 'creative') { const n = performance.now(); if (n - P.lastJump < 300) { setFlying(!P.flying); P.lastJump = 0; } else P.lastJump = n; }
     if (act === 'sneak' && !e.repeat && st.sneakToggle) sneakLatch = !sneakLatch;
     if (act === 'sprint' && !e.repeat && st.sprintToggle) sprintLatch = !sprintLatch;
     keys[c] = true; refreshMove();
@@ -3559,7 +4009,7 @@ function bindInput() {
     if (act === 'command') { keys[c] = false; openChat('/'); }
     if (act === 'debug') { showDebug = !showDebug; $('debug').style.display = showDebug ? 'flex' : 'none'; infoT = 0; }
     if (act === 'hideHud') setHudHidden(!hudHidden);
-    if (act === 'fly' && G.mode === 'creative') { P.flying = !P.flying; P.vy = 0; }
+    if (act === 'fly' && G.mode === 'creative') setFlying(!P.flying);
   });
   ctx.on(window, 'keyup', e => { delete keys[e.code]; if (e.code === SAVE.settings.keys.forward || e.code === 'ArrowUp') sprintTap = false; if (G) refreshMove(); });
   ctx.on(window, 'blur', () => { for (const k in keys) delete keys[k]; sprintTap = false; if (G) refreshMove(); input.mine = input.use = false; });
