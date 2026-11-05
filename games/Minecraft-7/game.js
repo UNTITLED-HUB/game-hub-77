@@ -109,6 +109,8 @@ const BULK_ITEM_TILES=Array.from({length:32},(_,i)=>'bulk_item_'+i);
 const BULK_ITEM_NAMES=['밀','달걀','깃털','뼈','뼛가루','화약','슬라임볼','엔더 진주','블레이즈 막대','블레이즈 가루','가스트의 눈물','거미 눈','설탕','종이','책','점토 덩이','익히지 않은 연어','익힌 연어','익히지 않은 대구','익힌 대구','열대어','복어','익히지 않은 닭고기','익힌 닭고기','쿠키','호박 파이','버섯 스튜','꿀병','우유 양동이','눈덩이','벽돌 아이템','네더 벽돌 아이템'];
 const EXTRA_TEXTURES=['cherry_planks','deepslate','copper_ore','amethyst_block','nether_bricks','end_stone','terracotta','granite','diorite','andesite','copper_block','oxidized_copper','dark_oak_planks','birch_planks','emerald_ore','lapis_ore'];
 
+const BED_HEAD=181, DEEP_COAL=182, DEEP_IRON=183, DEEP_GOLD=184, DEEP_DIAMOND=185, MAGMA=186, NETHER_QUARTZ=187, NETHER_PORTAL=188, END_PORTAL=189;
+const DIM_NAME={overworld:'오버월드',nether:'네더',end:'엔드'};
 const BLOCK = [];
 function B(id, name, tex, o = {}) {
   BLOCK[id] = Object.assign({ id, name, tex, solid: true, opaque: true, render: 'cube', hard: 1, tool: null, tier: 0, drop: id, light: 0, gravity: false, replaceable: false, creative: true, cat: '블록' }, o);
@@ -185,6 +187,12 @@ const TIERS = [
   { key: 'diamond', name: '다이아몬드', level: 4, speed: 8, dur: 1561, mat: DIAMOND }];
 const SWORD_DMG = [4, 5, 6, 4, 7];
 // attack damage / attacks per second per tier (wood, stone, iron, gold, diamond), as in the original
+B(BED_HEAD,'침대 머리',{top:'bed_head_top',bottom:'planks',side:'bed_head_side'}, {opaque:false,render:'bed',hard:0.2,tool:'axe',use:'bed',height:9/16,drop:0,creative:false});
+for(const [id,name,tex,drop] of [[DEEP_COAL,'심층암 석탄 광석','deep_coal',COAL],[DEEP_IRON,'심층암 철 광석','deep_iron',IRON_ORE],[DEEP_GOLD,'심층암 금 광석','deep_gold',GOLD_ORE],[DEEP_DIAMOND,'심층암 다이아몬드 광석','deep_diamond',DIAMOND]]) B(id,name,tex,{hard:3,tool:'pickaxe',tier:id===DEEP_DIAMOND?3:1,drop});
+B(MAGMA,'마그마 블록','magma',{hard:0.5,tool:'pickaxe',light:5});
+B(NETHER_QUARTZ,'네더 석영 광석','nether_quartz',{hard:3,tool:'pickaxe',tier:1,drop:QUARTZ});
+B(NETHER_PORTAL,'네더 차원문','nether_portal',{opaque:false,solid:false,render:'translucent',hard:-1,light:11,use:'nether'});
+B(END_PORTAL,'엔드 차원문','end_portal',{opaque:false,solid:false,render:'translucent',hard:-1,light:10,use:'end'});
 const WEAPON_STATS = { sword: [SWORD_DMG, [1.6, 1.6, 1.6, 1.6, 1.6]], axe: [[7, 9, 9, 7, 9], [0.8, 0.8, 0.9, 1, 1]], pickaxe: [[2, 3, 4, 2, 5], [1.2, 1.2, 1.2, 1.2, 1.2]], shovel: [[2.5, 3.5, 4.5, 2.5, 5.5], [1, 1, 1, 1, 1]] };
 BULK_ITEM_NAMES.forEach((name,i)=>{ const foods={16:[2,0.4],17:[6,9.6],18:[2,0.4],19:[5,6],20:[1,0.2],21:[1,0.2],22:[2,1.2],23:[6,7.2],24:[2,0.4],25:[8,4.8],26:[6,7.2],27:[6,1.2]}; I(BULK_ITEM_START+i,name,BULK_ITEM_TILES[i],{cat:foods[i]?'음식':'재료',...(foods[i]?{food:foods[i]}:{}),...([26,27,28].includes(i)?{stack:1}:{})}); });
 I(GOLDEN_APPLE,'황금 사과','golden_apple',{cat:'음식',food:[4,9.6]}); I(CARROT,'당근','carrot',{cat:'음식',food:[3,3.6]}); I(POTATO,'감자','potato',{cat:'음식',food:[1,0.6]}); I(BAKED_POTATO,'구운 감자','baked_potato',{cat:'음식',food:[5,6]}); I(BEETROOT,'비트','beetroot',{cat:'음식',food:[1,1.2]}); I(QUARTZ,'네더 석영','quartz_item'); I(REDSTONE,'레드스톤 가루','redstone_item'); I(PRISMARINE_SHARD,'프리즈머린 조각','prismarine_shard');
@@ -565,6 +573,7 @@ function paintAll() {
     for (const [x, y] of [[2, 12], [3, 13], [2, 13], [4, 13], [2, 11], [3, 14], [1, 12]]) t.set(x, y, [236, 236, 236]); outline(t, 0.45); });
   tile('compass', t => { blob(t, 8, 8, 6, 6, [150, 150, 156], 0.1); blob(t, 8, 8, 4.6, 4.6, [228, 228, 214], 0.05); for (let k = 0; k < 3; k++) { t.set(8 + k, 7 - k, [220, 40, 40]); t.set(7 - k, 8 + k, [70, 70, 80]); } t.set(8, 8, [40, 40, 40]); outline(t, 0.45); });
   tile('clock', t => { blob(t, 8, 8, 6, 6, [232, 196, 60], 0.1); blob(t, 8, 8, 4.6, 4.6, [96, 150, 220], 0.05); t.each((x, y) => { if (y >= 8 && Math.hypot(x + 0.5 - 8, y + 0.5 - 8) < 4.6) t.set(x, y, [40, 50, 96]); }); t.set(7, 6, [255, 240, 120]); t.set(8, 6, [255, 240, 120]); t.set(8, 7, [60, 60, 60]); t.set(8, 8, [60, 60, 60]); outline(t, 0.45); });
+  for(const name of ['bed_head_top','bed_head_side','deep_coal','deep_iron','deep_gold','deep_diamond','magma','nether_quartz','nether_portal','end_portal']) tile(name,t=>voronoi(t,12,[75,65,78],[35,30,40],0.4,1));
   tile('bed_top', t => { t.each((x, y) => { const edge = x === 0 || x === 15; t.set(x, y, y < 5 ? mul([236, 236, 236], 0.92 + t.r() * 0.08) : edge ? [150, 26, 26] : mul([196, 40, 40], 0.9 + 0.1 * Math.sin(y * 2.2) + t.r() * 0.06)); }); for (let x = 1; x < 15; x++) t.set(x, 5, [170, 170, 170]); });
   tile('bed_side', t => { t.each((x, y) => { if (y < 7) return; if (y < 10) t.set(x, y, mul([196, 40, 40], 0.9 + t.r() * 0.1)); else if (y < 13) t.set(x, y, mul([168, 132, 82], 0.9 + t.r() * 0.1)); else if (x < 3 || x > 12) t.set(x, y, mul([120, 88, 50], 0.9 + t.r() * 0.1)); }); });
   tile('sheep_shorn', t => t.noise([218, 196, 170], 0.06));
@@ -628,6 +637,7 @@ function paintAll() {
 // Generated sheets are split into fixed UV cells; loading failures retain built-in textures.
 async function applyWorldSheets() {
   const defs = [
+    ['dimension-fixes.png', [null,null,'bed_head_top','bed_top','bed_head_side','bed_side',null,null,'deep_coal','deep_iron','deep_gold','deep_diamond','magma','nether_quartz','nether_portal','end_portal']],
     ['concrete-v3.png', BULK_BLOCK_TILES.slice(0,16)],
     ['powder-v3.png', BULK_BLOCK_TILES.slice(16,32)],
     ['terracotta-v3.png', BULK_BLOCK_TILES.slice(32,48)],
@@ -636,7 +646,7 @@ async function applyWorldSheets() {
     ['world-face-v2.png', NEW_FACE_TILES],
     ['world-blocks-v2.png', NEW_BLOCK_TILES],
     ['world-extra.png', EXTRA_TEXTURES],
-    ['world-functional.png', [null,'table_front','furnace_top','furnace_front','sandstone_top','cactus_top','tnt_top','tnt_bottom','melon_top','bed_top','bed_side','wool_3','wool_4','wool_6','wool_7',null]],
+    ['world-functional.png', [null,'table_front','furnace_top','furnace_front','sandstone_top','cactus_top','tnt_top','tnt_bottom','melon_top',null,null,'wool_3','wool_4','wool_6','wool_7',null]],
     ['world-a.png', ['dirt','grass_top','grass_side','stone','cobble','mossy','bedrock','obsidian','sand','gravel','clay','log_side','spruce_log','birch_log','log_top','planks']],
     ['world-b.png', ['coal_ore','iron_ore','gold_ore','diamond_ore','table_top','table_side','furnace_front_lit','furnace_side','stone_bricks','bricks','snow','ice','bookshelf','sandstone_side','cactus_side','tnt_side']],
     ['world-nature.png', ['leaves','spruce_leaves','birch_leaves','wool','glowstone','pumpkin_side','pumpkin_top','melon_side','chest_side','chest_front','chest_top','snow_side','wool_0','wool_1','wool_2','wool_5']],
@@ -652,6 +662,7 @@ function tileUV(name) { const i = typeof name === 'number' ? name : T[name]; ret
 // UI icons for items (isometric cube for blocks)
 async function applyGeneratedItemIcons() {
   const defs = [
+    ['dimension-fixes.png', [LEATHER,BED]],
     ['items-tools.png', [PICK0,PICK0+1,PICK0+2,PICK0+4,SWORD0,SWORD0+1,SWORD0+2,SWORD0+4,IRON,GOLD,DIAMOND,COAL,APPLE,BREAD,BEEF,BUCKET]],
     ['items-extra.png', [AXE0,AXE0+1,AXE0+2,AXE0+4,SHOVEL0,SHOVEL0+1,SHOVEL0+2,SHOVEL0+4,PICK0+3,AXE0+3,SHOVEL0+3,SWORD0+3,STICK,STRING,FLINT,FLINT_STEEL]],
     ['items-food.png', [PORK,COOKED_PORK,BEEF,STEAK,MUTTON,COOKED_MUTTON,FLESH,MELON_SLICE,BREAD,APPLE,BUCKET,WATER_BUCKET,COAL,IRON,GOLD,DIAMOND]],
@@ -732,6 +743,7 @@ function newChunk(cx, cz) {
 }
 
 function generateChunk(cx, cz) {
+  if(W.dimension && W.dimension!=='overworld') return generateDimensionChunk(cx,cz);
   const ch = newChunk(cx, cz), B = ch.blocks, seed = W.seed;
   const x0 = cx * CS, z0 = cz * CS, M = 3, SZ = CS + M * 2;
   const hs = new Int16Array(SZ * SZ), bs = new Uint8Array(SZ * SZ);
@@ -751,6 +763,7 @@ function generateChunk(cx, cz) {
       let id;
       if (y === 0) id = BEDROCK;
       else if (y <= 3 && hash3(wx, y, wz, seed) < 0.75 - y * 0.22) id = BEDROCK;
+      else if (y < 17 && y < h-3) id = DEEPSLATE;
       else if (y < h - 3) id = (deep === SANDSTONE && y < h - 6) ? STONE : deep;
       else if (y < h) id = fill;
       else if (y === h) id = top;
@@ -770,7 +783,7 @@ function generateChunk(cx, cz) {
       const n = Math.floor(size * (0.6 + rnd() * 0.6));
       for (let k = 0; k < n; k++) {
         const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
-        if (ix >= 0 && ix < CS && iz >= 0 && iz < CS && iy > 0 && iy < WH && B[bidx(ix, iy, iz)] === STONE) B[bidx(ix, iy, iz)] = id;
+        if (ix >= 0 && ix < CS && iz >= 0 && iz < CS && iy > 0 && iy < WH && (B[bidx(ix, iy, iz)] === STONE || B[bidx(ix, iy, iz)] === DEEPSLATE)) B[bidx(ix, iy, iz)] = id;
         x += rnd() * 2 - 1; y += rnd() * 2 - 1; z += rnd() * 2 - 1;
       }
     }
@@ -778,6 +791,7 @@ function generateChunk(cx, cz) {
   vein(COAL_ORE, 14, 10, 5, 58); vein(IRON_ORE, 9, 7, 4, 44); vein(GOLD_ORE, 2, 6, 4, 26); vein(DIAMOND_ORE, 1, 5, 3, 14);
   vein(DIRT, 4, 14, 8, 50); vein(GRAVEL, 3, 12, 5, 50);
   if (rnd() < 0.6) vein(DIAMOND_ORE, 1, 3, 3, 12);
+  for(let i=0;i<CVOL;i++){const y=Math.floor(i/256);if(y>=17)break;const m={[COAL_ORE]:DEEP_COAL,[IRON_ORE]:DEEP_IRON,[GOLD_ORE]:DEEP_GOLD,[DIAMOND_ORE]:DEEP_DIAMOND};if(m[B[i]])B[i]=m[B[i]];}
   // surface decoration
   const setL = (lx, y, lz, id, force) => {
     if (lx < 0 || lz < 0 || lx >= CS || lz >= CS || y < 0 || y >= WH) return;
@@ -817,6 +831,44 @@ function generateChunk(cx, cz) {
   return ch;
 }
 
+function generateDimensionChunk(cx,cz){
+ const ch=newChunk(cx,cz), b=ch.blocks, nether=W.dimension==='nether';
+ for(let z=0;z<16;z++)for(let x=0;x<16;x++){
+ const wx=cx*16+x,wz=cz*16+z,n=W.noise.n2(wx/35,wz/35);
+ const radius=Math.hypot(wx,wz), island=radius<66 || (radius>100 && W.noise2.n2(wx/55,wz/55)>0.12);
+ const h=nether?Math.floor(16+n*9):Math.floor(29+n*8);
+ ch.heights[z*16+x]=nether?60:(island?h:0);
+ for(let y=0;y<64;y++){
+ let id=AIR;
+ if(nether){
+ if(y===0||y===63)id=BEDROCK;
+ else if(y<h || y>53+W.noise.n2(wx/24,wz/24)*5) id=NETHERRACK;
+ else if(y<9)id=MAGMA;
+ if(id===NETHERRACK){const r=hash3(wx,y,wz,W.seed);if(r<0.025)id=NETHER_QUARTZ;else if(r<0.04)id=BLACKSTONE;else if(y===h-1&&n>0.1)id=SOUL_SAND;else if(y>50&&r<0.018)id=GLOWSTONE;}
+ }else if(island&&y<=h&&y>h-10-Math.max(0,12-radius/5))id=END_STONE;
+ if(!nether&&radius>25&&radius<43&&Math.abs(Math.sin(Math.atan2(wz,wx)*10))<0.14&&y>=h&&y<49)id=OBSIDIAN;
+ // Safe arrival island and return portal, shared by both dimensions.
+ if(Math.abs(wx)<=3&&Math.abs(wz)<=3){if(y===30)id=nether?OBSIDIAN:END_STONE;else if(y>30&&y<35)id=AIR;}
+ if(wx===0&&wz===3&&y===31)id=nether?NETHER_PORTAL:END_PORTAL;
+ b[bidx(x,y,z)]=id;
+ }
+ }
+ const mods=W.mods.get(ckey(cx,cz));if(mods)for(const [i,id]of mods)b[i]=id;
+ for(let i=0;i<CVOL;i++)if(BLOCK[b[i]]?.light)ch.emit.add(i);
+ return ch;
+}
+function travelDimension(dest){
+ if(!G||G.loading)return;
+ const old=W.dimension||'overworld';if(dest===old)dest='overworld';
+ W.dimensions[old]={mods:encodeMods(),te:Object.fromEntries(W.te),pos:{x:P.x,y:P.y,z:P.z},spawn:G.spawn};
+ for(const ch of W.chunks.values())freeChunkGL(ch);
+ const saved=W.dimensions[dest];W.dimension=dest;W.mods=decodeMods(saved?.mods);W.te=new Map(Object.entries(saved?.te||{}));W.chunks=new Map();
+ for(const k of ['mobs','items','particles','tnts','arrows'])W[k]=[];
+ W.fluidQ.clear();W.gravQ.clear();lastChunk=null;lastPc=null;wantList=[];
+ const pos=saved?.pos||(dest==='overworld'?findSpawn():{x:0.5,y:31,z:0.5});
+ Object.assign(P,pos,{vx:0,vy:0,vz:0,fallStart:pos.y});G.spawn=saved?.spawn||{...pos};
+ G.loading=true;G.fresh=false;G.ui='loading';G.target=null;G.targetMob=null;G.sleep=0;ctx.setPaused(false);showLoading(0);
+}
 function placeTree(set, x, y, z, kind, r) {
   const log = kind === 1 ? BIRCH_LOG : kind === 2 ? SPRUCE_LOG : LOG;
   const leaf = kind === 1 ? BIRCH_LEAVES : kind === 2 ? SPRUCE_LEAVES : LEAVES;
@@ -868,6 +920,10 @@ function setBlock(x, y, z, id, opts = {}) {
   const lx = x & 15, lz = z & 15, i = bidx(lx, y, lz), old = ch.blocks[i];
   if (old === id) return false;
   ch.blocks[i] = id; recordMod(cx, cz, i, id);
+  if(id===AIR && (old===BED||old===BED_HEAD)){
+    const oz=z+(old===BED?1:-1), other=getBlock(x,y,oz);
+    if(other===(old===BED?BED_HEAD:BED)){setBlock(x,y,oz,AIR);if(old===BED_HEAD&&G.mode==='survival')spawnItem(BED,1,x+0.5,y+0.5,z+0.5);}
+  }
   const ol = (BLOCK[old] && BLOCK[old].light) || 0, nl = (BLOCK[id] && BLOCK[id].light) || 0;
   if (nl) ch.emit.add(i); else ch.emit.delete(i);
   const k = pkey(x, y, z);
@@ -1487,6 +1543,7 @@ function updateArrows(dt) {
 }
 // ── beds ──
 function trySleep(t) {
+  if(W.dimension && W.dimension!=='overworld'){toast('이 차원에서는 잠을 잘 수 없어요.');return;}
   G.spawn = { x: t.x + 0.5, y: t.y + 1, z: t.z + 0.5 };
   const tt = W.time % DAY_TICKS;
   if (tt < 12540 || tt > 23460) { toast('리스폰 지점을 정했어요. 잠은 밤에만 잘 수 있어요.'); return; }
@@ -1642,6 +1699,7 @@ function updateMobs(dt) {
 }
 let spawnTimer = 0;
 function spawnLogic(dt) {
+  if(W.dimension && W.dimension!=='overworld')return;
   spawnTimer -= dt; if (spawnTimer > 0) return; spawnTimer = 1;
   let passive = 0, hostile = 0;
   for (const m of W.mobs) MOBDEF[m.type].hostile ? hostile++ : passive++;
@@ -1958,6 +2016,7 @@ function tryPlace(t, id) {
     else if (b.use === 'chest') W.te.set(pkey(x, y, z), { type: 'chest', facing, slots: Array(27).fill(null) });
   }
   if (cur !== AIR && cb && cb.replaceable && !cb.fluid) dropBlockItems(x, y, z, cur);
+  if(id===BED){if(getBlock(x,y,z+1)!==AIR || !solidAt(x,y-1,z+1) || Math.abs(P.z-z-1.5)<P.w && Math.abs(P.x-x-0.5)<P.w+0.5){toast('침대는 앞뒤 두 칸의 빈 공간과 바닥이 필요해요.');return false;}setBlock(x,y,z+1,BED_HEAD);}
   setBlock(x, y, z, id);
   if (b.use === 'chest' || b.use === 'furnace') { const ch = getChunk(x >> 4, z >> 4); if (ch) ch.needMesh = true; }
   sfx('place_' + material(id)); startSwing();
@@ -1969,6 +2028,9 @@ function useItem() {
   const s = held(), id = s ? s.id : 0;
   if (t && !P.sneaking) {
     const b = BLOCK[t.id];
+    if(b && (b.use==='nether'||b.use==='end')){travelDimension(b.use);return;}
+    if(t.id===OBSIDIAN&&id===FLINT_STEEL){travelDimension(W.dimension==='nether'?'overworld':'nether');return;}
+    if(t.id===END_STONE&&id===BULK_ITEM_START+7){travelDimension(W.dimension==='end'?'overworld':'end');return;}
     if (b && b.use === 'table') { openScreen('table'); return; }
     if (b && (b.use === 'furnace' || b.use === 'chest')) {
       const k = pkey(t.x, t.y, t.z);
@@ -3176,6 +3238,7 @@ function showPause() {
   <button class="btn w204" data-act="resume">게임으로 돌아가기</button>
   <div class="row w204"><button class="btn" data-act="help">조작법</button><button class="btn" data-act="stats">통계</button></div>
   <div class="row w204"><button class="btn" data-act="settings">설정...</button>${touchUI() ? '<button class="btn" data-act="layout">버튼 배치...</button>' : '<button class="btn" data-act="page" data-p="keys">키 설정...</button>'}</div>
+  <div class="row w204"><button class="btn" data-act="dim-nether">네더 이동</button><button class="btn" data-act="dim-end">엔드 이동</button><button class="btn" data-act="dim-overworld">오버월드</button></div>
   <button class="btn w204" data-act="quit">저장 후 타이틀 화면으로</button>
   <p class="minfo">${esc(G.world.name)} · ${G.mode === 'creative' ? '크리에이티브' : '서바이벌'} · ${DIFF_NAME[W.difficulty]} · ${dayCount()}일째</p></div>`, 'game');
   ctx.setPaused(true);
@@ -3395,6 +3458,9 @@ function menuAction(a, el) {
     case 'bind': bindingKey = bindingKey === el.dataset.k ? null : el.dataset.k; showKeys(); break;
     case 'kreset': SAVE.settings.keys[el.dataset.k] = DEFAULT_KEYS[el.dataset.k]; saveSettingsSoon(); showKeys(); break;
     case 'kresetAll': SAVE.settings.keys = { ...DEFAULT_KEYS }; bindingKey = null; saveSettingsSoon(); showKeys(); break;
+    case 'dim-nether': travelDimension('nether');break;
+    case 'dim-end': travelDimension('end');break;
+    case 'dim-overworld': travelDimension('overworld');break;
     case 'resume': hideScreens(); G.ui = null; ctx.setPaused(false); capture(); break;
     case 'pause': showPause(); break;
     case 'help': showHelp(); break;
@@ -3820,7 +3886,7 @@ function serializeWorld() {
   return {
     player: { x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, health: P.health, hunger: P.hunger, sat: P.sat, airT: P.airT, flying: P.flying, dead: P.dead },
     inv: G.inv.map(s => s ? [s.id, s.count, s.dmg || 0] : 0), armor: G.armor.map(s => s ? [s.id, 1, s.dmg || 0] : 0), off: G.off ? [G.off.id, G.off.count, G.off.dmg || 0] : 0, sel: G.sel, time: W.time, spawn: G.spawn, stats: G.stats,
-    mods: encodeMods(), te: Object.fromEntries(W.te),
+    dimension:W.dimension, dimensions:W.dimensions, mods: encodeMods(), te: Object.fromEntries(W.te),
     mobs: W.mobs.filter(m => !m.dead && Math.hypot(m.x - P.x, m.z - P.z) < 80).map(m => [m.type, +m.x.toFixed(2), +m.y.toFixed(2), +m.z.toFixed(2), m.hp, m.color, Math.round(m.sheared || 0)]),
   };
 }
@@ -3838,7 +3904,7 @@ let lastPc = null, wantList = [];
 function startWorld(w) {
   wake();
   const d = w.data;
-  W = { seed: w.seed >>> 0, noise: makeNoise(w.seed >>> 0), noise2: makeNoise((w.seed ^ 0x9e3779b9) >>> 0), chunks: new Map(), mods: decodeMods(d && d.mods), te: new Map(Object.entries((d && d.te) || {})),
+  W = { dimension:d?.dimension||'overworld',dimensions:d?.dimensions||{}, seed: w.seed >>> 0, noise: makeNoise(w.seed >>> 0), noise2: makeNoise((w.seed ^ 0x9e3779b9) >>> 0), chunks: new Map(), mods: decodeMods(d && d.mods), te: new Map(Object.entries((d && d.te) || {})),
     fluidQ: new Set(), gravQ: new Set(), mobs: [], items: [], particles: [], tnts: [], arrows: [], time: d ? d.time : 1000, difficulty: w.difficulty ?? 2, daylight: 1, skyLevel: 15 };
   lastChunk = null; lastPc = null;
   G = { world: w, mode: w.mode, inv: Array(36).fill(null), sel: (d && d.sel) || 0, ui: 'loading', settings: SAVE.settings, spawn: (d && d.spawn) || findSpawn(), stats: Object.assign({ mined: 0, placed: 0, crafted: 0, deaths: 0, time: 0, walk: 0 }, (d && d.stats) || {}),
@@ -3929,6 +3995,7 @@ function updateSky() {
   const tt = (W.time % DAY_TICKS) / DAY_TICKS, ang = tt * Math.PI * 2, sunY = Math.sin(ang);
   W.sunAng = ang; W.sunY = sunY;
   W.daylight = clamp(0.5 + sunY * 2.2, 0.2, 1);
+  if(W.dimension==='nether'||W.dimension==='end')W.daylight=0.5;
   W.skyLevel = Math.round(clamp((W.daylight - 0.16) / 0.84, 0, 1) * 11 + 4);
 }
 function furnaceTick(k, te) {
@@ -3956,6 +4023,7 @@ function step(dt) {
   updatePlayer(dt); updateInteraction(dt); updateSurvival(dt);
   tickAcc += dt; while (tickAcc >= TICK) { tickAcc -= TICK; gameTick(); }
   updateMobs(dt); updateItems(dt); updateArrows(dt); updateParticles(dt); updateTNT(dt); spawnLogic(dt); updateSleep(dt);
+  if(getBlock(Math.floor(P.x),Math.floor(P.y-0.1),Math.floor(P.z))===MAGMA&&!P.sneaking&&G.mode==='survival'){P.dimensionBurn=(P.dimensionBurn||0)+dt;if(P.dimensionBurn>=1){P.dimensionBurn=0;P.health=Math.max(0,P.health-1);}}
   G.stats.time = (G.stats.time || 0) + dt;
   shake = Math.max(0, shake - dt * 2);
   music(dt);
@@ -3971,6 +4039,7 @@ function render(dt) {
   const day = [0.53, 0.74, 0.98], night = [0.015, 0.02, 0.06], dusk = [0.95, 0.52, 0.28];
   let sky = mix(night, day, clamp((dl - 0.16) / 0.84, 0, 1));
   const duskK = clamp(1 - Math.abs(sunY) * 4, 0, 1) * 0.6; sky = mix(sky, dusk, duskK * clamp(dl, 0.3, 1));
+  if(W.dimension==='nether')sky=[0.24,0.055,0.035];else if(W.dimension==='end')sky=[0.055,0.025,0.09];
   let fogC = sky, fogR = [far * 0.55, far];
   if (P.eyeInWater) { fogC = mul([0.05, 0.12, 0.36], Math.max(0.3, dl)); fogR = [0, 22]; }
   gl.clearColor(fogC[0], fogC[1], fogC[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
