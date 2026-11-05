@@ -1,0 +1,14 @@
+[
+  "core.js",
+  "item.js",
+  "texture.js",
+  "world.js",
+  "renderer.js",
+  "entity.js",
+  "mob.js",
+  "player.js",
+  "ui.js",
+  "command.js",
+  "touch.js",
+  "runtime.js"
+]
