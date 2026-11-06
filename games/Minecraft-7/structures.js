@@ -5,7 +5,12 @@
 // Every structure is a pure function of the seed, built chunk by chunk through a clipped put().
 
 const HCACHE = new Map();
-function natH(x, z) { if (HCACHE.seed !== W.seed) { HCACHE.clear(); HCACHE.seed = W.seed; } const k = x + ',' + z; let h = HCACHE.get(k); if (h === undefined) { if (HCACHE.size > 250000) HCACHE.clear(); h = column(x, z)[0]; HCACHE.set(k, h); } return h; }
+// Terrain caches are keyed by seed and generator version (old worlds keep the v1 terrain).
+const terrainKey = () => W.seed + '/' + (W.gen || 4);
+// Terrain before village levelling, used to choose village sites (avoids a site depending on itself).
+const rawColumn = (x, z) => W.gen === 1 ? columnV1(x, z) : column2(x, z, true);
+const NO_VILLAGE = b => b === MOUNTAIN || b === OCEAN || b === BEACH || b === SNOWY_PEAKS || b === SWAMP || b === BADLANDS || b === RIVER || b === FROZEN_OCEAN;
+function natH(x, z) { if (HCACHE.seed !== terrainKey()) { HCACHE.clear(); HCACHE.seed = terrainKey(); } const k = x + ',' + z; let h = HCACHE.get(k); if (h === undefined) { if (HCACHE.size > 250000) HCACHE.clear(); h = column(x, z)[0]; HCACHE.set(k, h); } return h; }
 const STRUCT_RND = (a, b, s) => mulberry32((hash2(a, b, (W.seed + s) | 0) * 4294967296) >>> 0);
 
 // ── loot ──
@@ -61,15 +66,16 @@ const villageCache = new Map(), layoutCache = new Map();
 const VILLAGE_GRID = 192;
 const villageCenter = (x, z) => [Math.floor((x + 64) / VILLAGE_GRID) * VILLAGE_GRID + 32, Math.floor((z + 64) / VILLAGE_GRID) * VILLAGE_GRID + 32];
 function villageSite(gx, gz) {
-  const key = W.seed + ':' + gx + ',' + gz; if (villageCache.has(key)) return villageCache.get(key);
-  let land = 0, total = 0, lo = Infinity, hi = -Infinity;
+  const key = terrainKey() + ':' + gx + ',' + gz; if (villageCache.has(key)) return villageCache.get(key);
+  let land = 0, total = 0, lo = Infinity, hi = -Infinity, sum = 0;
   for (let z = -32; z <= 32; z += 8) for (let x = -32; x <= 32; x += 8) {
-    total++; const [h, b] = column(gx + x, gz + z);
-    if (h > SEA + 1 && b !== MOUNTAIN && b !== OCEAN && b !== BEACH) { land++; lo = Math.min(lo, h); hi = Math.max(hi, h); }
+    total++; const [h, b] = rawColumn(gx + x, gz + z);
+    if (h > SEA + 1 && !NO_VILLAGE(b)) { land++; lo = Math.min(lo, h); hi = Math.max(hi, h); sum += h; }
   }
-  const [ch, cb] = column(gx, gz);
-  const valid = ch > SEA + 1 && cb !== MOUNTAIN && cb !== OCEAN && cb !== BEACH && land / total >= 0.7 && hi - lo <= 22 && hash2(gx, gz, W.seed + 31) < 0.85;
-  const v = { valid, base: ch + 1 }; villageCache.set(key, v); return v;
+  const [ch, cb] = rawColumn(gx, gz);
+  const valid = ch > SEA + 1 && !NO_VILLAGE(cb) && land / total >= 0.7 && hi - lo <= 22 && hash2(gx, gz, W.seed + 31) < 0.85;
+  // flat: the level the village ground is graded to (gen 3+), the mean height of the site's land
+  const v = { valid, base: ch + 1, flat: land ? Math.max(SEA + 2, Math.round(sum / land)) : ch }; villageCache.set(key, v); return v;
 }
 const VSTYLE = {
   plains: { found: COBBLE, corner: LOG, wall: PLANKS, roof: PLANKS, slab: OAK_SLAB, floor: PLANKS, acc: STRIPPED_LOG, post: LOG, light: LANTERN },
@@ -80,10 +86,10 @@ const VSTYLE = {
 const JOB_BLOCKS = [SMOKER, BLAST_FURNACE, SMITHING_TABLE, FLETCHING_TABLE, LOOM, COMPOSTER, CARTOGRAPHY_TABLE, BOOKSHELF];
 const PIECE_SIZE = { small: [5, 5], medium: [7, 7], farm: [9, 7], smith: [7, 7], library: [9, 7], pen: [7, 7] };
 function villageLayout(gx, gz) {
-  const key = W.seed + ':' + gx + ',' + gz; if (layoutCache.has(key)) return layoutCache.get(key);
+  const key = terrainKey() + ':' + gx + ',' + gz; if (layoutCache.has(key)) return layoutCache.get(key);
   const site = villageSite(gx, gz); if (!site.valid) { layoutCache.set(key, null); return null; }
   const rnd = STRUCT_RND(gx, gz, 77), b = column(gx, gz)[1];
-  const style = b === DESERT ? 'desert' : b === SNOWY ? 'snowy' : b === FOREST ? (rnd() < 0.5 ? 'taiga' : 'plains') : 'plains';
+  const style = b === DESERT ? 'desert' : b === SNOWY ? 'snowy' : b === TAIGA ? 'taiga' : (b === FOREST || b === BIRCH_FOREST || b === DARK_FOREST) ? (rnd() < 0.5 ? 'taiga' : 'plains') : 'plains';
   const L = { gx, gz, style, pieces: [], roads: [], bx0: gx - 4, bz0: gz - 4, bx1: gx + 4, bz1: gz + 4 };
   const rects = [], roadRects = [];
   const overlap = (a, c, m) => !(a[2] < c[0] - m || a[0] > c[2] + m || a[3] < c[1] - m || a[1] > c[3] + m);
@@ -263,7 +269,7 @@ function structureAt(kind, gx, gz) {
   const [h, b] = column(ox, oz);
   if (kind === 'pyramid' && (b !== DESERT || h <= SEA + 1)) return null;
   if (kind === 'igloo' && (b !== SNOWY || h <= SEA + 1)) return null;
-  if (kind === 'portal' && (h <= SEA || b === MOUNTAIN)) return null;
+  if (kind === 'portal' && (h <= SEA || b === MOUNTAIN || b === SNOWY_PEAKS)) return null;
   if (nearVillage(ox, oz)) return null;
   return { x: ox, z: oz, h };
 }
@@ -438,8 +444,9 @@ function generateOverworldStructures(ch) {
 }
 function treeBlocked(x, z) {
   const [gx,gz]=villageCenter(x,z), L=villageLayout(gx,gz);
-  if(L && (L.roads.some(r=>x>=r[0]-3&&x<=r[2]+3&&z>=r[1]-3&&z<=r[3]+3) || L.pieces.some(p=>x>=p.x0-3&&x<=p.x1+3&&z>=p.z0-3&&z<=p.z1+3))) return true;
-  for (const [kind, sp, r] of [['portal', 320, 8], ['pyramid', 224, 14], ['igloo', 208, 8]]) { const st = structureAt(kind, Math.floor(x / sp), Math.floor(z / sp)); if (st && Math.abs(st.x - x) <= r + 3 && Math.abs(st.z - z) <= r + 3) return true; }
+  const g = W.gen === 1 ? 3 : 5;   // v2 trees have wider crowns
+  if(L && (L.roads.some(r=>x>=r[0]-g&&x<=r[2]+g&&z>=r[1]-g&&z<=r[3]+g) || L.pieces.some(p=>x>=p.x0-g&&x<=p.x1+g&&z>=p.z0-g&&z<=p.z1+g))) return true;
+  for (const [kind, sp, r] of [['portal', 320, 8], ['pyramid', 224, 14], ['igloo', 208, 8]]) { const st = structureAt(kind, Math.floor(x / sp), Math.floor(z / sp)); if (st && Math.abs(st.x - x) <= r + g && Math.abs(st.z - z) <= r + g) return true; }
   return false;
 }
 

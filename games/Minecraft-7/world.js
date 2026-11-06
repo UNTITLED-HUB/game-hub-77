@@ -4,7 +4,9 @@ const BIOME_NAME = ['바다', '해변', '평원', '숲', '사막', '설원', '�
 let W = null;           // active world runtime
 let lastChunk = null;
 
-function column(x, z) {
+// Worlds created before terrain v2 (W.gen === 1) keep the original generator; see terrain.js.
+function column(x, z) { return W.gen === 1 ? columnV1(x, z) : column2(x, z); }
+function columnV1(x, z) {
   const n = W.noise, m = W.noise2;
   const cont = n.fbm2(x / 256, z / 256, 4);
   const det = n.fbm2(x / 48 + 31.7, z / 48 - 17.3, 3);
@@ -30,10 +32,13 @@ function newChunk(cx, cz) {
 
 function generateChunk(cx, cz) {
   if(W.dimension && W.dimension!=='overworld') return generateDimensionChunk(cx,cz);
+  return W.gen === 1 ? generateChunkV1(cx, cz) : generateChunk2(cx, cz);
+}
+function generateChunkV1(cx, cz) {
   const ch = newChunk(cx, cz), B = ch.blocks, seed = W.seed;
   const x0 = cx * CS, z0 = cz * CS, M = 3, SZ = CS + M * 2;
   const hs = new Int16Array(SZ * SZ), bs = new Uint8Array(SZ * SZ);
-  for (let lz = 0; lz < SZ; lz++) for (let lx = 0; lx < SZ; lx++) { const [h, b] = column(x0 + lx - M, z0 + lz - M); hs[lz * SZ + lx] = h; bs[lz * SZ + lx] = b; }
+  for (let lz = 0; lz < SZ; lz++) for (let lx = 0; lx < SZ; lx++) { const [h, b] = columnV1(x0 + lx - M, z0 + lz - M); hs[lz * SZ + lx] = h; bs[lz * SZ + lx] = b; }
   const n3a = W.noise.n3, n3b = W.noise2.n3;
   for (let z = 0; z < CS; z++) for (let x = 0; x < CS; x++) {
     const h = hs[(z + M) * SZ + x + M], b = bs[(z + M) * SZ + x + M], wx = x0 + x, wz = z0 + z;
@@ -169,6 +174,8 @@ function generateDimensionChunk(cx,cz){
   }
  }
  if(!nether&&W.structures!==false)generateEndStructures(ch);
+ // fortress rooms and Emberbloom only in worlds made with generator 4 or newer (older nethers stay as they were)
+ if(nether&&W.structures!==false&&(W.gen||4)>=4)generateFortress(ch);
  const mods=W.mods.get(ckey(cx,cz));if(mods)for(const [i,id]of mods)b[i]=id;
  applyPendingTE(ch);
  for(let i=0;i<CVOL;i++){if(BLOCK[b[i]]?.light)ch.emit.add(i);if(b[i]===NETHER_PORTAL){const x=cx*16+(i&15),y=(i>>8)+YMIN,z=cz*16+((i>>4)&15);if(!W.te.has(pkey(x,y,z)))W.te.set(pkey(x,y,z),{type:'nether',frame:{x:-1,y:49,z:4,dx:1,dz:0,width:2,height:4}});}}
@@ -268,7 +275,8 @@ function travelDimension(dest){
  Object.assign(P,pos,{vx:0,vy:0,vz:0,fallStart:pos.y});G.spawn=saved?.spawn||{...pos};
  G.loading=true;G.fresh=false;G.ui='loading';G.target=null;G.targetMob=null;G.sleep=0;ctx.setPaused(false);showLoading(0);
 }
-function placeTree(set, x, y, z, kind, r) {
+// ox/oz: world offset of the local coordinates (terrain v2 passes it so leaves match across chunk borders)
+function placeTree(set, x, y, z, kind, r, ox = 0, oz = 0) {
   const log = kind === 1 ? BIRCH_LOG : kind === 2 ? SPRUCE_LOG : LOG;
   const leaf = kind === 1 ? BIRCH_LEAVES : kind === 2 ? SPRUCE_LEAVES : LEAVES;
   if (kind === 2) {
@@ -287,7 +295,7 @@ function placeTree(set, x, y, z, kind, r) {
   for (let k = ht - 3; k <= ht; k++) {
     const rad = k >= ht - 1 ? 1 : 2;
     for (let dx = -rad; dx <= rad; dx++) for (let dz = -rad; dz <= rad; dz++) {
-      if (Math.abs(dx) === rad && Math.abs(dz) === rad && (k === ht || hash3(x + dx, k, z + dz, 7) < 0.5)) continue;
+      if (Math.abs(dx) === rad && Math.abs(dz) === rad && (k === ht || hash3(x + dx + ox, k, z + dz + oz, 7) < 0.5)) continue;
       if (dx === 0 && dz === 0 && k < ht) continue;
       set(x + dx, y + k, z + dz, leaf);
     }
@@ -506,7 +514,7 @@ function findSpawn() {
   for (let r = 0; r < 600; r += 8) for (let a = 0; a < Math.max(1, r / 2); a++) {
     const ang = a / Math.max(1, r / 2) * Math.PI * 2, x = Math.round(Math.cos(ang) * r), z = Math.round(Math.sin(ang) * r);
     const [h, b] = column(x, z);
-    if (b !== OCEAN && b !== BEACH && h > SEA + 1 && h < SEA+35) return { x: x + 0.5, y: h + 1, z: z + 0.5 };
+    if (b !== OCEAN && b !== BEACH && b !== RIVER && b !== SWAMP && h > SEA + 1 && h < SEA+35) return { x: x + 0.5, y: h + 1, z: z + 0.5 };
   }
   return { x: 0.5, y: WH - 10, z: 0.5 };
 }

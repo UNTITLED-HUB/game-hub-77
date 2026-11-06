@@ -276,5 +276,5 @@ const SMELT = { [ANCIENT_DEBRIS]:NETHERITE_SCRAP, [BULK_ITEM_START+16]: BULK_ITE
 const FUEL = { [COAL]: 80, [PLANKS]: 15, [LOG]: 15, [SPRUCE_LOG]: 15, [BIRCH_LOG]: 15, [STICK]: 5, [SAPLING]: 5, [TABLE]: 15, [CHEST]: 15, [BOOKSHELF]: 15, [BOW]: 15 };
 TIERS.forEach((t, i) => { if (i === 0) [PICK0, AXE0, SHOVEL0, SWORD0].forEach(b => FUEL[b + i] = 10); });
 [CHERRY_LOG,DARK_OAK_LOG,MANGROVE_LOG,BAMBOO_BLOCK,CHERRY_PLANKS,DARK_OAK_PLANKS,BIRCH_PLANKS,MANGROVE_PLANKS,BAMBOO_PLANKS].forEach(id=>FUEL[id]=15);
-const SMELT_TIME = 8;
+const SMELT_TIME = 10; // seconds per item in a furnace (200 ticks, like the original); smokers and blast furnaces take half
 

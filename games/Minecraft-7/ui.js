@@ -452,6 +452,7 @@ function tipHTML(id, s) {
   if (id === ELYTRA) extra += `<div class="tl">${tr('공중에서 점프를 한 번 더 누르면 활공해요')}</div>`;
   if (id === FIREWORK) extra += `<div class="tl">${tr('활공 중에 사용하면 앞으로 가속해요')}</div>`;
   if (id === SPYGLASS) extra += `<div class="tl">${tr('사용 버튼을 누르고 있으면 확대해요')}</div>`;
+  if (inf.desc) extra += `<div class="tl" style="color:#aaaaaa">${esc(tr(inf.desc))}</div>`;
   if (t && t.aspd) extra += `<div class="tl" style="color:#55ff55">${tr('공격력 {0} · 공격 속도 {1}', t.dmg, t.aspd)}</div>`;
   return `<div>${esc(inf.name)}</div>${extra}`;
 }
@@ -525,6 +526,7 @@ function updateGadget() {
     const ph = tt < 12000 ? '낮' : tt < 13800 ? '해 질 녘' : tt < 22200 ? '밤' : '새벽';
     key = 't' + hh + ':' + mm; html = `<span>${tr('{0}일째 · {1} {2}', dayCount(), tr(ph), String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'))}</span>`;
   }
+  else if (g && XGADGET[g] && !G.ui) { const r = XGADGET[g](needle); if (r) { key = r[0]; html = r[1]; } }
   if (key === gadgetKey) return; gadgetKey = key;
   el.style.display = key ? 'flex' : 'none'; if (key) el.innerHTML = html;
 }
@@ -633,7 +635,7 @@ function renderSlots() {
   const held = $('touchHeld'); if (held) { held.style.visibility = cursorStack ? 'visible' : 'hidden'; held.innerHTML = cursorStack ? `<span class="held-slot">${slotHTML(cursorStack)}</span><span>${esc(info(cursorStack.id).name)}</span>` : ''; }
   const pv = $('pview'); if (pv) drawPortrait(pv, G.armor);
   const sub = $('invsub'); if (sub && G.armor) { const [def] = armorPoints(); sub.textContent = tr(G.uiKind === 'creative' ? '갑옷' : '인벤토리') + (def ? ' · ' + tr('방어력 {0}', def) : ''); }
-  if (G.uiKind === 'furnace' && G.container) { const te = G.container.te; const f = $('fflame'), a = $('farrow'); if (f) f.style.height = (te.burn > 0 ? te.burn / te.burnMax * 100 : 0) + '%'; if (a) a.style.width = (te.cook / SMELT_TIME * 100) + '%'; }
+  if (G.uiKind === 'furnace' && G.container) { const te = G.container.te; const f = $('fflame'), a = $('farrow'); if (f) f.style.height = (te.burn > 0 ? te.burn / te.burnMax * 100 : 0) + '%'; if (a) a.style.width = Math.min(100, te.cook / (SMELT_TIME / furnaceSpeed(te.block)) * 100) + '%'; }
   if (G.uiKind === 'inventory' || G.uiKind === 'table') renderRecipes();
 }
 function getSlot(ref) {
@@ -672,7 +674,7 @@ function shiftMove(ref) {
   if (k === 'inv' && am && (G.uiKind === 'inventory' || G.uiKind === 'creative') && !G.armor[am.slot]) { G.armor[am.slot] = st; setSlot(ref, null); sfx('equip'); return; }
   if (k === 'inv') {
     if (G.uiKind === 'chest') rest = moveToRange(st, 0, 27, 'c:');
-    else if (G.uiKind === 'furnace') { const tgt = SMELT[st.id] != null ? 0 : FUEL[st.id] ? 1 : -1; rest = st; if (tgt >= 0) { const cur = G.container.te.slots[tgt]; if (!cur) { G.container.te.slots[tgt] = clone(st); rest = null; } else if (same(cur, st)) { const n = Math.min(maxStack(st.id) - cur.count, st.count); cur.count += n; st.count -= n; rest = st.count ? st : null; } } }
+    else if (G.uiKind === 'furnace') { const fb = furnaceBlock(), tgt = furnaceAccepts(fb, st.id) ? 0 : isFurnaceFuel(st.id) ? 1 : -1; rest = st; if (tgt >= 0) { const cur = G.container.te.slots[tgt]; if (!cur) { G.container.te.slots[tgt] = clone(st); rest = null; } else if (same(cur, st)) { const n = Math.min(maxStack(st.id) - cur.count, st.count); cur.count += n; st.count -= n; rest = st.count ? st : null; } } }
     else rest = i < 9 ? moveToRange(st, 9, 36) : moveToRange(st, 0, 9);
     setSlot(ref, rest && rest.count ? rest : null);
   } else {
@@ -716,6 +718,8 @@ function slotClick(ref, right, shift) {
     renderSlots(); invChanged(); return;
   }
   if (shift) { shiftMove(ref); renderSlots(); invChanged(); return; }
+  // the fuel slot only takes fuel (and empty buckets), like the original
+  if (ref === 'c:1' && G.uiKind === 'furnace' && cursorStack && !isFurnaceFuel(cursorStack.id)) { renderSlots(); return; }
   const st = getSlot(ref);
   if (!right) {
     if (!cursorStack) { if (st) { cursorStack = st; setSlot(ref, null); } }
@@ -835,7 +839,7 @@ function screenEvents() {
   // long-press: take half / place one · long-press the craft result: craft as many as possible
   // double-tap: quick-move to the other section · palette: swipe to scroll, hold then drag to take
   let D = null, lastTap = null;
-  const placeable = r => !!r && !r.startsWith('pal:') && r !== 'out' && r !== 'trash' && !(r === 'c:2' && G.uiKind === 'furnace');
+  const placeable = r => !!r && !r.startsWith('pal:') && r !== 'out' && r !== 'trash' && !(r === 'c:2' && G.uiKind === 'furnace') && !(r === 'c:1' && G.uiKind === 'furnace' && cursorStack && !isFurnaceFuel(cursorStack.id));
   const canSpread = r => placeable(r) && !r.startsWith('arm:') && !!cursorStack && (!getSlot(r) || (same(getSlot(r), cursorStack) && getSlot(r).count < maxStack(cursorStack.id)));
   const slotAt = (x, y) => { const rn = root.getRootNode ? root.getRootNode() : document, h = (rn && rn.elementFromPoint ? rn : document).elementFromPoint(x, y), el = h && h.closest ? h.closest('[data-slot]') : null; return el && s.contains(el) ? el : null; };
   const slotNode = r => s.querySelector(`[data-slot="${r}"]`);
@@ -1234,7 +1238,7 @@ function menuAction(a, el) {
     case 'ccancel': if (createFrom === 'worlds') showTitle(); else showLanding(); break;
     case 'create': {
       const name = ($('wname').value.trim() || tr('새로운 세계')).slice(0, 32), seedText = $('wseed').value.trim() || String(Math.floor(Math.random() * 1e9));
-      const w = { id: 'w' + Date.now().toString(36), name, mode: createOpts.mode, difficulty: createOpts.difficulty, bonus: createOpts.bonus, cheats:createOpts.cheats, structures: createOpts.structures, seedText, seed: /^-?\d+$/.test(seedText) ? (+seedText | 0) >>> 0 : hashSeed(seedText), created: Date.now(), played: Date.now(), data: null };
+      const w = { id: 'w' + Date.now().toString(36), name, mode: createOpts.mode, difficulty: createOpts.difficulty, bonus: createOpts.bonus, cheats:createOpts.cheats, structures: createOpts.structures, gen: 4, seedText, seed: /^-?\d+$/.test(seedText) ? (+seedText | 0) >>> 0 : hashSeed(seedText), created: Date.now(), played: Date.now(), data: null };
       SAVE.worlds.push(w); selectedWorld = w.id; startWorld(w); break;
     }
     case 'settings': keysParent = 'main'; showSettings('main'); break;

@@ -117,7 +117,7 @@ function breakBlock(t) {
     if (tool && tool.kind === 'shears' && (isLeaves(id) || id === TALL_GRASS || id === DEAD_BUSH)) spawnItem(id, 1, t.x + 0.5, t.y + 0.4, t.z + 0.5);
     else if (canHarvest(b, tool)) dropBlockItems(t.x, t.y, t.z, id);
     else { const te = W.te.get(pkey(t.x, t.y, t.z)); if (te) for (const sl of te.slots) if (sl) spawnItem(sl.id, sl.count, t.x + 0.5, t.y + 0.5, t.z + 0.5, sl.dmg); }
-    if (tool && b.hard > 0) damageTool(tool.kind === 'sword' ? 2 : 1);
+    if (tool && b.hard > 0) damageTool(['sword', 'dagger', 'hammer'].includes(tool.kind) ? 2 : 1);
     P.exhaustion += 0.005;
     G.stats.mined++;
   }
@@ -141,12 +141,17 @@ function attack(m) {
   const sprintHit = full && P.sprinting && !classic;
   const crit = full && P.vy < 0 && !P.onGround && !P.inWater && !P.flying && (classic || !P.sprinting);
   if (crit) dmg *= 1.5;
+  // dagger: double damage when striking from behind the target
+  if (w.kind === 'dagger') { const dx = m.x - P.x, dz = m.z - P.z, l = Math.hypot(dx, dz) || 1; if ((Math.sin(m.yaw) * dx - Math.cos(m.yaw) * dz) / l > 0.5) { dmg *= 2; critParticles(m); } }
   const fall = P.fallStart - P.y;
   if (w.kind === 'mace' && fall > 1.5 && !P.onGround) { dmg += fall <= 3 ? 4 * fall : fall <= 8 ? 12 + 2 * (fall - 3) : 22 + (fall - 8); P.fallStart = P.y; P.vy = Math.max(P.vy, 4); shake = Math.max(shake, 0.4); sfx('boom', 0.35); }
   const sweep = !classic && full && !crit && !sprintHit && P.onGround && w.kind === 'sword' && Math.hypot(P.vx, P.vz) < 4.4;
   dmg = Math.round(dmg * 100) / 100;
   P.atkT = 0;
-  if (hurtMob(m, dmg, P.x, P.z, false, (sprintHit ? 1.7 : 1) * (0.35 + 0.65 * str))) {
+  const hammer = w.kind === 'hammer';
+  if (hurtMob(m, dmg, P.x, P.z, false, (sprintHit ? 1.7 : 1) * (hammer ? 2 : 1) * (0.35 + 0.65 * str))) {
+    // war hammer: a full swing also jolts mobs standing close to the target
+    if (hammer && full) { shake = Math.max(shake, 0.25); for (const o of W.mobs) if (o !== m && !o.dead && Math.hypot(o.x - m.x, o.z - m.z) < 2.5 && Math.abs(o.y - m.y) < 1.5) { const d2 = Math.round(dmg * 0.35 * 100) / 100; if (hurtMob(o, d2, m.x, m.z, false, 0.8)) dmgNumber(o, d2, false); } }
     if (m.type === 'spider') m.angry = true;
     dmgNumber(m, dmg, crit);
     if (crit) { critParticles(m); sfx('crit'); } else sfx(sprintHit ? 'knock' : full ? 'strong' : 'weak');
@@ -155,7 +160,7 @@ function attack(m) {
       for (const o of W.mobs) if (o !== m && !o.dead && Math.hypot(o.x - m.x, o.z - m.z) < 1.6 && Math.abs(o.y - m.y) < 1 && Math.hypot(o.x - P.x, o.z - P.z) < 4) { if (hurtMob(o, 1, P.x, P.z, false, 0.45)) dmgNumber(o, 1, false); }
     }
     if (sprintHit) { P.sprinting = false; P.vx *= 0.6; P.vz *= 0.6; }
-    if (tool) damageTool(tool.kind === 'sword' ? 1 : 2);
+    if (tool) damageTool(['sword', 'dagger', 'hammer'].includes(tool.kind) ? 1 : 2);
     P.exhaustion += 0.1;
   } else sfx('weak', 0.5);
   startSwing();
@@ -184,6 +189,7 @@ function tryPlace(t, id) {
   if (b.needsSoil && !(below === GRASS || below === DIRT || below === SNOW_GRASS)) { toast(tr('{0}은(는) 흙이나 잔디 위에만 심을 수 있어요.', b.name)); return false; }
   if (b.needsSand && !(below === SAND || below === DIRT || below === GRASS)) { toast(tr('모래 위에만 심을 수 있어요.')); return false; }
   if (b.needsFloor && !solidAt(x, y - 1, z)) { toast(tr('블록 윗면에만 설치할 수 있어요.')); return false; }
+  if (b.needsSoul && !(below === SOUL_SAND || below === SOUL_SOIL || below === NETHERRACK)) { toast(tr('잉걸꽃은 영혼 모래나 네더랙 위에만 심을 수 있어요.')); return false; }
   if (id === CACTUS && !(below === SAND || below === CACTUS)) { toast(tr('선인장은 모래 위에만 자라요.')); return false; }
   if (b.facing || b.use === 'chest' || b.use === 'furnace') {
     const facing = facingFor();
@@ -226,6 +232,7 @@ function useItem() {
     if (b && b.use === 'tnt' && lighter) { setBlock(t.x, t.y, t.z, AIR); primeTNT(t.x, t.y, t.z); if (id === FLINT_STEEL) damageTool(1); else consumeHeld(1); startSwing(); return; }
     if (b && b.use === 'bed') { trySleep(t); return; }
   }
+  if (xUseItem(t, s, id)) return; // this game's own gadgets, drinks and instruments (extras.js)
   // shear a sheep
   const tm = G.targetMob;
   if (id === SHEARS && tm && tm.type === 'sheep' && !tm.sheared && !tm.dead) {
@@ -324,6 +331,7 @@ function canUse(s) {
   if (it.food) return G.mode === 'survival' && P.hunger < 20;
   if (it.armor || id === BUCKET || id === WATER_BUCKET || it.milk || it.pearl || it.rocket || id === SPYGLASS) return true;
   if ((it.tool && ['hoe', 'shovel', 'axe'].includes(it.tool.kind)) || it.bonemeal || it.plant || it.lighter) return !!t;
+  if (xCanUse(it)) return true;
   if (id === BOW) return G.mode === 'creative' || hasArrow();
   if (id === FLINT_STEEL) return !!t;
   if (id === SHEARS) return !!(G.targetMob && G.targetMob.type === 'sheep' && !G.targetMob.sheared);

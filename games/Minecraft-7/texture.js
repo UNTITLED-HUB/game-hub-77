@@ -20,6 +20,7 @@ function buildAtlas() {
   EXTRA_TEXTURES.forEach((name,i)=>tile(name,t=>t.copy(i===0||i===12||i===13?'planks':i===2||i===14||i===15?'iron_ore':i===3?'obsidian':'stone')));
   [['emerald','diamond'],['lapis','diamond'],['copper_ingot','iron_ingot'],['amethyst_shard','diamond']].forEach(([name,base])=>tile(name,t=>t.copy(base)));
   paintContent();
+  paintExtras();
   // Each model face gets its own tile, retaining procedural fallback textures.
   const fallback = {zombie:'zombie_skin',pig:'pig_skin',cow:'cow_skin',sheep:'sheep_face',spider:'spider_body'};
   for (const [mob, base] of Object.entries(fallback)) for (let i=0;i<16;i++) tile('skin_'+mob+'_'+i, t => t.copy(i === 0 ? mob+'_face' : base));

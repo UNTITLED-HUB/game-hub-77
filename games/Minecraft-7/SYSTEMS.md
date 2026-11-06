@@ -8,12 +8,15 @@
 | item.js | 블록·아이템·갑옷·네더라이트·제작·화로 |
 | content.js | 새 블록(200–254)·아이템(420–497)·조합법·절차적 텍스처 |
 | i18n.js | 언어(한국어/English)·tr()·아이템 영어 이름·도움말 |
+| extras.js | 이 게임 고유 아이템(500번부터, 끝에만 추가)·잉걸꽃 블록(255)·조합법·사용 효과·부적·도구 표시·아이콘 |
 | texture.js | 텍스처 등록·이미지 시트·아이콘 |
-| world.js | 차원·지형·포탈·빛·유체·저장 인코딩 |
+| world.js | 차원·지형(v1, 기존 월드용)·포탈·빛·유체·저장 인코딩 |
+| terrain.js | 지형 v2(새 월드): 대륙·강·산맥·바이옴 17종·나무·동굴·협곡·광석 |
 | structures.js | 마을(지형 추종)·무너진 차원문·사막 피라미드·이글루·던전·요새·엔드 시티/함선·전리품·생성기 |
 | renderer.js | 청크 메시·물/용암 투명도·셰이더 |
 | entity.js | 충돌·드롭·화살·갑옷 방어·폭발 |
 | mob.js | 몹 등록·생성·AI·모델·불덩이 |
+| fortress.js | 네더 요새 방(gen 4+): 잉걸 홀·금고·대장간·온실·서고·감시초소, 요새 전리품, 잉걸꽃 배치 |
 | player.js | 플레이어·공격·채굴·사용·이동·생존 |
 | ui.js | 인벤토리·메뉴·치트 토글·설정 |
 | command.js | 명령어·선택자·실행 컨텍스트·상태 효과 |
@@ -25,6 +28,9 @@ node build-game.mjs
 node build-game.mjs --check
 node test-world.cjs game.js
 node test-command.cjs game.js
+node test-fluid.cjs game.js
+node test-extras.cjs game.js
+node test-furnace.cjs game.js
 ```
 
 ## 치트와 명령어

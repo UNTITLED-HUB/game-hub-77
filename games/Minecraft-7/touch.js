@@ -114,6 +114,21 @@ function ctlUp(id, e, el, p) {
     case 'pause': if (ok && G && !G.ui) showPause(); break;
   }
 }
+// Items whose "use" (right click on PC) needs the button held: food, the bow, the spyglass and the shield.
+// The main hand decides; the off hand counts only when the main hand holds nothing it could mine with.
+function holdToUse() {
+  if (!G || G.ui || P.dead) return false;
+  const holds = s => {
+    if (!s) return false;
+    const it = ITEM[s.id]; if (!it) return false;
+    if (it.food) return G.mode === 'survival' && P.hunger < 20 && !(it.plant && G.target && G.target.id === FARMLAND);
+    if (s.id === BOW) return G.mode === 'creative' || hasArrow();
+    return s.id === SPYGLASS || s.id === SHIELD;
+  };
+  const main = G.inv[G.sel];
+  if (holds(main)) return true;
+  return !(main && (toolOf(main.id) || main.id < 256)) && holds(G.off);
+}
 function touchEvents() {
   const touch = $('touch');
   ctx.on(touch, 'pointerdown', e => {
@@ -145,8 +160,13 @@ function touchEvents() {
       J.float = true; TEL.move.style.left = lx + 'px'; TEL.move.style.top = ly + 'px'; TEL.move.classList.add('down');
       joyStart(e, e.clientX, e.clientY); return;
     }
-    const L = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, mining: false };
-    L.timer = ctx.timeout(() => { if (looks.get(e.pointerId) === L && L.moved < 12) { L.mining = true; input.mine = true; P.attackCd = 0; P.mineCd = 0; } }, st.holdDelay || 280);
+    const L = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0, mining: false, using: false };
+    // holding the screen mines / attacks, except with an item that is used by holding (eating, drawing a bow…)
+    L.timer = ctx.timeout(() => {
+      if (looks.get(e.pointerId) !== L || L.moved >= 12) return;
+      if (holdToUse()) { L.using = true; input.use = true; P.useCd = 0; }
+      else { L.mining = true; input.mine = true; P.attackCd = 0; P.mineCd = 0; }
+    }, st.holdDelay || 280);
     looks.set(e.pointerId, L);
   });
   ctx.on(canvas, 'pointermove', e => {
@@ -161,6 +181,7 @@ function touchEvents() {
     const L = looks.get(e.pointerId); if (!L) return; looks.delete(e.pointerId);
     clearTimeout(L.timer);
     if (L.mining) input.mine = false;
+    else if (L.using) input.use = false; // a drawn bow shoots on release
     else if (e.type !== 'pointercancel' && L.moved < 12 && performance.now() - L.t < (SAVE.settings.holdDelay || 280) && G && !G.ui) {
       // a quick tap on a mob hits it (shears on a sheep still shear); otherwise it places / uses
       const m = G.targetMob, s = G.inv[G.sel];

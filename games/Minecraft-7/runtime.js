@@ -52,6 +52,14 @@ function sfx(name, vol = 1) {
     case 'sweep': noise(0.22, 2000, 0.5, 0.35, 'bandpass'); break;
     case 'note': tone('triangle', 440 * Math.pow(2, Math.floor(Math.random() * 12) / 12), 430, 0.5, 0.1); break;
     case 'bell': tone('sine', 1320, 1300, 1.6, 0.12); tone('sine', 660, 655, 1.8, 0.08); tone('sine', 1980, 1960, 0.9, 0.04); break;
+    // instruments (extras.js): each plays a short phrase from a pentatonic scale
+    case 'x_flute': case 'x_ocarina': case 'x_harp': case 'x_chime': case 'x_horn': {
+      const steps = [0, 2, 4, 7, 9, 12], base = { x_flute: 660, x_ocarina: 520, x_harp: 392, x_chime: 1046, x_horn: 196 }[name];
+      const wave = { x_flute: 'sine', x_ocarina: 'sine', x_harp: 'triangle', x_chime: 'sine', x_horn: 'sawtooth' }[name], len = name === 'x_chime' ? 1.2 : name === 'x_harp' ? 0.7 : 0.32;
+      for (let i = 0; i < 3; i++) { const f = base * Math.pow(2, steps[Math.floor(Math.random() * steps.length)] / 12); tone(wave, f, f * (name === 'x_horn' ? 0.98 : 1), len, name === 'x_horn' ? 0.035 : 0.07, i * 0.18); }
+      break;
+    }
+    case 'x_drum': tone('sine', 140, 50, 0.3, 0.3); noise(0.12, 300, 0.8, 0.3, 'lowpass'); tone('sine', 120, 45, 0.25, 0.22, 0.2); break;
     case 'rocket': noise(0.6, 2400, 0.4, 0.4); tone('sawtooth', 200, 900, 0.5, 0.03); break;
     case 'pearl': tone('sine', 900, 300, 0.25, 0.08); noise(0.2, 3000, 1, 0.2); break;
     case 'slime': tone('sine', 220, 360, 0.18, 0.12); noise(0.1, 500, 1, 0.3); break;
@@ -124,7 +132,7 @@ function applyVisualSettings() {
 }
 function serializeWorld() {
   return {
-    player: { x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, health: P.health, hunger: P.hunger, sat: P.sat, airT: P.airT, flying: P.flying, dead: P.dead,effects:P.effects,xp:P.xp,tags:P.tags },
+    player: { x: P.x, y: P.y, z: P.z, yaw: P.yaw, pitch: P.pitch, health: P.health, hunger: P.hunger, sat: P.sat, airT: P.airT, flying: P.flying, dead: P.dead,effects:P.effects,xp:P.xp,tags:P.tags,mark:P.mark },
     inv: G.inv.map(s => s ? [s.id, s.count, s.dmg || 0,s.enchants||null] : 0), armor: G.armor.map(s => s ? [s.id, 1, s.dmg || 0,s.enchants||null] : 0), off: G.off ? [G.off.id, G.off.count, G.off.dmg || 0] : 0, sel: G.sel, weather:W.weather,weatherTime:W.weatherTime,time: W.time, spawn: G.spawn, stats: G.stats,
     terrainVersion:2, dimension:W.dimension, dimensions:W.dimensions, mods: encodeMods(), te: Object.fromEntries(W.te),
     mobs: W.mobs.filter(m => !m.dead && Math.hypot(m.x - P.x, m.z - P.z) < 80).map(m => [m.type, +m.x.toFixed(2), +m.y.toFixed(2), +m.z.toFixed(2), m.hp, m.color, Math.round(m.sheared || 0)]),
@@ -144,7 +152,7 @@ let lastPc = null, wantList = [];
 function startWorld(w) {
   wake();
   const d = w.data;
-  W = { dimension:d?.dimension||'overworld',dimensions:d?.dimensions||{}, seed: w.seed >>> 0, noise: makeNoise(w.seed >>> 0), noise2: makeNoise((w.seed ^ 0x9e3779b9) >>> 0), chunks: new Map(), mods: decodeMods(d && d.mods), te: new Map(Object.entries((d && d.te) || {})),
+  W = { dimension:d?.dimension||'overworld',dimensions:d?.dimensions||{}, gen: w.gen || 1, seed: w.seed >>> 0, noise: makeNoise(w.seed >>> 0), noise2: makeNoise((w.seed ^ 0x9e3779b9) >>> 0), chunks: new Map(), mods: decodeMods(d && d.mods), te: new Map(Object.entries((d && d.te) || {})),
     weather:d?.weather||'clear',weatherTime:d?.weatherTime||0, structures: w.structures !== false, pendingSpawns: [], fluidQ: new Set(), gravQ: new Set(), mobs: [], items: [], particles: [], tnts: [], arrows: [], time: d ? d.time : 1000, difficulty: w.difficulty ?? 2, daylight: 1, skyLevel: 15 };
   lastChunk = null; lastPc = null;
   G = { world: w, mode: w.mode, inv: Array(36).fill(null), sel: (d && d.sel) || 0, ui: 'loading', settings: SAVE.settings, spawn: (d && d.spawn) || findSpawn(), stats: Object.assign({ mined: 0, placed: 0, crafted: 0, deaths: 0, time: 0, walk: 0 }, (d && d.stats) || {}),
@@ -235,15 +243,41 @@ function updateSky() {
   if(W.dimension==='nether'||W.dimension==='end')W.daylight=0.8;
   W.skyLevel = Math.round(clamp((W.daylight - 0.16) / 0.84, 0, 1) * 11 + 4);
 }
+// Furnace rules follow the original game (one call = one game tick, times in seconds = ticks / 20):
+// an item takes 10 s; fuel is only lit when there is something it can cook, and once lit it burns down
+// even if the input is taken out; progress resets when the input changes or cooking stops while lit, and
+// unwinds 2× when unlit. Smokers (food only) and blast furnaces (ores only) cook twice as fast and burn
+// fuel twice as fast, so one coal still cooks 8 items everywhere. A lava bucket leaves its empty bucket.
+const BLAST_INPUTS = () => new Set([IRON_ORE, GOLD_ORE, COPPER_ORE, DIAMOND_ORE, DEEP_IRON, DEEP_GOLD, DEEP_DIAMOND, ANCIENT_DEBRIS, RAW_IRON, RAW_GOLD, RAW_COPPER, XID.raw_blackiron]);
+let blastInputs = null;
+function furnaceSpeed(blockId) { return blockId === SMOKER || blockId === BLAST_FURNACE ? 2 : 1; }
+function furnaceAccepts(blockId, id) {
+  const res = SMELT[id]; if (res == null) return false;
+  if (blockId === SMOKER) return !!(ITEM[res] && ITEM[res].food);
+  if (blockId === BLAST_FURNACE) return (blastInputs ??= BLAST_INPUTS()).has(id);
+  return true;
+}
+const isFurnaceFuel = id => !!FUEL[id] || id === BUCKET;
+// block id of the furnace whose window is open
+function furnaceBlock() { const te = G.container && G.container.te; if (te && te.block != null) return te.block; const [x, y, z] = G.container.pos.split(',').map(Number); return getBlock(x, y, z); }
 function furnaceTick(k, te) {
-  const [inp, fuel, out] = te.slots, res = inp && SMELT[inp.id];
-  const canOut = res && (!out || (out.id === res && out.count < maxStack(res)));
+  if (te.block == null) { const [x, y, z] = k.split(',').map(Number); te.block = getBlock(x, y, z); }
+  const spd = furnaceSpeed(te.block), total = SMELT_TIME / spd;
+  const [inp, fuel, out] = te.slots, res = inp && furnaceAccepts(te.block, inp.id) ? SMELT[inp.id] : null;
+  const canBurn = res != null && (!out || (out.id === res && out.count < maxStack(res)));
   const wasLit = te.burn > 0;
-  if (te.burn > 0) te.burn -= TICK;
-  if (te.burn <= 0 && canOut && fuel && FUEL[fuel.id]) { te.burnMax = te.burn = FUEL[fuel.id]; fuel.count--; if (!fuel.count) te.slots[1] = fuel.id === WATER_BUCKET ? { id: BUCKET, count: 1 } : null; }
-  if (te.burn > 0 && canOut) { if (te.fast == null) { const [x, y, z] = k.split(',').map(Number), id = getBlock(x, y, z); te.fast = id === SMOKER || id === BLAST_FURNACE ? 2 : 1; } te.cook += TICK * te.fast; if (te.cook >= SMELT_TIME) { te.cook = 0; inp.count--; if (!inp.count) te.slots[0] = null; if (out) out.count++; else te.slots[2] = { id: res, count: 1, dmg: 0 }; } }
-  else te.cook = Math.max(0, te.cook - TICK * 2);
-  if (te.burn < 0) te.burn = 0;
+  if (te.burn > 0) te.burn = Math.max(0, te.burn - TICK);
+  if (inp && te.cookId !== inp.id) { te.cookId = inp.id; te.cook = 0; }
+  if (te.burn > 0 || (fuel && FUEL[fuel.id] && inp)) {
+    if (te.burn <= 0 && canBurn && fuel && FUEL[fuel.id]) {
+      te.burnMax = te.burn = FUEL[fuel.id] / spd;
+      fuel.count--; if (!fuel.count) te.slots[1] = fuel.id === LAVA_BUCKET ? { id: BUCKET, count: 1, dmg: 0 } : null;
+    }
+    if (te.burn > 0 && canBurn) {
+      te.cook += TICK;
+      if (te.cook >= total - 1e-6) { te.cook = 0; inp.count--; if (!inp.count) te.slots[0] = null; if (out) out.count++; else te.slots[2] = { id: res, count: 1, dmg: 0 }; }
+    } else te.cook = 0;
+  } else if (te.cook > 0) te.cook = Math.max(0, te.cook - TICK * 2);
   if (wasLit !== te.burn > 0) { const [x, , z] = k.split(',').map(Number); const ch = getChunk(x >> 4, z >> 4); if (ch) { ch.needMesh = true; ch.urgent = true; } }
 }
 // crops planted on farmland ripen after a couple of in-game minutes when they have light
@@ -269,7 +303,7 @@ function step(dt) {
   updatePortal(dt);if(G.loading)return;updateEffects(dt);updateLava(dt);
   if(G.world.rules?.doDaylightCycle!==false)W.time += dt * DAY_TICKS / DAY_SECONDS;
   updateSky();
-  updatePlayer(dt); updateInteraction(dt); updateSurvival(dt);
+  updatePlayer(dt); updateInteraction(dt); updateSurvival(dt); updateExtras(dt);
   tickAcc += dt; while (tickAcc >= TICK) { tickAcc -= TICK; gameTick(); }
   processPendingSpawns(); updateSpawners(dt);
   updateMobs(dt); updateItems(dt); updateArrows(dt); updateParticles(dt); updateTNT(dt); spawnLogic(dt); updateSleep(dt);
@@ -774,7 +808,7 @@ function frame(now) {
   updateHUD(dt);
   if (showDebug) {
     const bx = Math.floor(P.x), bz = Math.floor(P.z), ch = getChunk(bx >> 4, bz >> 4), l = getLight(bx, Math.floor(P.y + 1), bz);
-    const biome = ch ? BIOME_NAME[ch.biomes[(bz & 15) * CS + (bx & 15)]] : '?';
+    const biome = ch ? tr(BIOME_NAME[ch.biomes[(bz & 15) * CS + (bx & 15)]]) : '?';
     const tday = Math.floor(W.time % DAY_TICKS);
     const facing = ['북쪽 (-Z)', '동쪽 (+X)', '남쪽 (+Z)', '서쪽 (-X)'][((Math.round(P.yaw / (Math.PI / 2)) % 4) + 4) % 4];
     const tg = G.target;
